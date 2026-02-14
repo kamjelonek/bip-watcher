@@ -23,6 +23,7 @@ from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from urllib.parse import urljoin, urlparse, urlunparse, parse_qsl, urlencode
 from pathlib import Path
+import win32com.client
 
 import aiohttp
 import requests
@@ -143,17 +144,16 @@ BAD_EXT = (
 )
 
 # ===================== PERFORMANCE =====================
-CONCURRENT_GMINY = 8
-CONCURRENT_REQUESTS = 100
+CONCURRENT_GMINY = 6
+CONCURRENT_REQUESTS = 30
 LIMIT_PER_HOST = 3
 
-PHASE1_MAX_PAGES = 120
-PHASE1_MAX_SEEDS = 2000
-PHASE2_MAX_DEPTH = 4
-
-PHASE2_MAX_PAGES = 5000
-MAX_SEC_PER_GMINA = 3600
-ABSOLUTE_MAX_SEC_PER_GMINA = 3600  # HARD LIMIT
+PHASE1_MAX_PAGES = 2000     # było 120
+PHASE1_MAX_SEEDS = 50000    # było 2000
+PHASE2_MAX_DEPTH = 6        # było 4 (często BIPy mają głębiej)
+PHASE2_MAX_PAGES = 200000   # było 5000 (przy UNLIMITED_SCAN i tak ogranicza Cię czas)
+ABSOLUTE_MAX_SEC_PER_GMINA = 7200  # np. 2h jeśli chcesz realnie domykać gminy
+MAX_SEC_PER_GMINA = 7200
 
 REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=None, sock_connect=12, sock_read=35)
 
@@ -1989,9 +1989,6 @@ async def phase1_discover(gmina: str, start_url: str,
         # ✅ Phase1: listing/home zawsze odświeżaj (to indeksy treści)
         # ✅ Cache w Phase1 może skipować tylko "zwykłe" strony (non-listing),
         #    żeby nie zabić discovery.
-        if USE_CACHE and (url_key(url) in urls_seen) and (not is_phase1_listing(url)):
-            diag["counts"]["phase1_url_cache_skip"] += 1
-            continue
 
         html, final, kind, status, ctype, err, ms = await fetch(session_crawl, url)
         trace_set(diag, "PHASE1_DISCOVERY", url=url, kind=kind, status=status, ms=ms)
@@ -2870,4 +2867,6 @@ def run_main_vscode_style():
     loop.run_until_complete(main())
 
 
-await main()
+
+if __name__ == "__main__":
+    run_main_vscode_style()
