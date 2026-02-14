@@ -9,6 +9,10 @@ permissions:
   contents: write
   issues: write
 
+concurrency:
+  group: bip-watcher
+  cancel-in-progress: false
+
 jobs:
   run:
     runs-on: ubuntu-latest
@@ -17,20 +21,28 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
       - name: Install dependencies
+        shell: bash
         run: |
+          set -euo pipefail
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       # ===================== CACHE RESTORE =====================
       - name: Unpack cache.zip (if exists)
+        shell: bash
         run: |
+          set -euo pipefail
+          mkdir -p data
           if [ -f data/cache.zip ]; then
             unzip -o data/cache.zip -d data
           else
@@ -39,21 +51,27 @@ jobs:
 
       # ===================== RUN SCRIPT =====================
       - name: Run watcher
+        shell: bash
         run: |
-          python bip_watcher.py
+          set -euo pipefail
+          python -u bip_watcher.py
 
       # ===================== CACHE SAVE =====================
       - name: Repack cache.json -> cache.zip
+        if: always()
+        shell: bash
         run: |
+          set -euo pipefail
           if [ -f data/cache.json ]; then
             rm -f data/cache.zip
-            cd data
-            zip -9 cache.zip cache.json
-            cd ..
+            (cd data && zip -9 cache.zip cache.json)
+          else
+            echo "No cache.json to pack."
           fi
 
       # ===================== ARTIFACTS =====================
       - name: Upload outputs
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: bip-output
@@ -66,9 +84,12 @@ jobs:
 
       # ===================== ISSUE NOTIFICATION =====================
       - name: Create Issue if there are changes
+        if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
         run: |
+          set -euo pipefail
           python - << 'PY'
           import os, re, subprocess
           from datetime import datetime
@@ -94,21 +115,21 @@ jobs:
           if len(txt) > 60000:
               body += "\n\n(truncated)"
 
-          subprocess.check_call([
-              "gh", "issue", "create",
-              "--title", title,
-              "--body", body
-          ])
+          subprocess.check_call(["gh", "issue", "create", "--title", title, "--body", body])
           print("Issue created")
           PY
 
-      # ===================== SAVE CACHE BACK TO REPO =====================
+      # ===================== SAVE BACK TO REPO =====================
       - name: Commit updated cache and reports
+        if: github.event_name != 'pull_request'
+        shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           git add data/cache.zip data/summary_report.txt data/log.csv data/diag_gminy.csv data/diag_errors.csv || true
+          git status --porcelain
 
           git commit -m "Update cache and reports [skip ci]" || echo "Nothing to commit"
           git push
