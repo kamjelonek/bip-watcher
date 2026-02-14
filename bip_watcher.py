@@ -2752,18 +2752,17 @@ async def main():
         print("❌ CSV pusty / brak poprawnych rekordów.")
         return
 
-shard_total = int(os.getenv("SHARD_TOTAL", "1"))
-shard_index = int(os.getenv("SHARD_INDEX", "0"))
+    shard_total = int(os.getenv("SHARD_TOTAL", "1"))
+    shard_index = int(os.getenv("SHARD_INDEX", "0"))
 
-rows_all = rows
-rows = pick_rows_for_shard(rows_all, shard_index, shard_total)
+    rows_all = rows
+    rows = pick_rows_for_shard(rows_all, shard_index, shard_total)
 
-print(f"🧩 SHARD {shard_index}/{shard_total} -> {len(rows)}/{len(rows_all)} gmin", flush=True)
+    print(f"🧩 SHARD {shard_index}/{shard_total} -> {len(rows)}/{len(rows_all)} gmin", flush=True)
 
-if not rows:
-    print("ℹ️ Brak gmin w tym shardzie.")
-    return
-
+    if not rows:
+        print("ℹ️ Brak gmin w tym shardzie.")
+        return
     
     # aiohttp connectors
     conn_default = aiohttp.TCPConnector(
@@ -2883,5 +2882,6 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
