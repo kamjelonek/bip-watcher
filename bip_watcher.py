@@ -49,7 +49,7 @@ UNLIMITED_SCAN = True
 USE_CACHE = True
 ONLY_GMINA = None  # np. "Gmina X"
 CRAWL_ALL_INTERNAL_LINKS = True  # ✅ bierz wszystko z domeny, poza ignorowanymi
-BOOTSTRAP_MODE = True
+BOOTSTRAP_MODE = FALSE
 FORCE_PHASE1_REDISCOVERY = True   # ✅ Phase1 zawsze robi discovery, seed_cache tylko jako dodatek
 
 
@@ -2882,6 +2882,7 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
 
