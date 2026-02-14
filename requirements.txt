@@ -1,5 +1,4 @@
 aiohttp
 requests
 beautifulsoup4
-ipython
-
+pywin32; platform_system=="Windows"
