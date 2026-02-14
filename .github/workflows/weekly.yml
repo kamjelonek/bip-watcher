@@ -1,0 +1,71 @@
+name: BIP Watcher Weekly
+
+on:
+  schedule:
+    - cron: "0 5 * * 1"   # poniedziałek 05:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run watcher
+        run: |
+          python bip_watcher.py
+
+      - name: Upload output
+        uses: actions/upload-artifact@v4
+        with:
+          name: bip-output
+          path: |
+            data/summary_report.txt
+            data/log.csv
+            data/diag_gminy.csv
+            data/diag_errors.csv
+            data/cache.json
+
+      - name: Create Issue if there are changes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python - << 'PY'
+          import os, re, subprocess
+          from datetime import datetime
+
+          p = "data/summary_report.txt"
+          if not os.path.exists(p):
+              print("No summary -> skip")
+              raise SystemExit(0)
+
+          txt = open(p, "r", encoding="utf-8", errors="ignore").read()
+          m = re.search(r"mail_items=(\d+)", txt)
+          n = int(m.group(1)) if m else 0
+          if n <= 0:
+              print("No changes -> no issue")
+              raise SystemExit(0)
+
+          ts = datetime.utcnow().strftime("%Y-%m-%d")
+          title = f"BIP WATCHER: {n} nowych/zmienionych ({ts})"
+          body = txt[:60000] + ("\n\n(truncated)" if len(txt) > 60000 else "")
+          subprocess.check_call(["gh", "issue", "create", "--title", title, "--body", body])
+          print("Issue created")
+          PY
