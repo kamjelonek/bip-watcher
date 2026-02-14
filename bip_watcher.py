@@ -23,7 +23,6 @@ from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from urllib.parse import urljoin, urlparse, urlunparse, parse_qsl, urlencode
 from pathlib import Path
-import win32com.client
 
 import aiohttp
 import requests
@@ -148,10 +147,10 @@ CONCURRENT_GMINY = 6
 CONCURRENT_REQUESTS = 30
 LIMIT_PER_HOST = 3
 
-PHASE1_MAX_PAGES = 2000     # było 120
-PHASE1_MAX_SEEDS = 50000    # było 2000
-PHASE2_MAX_DEPTH = 6        # było 4 (często BIPy mają głębiej)
-PHASE2_MAX_PAGES = 200000   # było 5000 (przy UNLIMITED_SCAN i tak ogranicza Cię czas)
+PHASE1_MAX_PAGES = 500     # było 120
+PHASE1_MAX_SEEDS = 10000    # było 2000
+PHASE2_MAX_DEPTH = 4       # było 4 (często BIPy mają głębiej)
+PHASE2_MAX_PAGES = 100000   # było 5000 (przy UNLIMITED_SCAN i tak ogranicza Cię czas)
 ABSOLUTE_MAX_SEC_PER_GMINA = 7200  # np. 2h jeśli chcesz realnie domykać gminy
 MAX_SEC_PER_GMINA = 7200
 
@@ -174,8 +173,8 @@ PAGINATION_CAP_LOW  = 1200 if UNLIMITED_SCAN else 300
 CACHE_CHECKPOINT_EVERY_N_GMINY = 3
 SEED_CACHE_TTL_DAYS = 30
 FAST_TEXT_MAX_CHARS = 3500
-HIT_RECHECK_TTL_HOURS = 24   # HIT/NOWE/ZMIANA: recheck co 24h
-NO_MATCH_RECHECK_TTL_HOURS = 24  # NO_MATCH: recheck co 24 godziny (żeby złapać późniejsze publikacje)
+HIT_RECHECK_TTL_HOURS = 168   # HIT/NOWE/ZMIANA: recheck co 24h
+NO_MATCH_RECHECK_TTL_HOURS = 168  # NO_MATCH: recheck co 24 godziny (żeby złapać późniejsze publikacje)
 FAST_FPRINT_MAX_CHARS = 6000
 
 
@@ -1446,22 +1445,6 @@ def log_new_item(gmina: str, title: str, url: str, kw: str):
             w.writerow(["datetime_found", "gmina", "keyword", "title", "url"])
         w.writerow([now_iso(), gmina, kw, title, url])
 
-def send_email(subject: str, body: str) -> bool:
-    """
-    Wysyłka przez Outlook Desktop (COM) – bez SMTP/portów.
-    Wymaga: zainstalowany Outlook + skonfigurowane konto.
-    """
-    try:
-        outlook = win32com.client.Dispatch("Outlook.Application")
-        mail = outlook.CreateItem(0)  # 0 = olMailItem
-        mail.To = EMAIL_TO
-        mail.Subject = subject
-        mail.Body = body
-        mail.Send()
-        return True
-    except Exception as e:
-        print(f"❌ Outlook send failed: {e}")
-        return False
 
 def read_bipy_csv(path: Path):
     rows = []
@@ -2870,3 +2853,4 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
