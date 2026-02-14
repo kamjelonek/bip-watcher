@@ -280,6 +280,23 @@ def iso_parse(s: str):
     except Exception:
         return None
 
+def pick_rows_for_shard(rows, shard_index: int, shard_total: int):
+    """
+    Stabilny podział: ten sam wiersz zawsze trafi do tego samego sharda.
+    Dzielimy po hash(name|url) % shard_total.
+    """
+    if shard_total <= 1:
+        return rows
+
+    out = []
+    for (name, url) in rows:
+        key = f"{(name or '').strip().lower()}|{canonical_url(url)}"
+        h = int(hashlib.sha1(key.encode("utf-8", errors="ignore")).hexdigest(), 16)
+        if (h % shard_total) == shard_index:
+            out.append((name, url))
+    return out
+
+
 def should_recheck_hit(prev: dict) -> bool:
     """
     True -> wolno/fajnie sprawdzić ponownie (minął TTL)
@@ -2735,6 +2752,19 @@ async def main():
         print("❌ CSV pusty / brak poprawnych rekordów.")
         return
 
+shard_total = int(os.getenv("SHARD_TOTAL", "1"))
+shard_index = int(os.getenv("SHARD_INDEX", "0"))
+
+rows_all = rows
+rows = pick_rows_for_shard(rows_all, shard_index, shard_total)
+
+print(f"🧩 SHARD {shard_index}/{shard_total} -> {len(rows)}/{len(rows_all)} gmin", flush=True)
+
+if not rows:
+    print("ℹ️ Brak gmin w tym shardzie.")
+    return
+
+    
     # aiohttp connectors
     conn_default = aiohttp.TCPConnector(
         limit=CONCURRENT_REQUESTS,
@@ -2853,4 +2883,5 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
