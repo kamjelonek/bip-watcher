@@ -5,6 +5,11 @@ on:
     - cron: "0 5 * * 1"   # poniedziałek 05:00 UTC
   workflow_dispatch: {}
 
+# Żeby dwa uruchomienia nie mieszały cache (np. ręczne + cron)
+concurrency:
+  group: bip-watcher
+  cancel-in-progress: false
+
 permissions:
   contents: write
   issues: write
@@ -13,7 +18,9 @@ jobs:
   scan:
     name: Scan shard ${{ matrix.shard }}
     runs-on: ubuntu-latest
-    timeout-minutes: 350
+
+    # GitHub-hosted runner ma twardy limit ~6h na job; dajemy bufor na zapis/artefakty.
+    timeout-minutes: 355
 
     strategy:
       fail-fast: false
@@ -45,42 +52,71 @@ jobs:
           fi
 
       # ===================== RUN SCRIPT (this shard only) =====================
+      # continue-on-error: true => nawet jeśli jedna gmina wysypie skan,
+      # job spróbuje spakować cache/diag i wrzucić artefakty.
       - name: Run watcher (sharded)
+        continue-on-error: true
         env:
           SHARD_TOTAL: "4"
           SHARD_INDEX: "${{ matrix.shard }}"
+          # soft-deadline dla kodu (jeśli obsłużysz to w bip_watcher.py)
+          RUN_DEADLINE_MIN: "345"
         run: |
           python bip_watcher.py
 
+      # ===================== ENSURE cache.json exists (so merge can always run) =====================
+      - name: Ensure cache.json exists
+        if: always()
+        run: |
+          mkdir -p data
+          if [ ! -f data/cache.json ]; then
+            echo "cache.json missing - creating minimal placeholder to allow merge."
+            python - << 'PY'
+            import json, os
+            os.makedirs("data", exist_ok=True)
+            cache = {
+              "schema": 10,
+              "urls_seen": {},
+              "content_seen": {},
+              "gmina_seeds": {},
+              "page_fprints": {},
+              "gmina_frontiers": {},
+              "gmina_retry": {},
+            }
+            with open("data/cache.json", "w", encoding="utf-8") as f:
+              json.dump(cache, f, ensure_ascii=False, indent=2)
+            PY
+          fi
+
       # ===================== PACK SHARD CACHE =====================
       - name: Pack shard cache
+        if: always()
         run: |
-          if [ -f data/cache.json ]; then
-            rm -f "data/cache_shard_${{ matrix.shard }}.zip"
-            cd data
-            zip -9 "cache_shard_${{ matrix.shard }}.zip" cache.json
-            cd ..
-          else
-            echo "No cache.json produced!"
-            exit 1
-          fi
+          rm -f "data/cache_shard_${{ matrix.shard }}.zip"
+          cd data
+          zip -9 "cache_shard_${{ matrix.shard }}.zip" cache.json
+          cd ..
 
       # ===================== ARTIFACTS (per shard) =====================
       - name: Upload shard outputs
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: bip-output-shard-${{ matrix.shard }}
+          if-no-files-found: warn
           path: |
             data/cache_shard_${{ matrix.shard }}.zip
             data/summary_report.txt
             data/log.csv
             data/diag_gminy.csv
             data/diag_errors.csv
+            data/cache.json
 
   merge:
     name: Merge caches + publish
     runs-on: ubuntu-latest
     needs: [scan]
+    if: always()
     timeout-minutes: 60
 
     steps:
@@ -97,11 +133,10 @@ jobs:
         with:
           path: artifacts
 
-      - name: Merge cache.json from 4 shards into main data/cache.zip
+      - name: Merge cache.json from shards into main data/cache.zip
         run: |
           python - << 'PY'
           import os, json, zipfile
-          from datetime import datetime
 
           def load_cache_from_zip(zpath):
             with zipfile.ZipFile(zpath, "r") as z:
@@ -109,13 +144,11 @@ jobs:
                 return json.load(f)
 
           def iso_max(a, b):
-            # wybierz nowszy ISO timestamp (lub b, jeśli a puste)
             if not a: return b
             if not b: return a
             return a if a >= b else b
 
           def merge_content_seen(a, b):
-            # klucz = url_dedup sha1, wartości dict
             out = dict(a or {})
             for k, vb in (b or {}).items():
               va = out.get(k)
@@ -125,25 +158,19 @@ jobs:
                 out[k] = vb
                 continue
 
-              # scalanie pól + priorytety
               outv = dict(va)
-
-              # timestamps
               outv["found_at"] = iso_max(va.get("found_at",""), vb.get("found_at",""))
               outv["last_checked"] = iso_max(va.get("last_checked",""), vb.get("last_checked",""))
 
-              # preferuj nowszy url/title (po last_checked)
               if (vb.get("last_checked","") or "") >= (va.get("last_checked","") or ""):
                 for fld in ("url","title","gmina","etag","last_modified","att_sig"):
                   if vb.get(fld):
                     outv[fld] = vb.get(fld)
 
-              # keywords = union
               kwa = set(va.get("keywords") or [])
               kwb = set(vb.get("keywords") or [])
               outv["keywords"] = sorted(kwa | kwb)
 
-              # status: priorytet ZMIANA > NOWE > HIT > NO_MATCH > SEEN/inna
               pri = {"ZMIANA": 4, "NOWE": 3, "HIT": 2, "NO_MATCH": 1}
               sa = va.get("status") or ""
               sb = vb.get("status") or ""
@@ -166,7 +193,6 @@ jobs:
               out[k] = va if tsa >= tsb else vb
             return out
 
-          # znajdź wszystkie shard zipy
           shard_zips = []
           for root, _, files in os.walk("artifacts"):
             for fn in files:
@@ -174,18 +200,15 @@ jobs:
                 shard_zips.append(os.path.join(root, fn))
           shard_zips.sort()
 
-          if len(shard_zips) == 0:
+          if not shard_zips:
             raise SystemExit("No shard cache zips found in artifacts/")
 
           caches = [load_cache_from_zip(p) for p in shard_zips]
-
-          # startujemy od pierwszego jako baza
           merged = caches[0]
 
           for c in caches[1:]:
             merged["schema"] = max(int(merged.get("schema", 0) or 0), int(c.get("schema", 0) or 0))
 
-            # urls_seen: union (timestamp max)
             ua = merged.get("urls_seen") or {}
             ub = c.get("urls_seen") or {}
             out_urls = dict(ua)
@@ -193,14 +216,11 @@ jobs:
               out_urls[k] = iso_max(out_urls.get(k, ""), ts)
             merged["urls_seen"] = out_urls
 
-            # content_seen: merge per rekord
             merged["content_seen"] = merge_content_seen(merged.get("content_seen") or {}, c.get("content_seen") or {})
 
-            # gmina_seeds / page_fprints: wybierz nowsze po ts
             merged["gmina_seeds"] = merge_dict_latest_ts(merged.get("gmina_seeds") or {}, c.get("gmina_seeds") or {}, ts_field="ts")
             merged["page_fprints"] = merge_dict_latest_ts(merged.get("page_fprints") or {}, c.get("page_fprints") or {}, ts_field="ts")
 
-            # frontier/retry: bierz większe (żeby nie zgubić kolejki)
             ga = merged.get("gmina_frontiers") or {}
             gb = c.get("gmina_frontiers") or {}
             out_gf = dict(ga)
@@ -222,7 +242,6 @@ jobs:
               if not isinstance(va, list):
                 out_gr[k] = vb
               else:
-                # union (bez duplikatów) z limitem
                 s = set(va)
                 for u in vb:
                   if u not in s:
@@ -237,7 +256,6 @@ jobs:
           with open("data/cache.json", "w", encoding="utf-8") as f:
             json.dump(merged, f, ensure_ascii=False, indent=2)
 
-          # zip główny cache.zip
           zpath = "data/cache.zip"
           if os.path.exists(zpath):
             os.remove(zpath)
@@ -252,6 +270,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add data/cache.zip || true
+          git add data/cache.zip data/cache.json || true
+          git status --porcelain
+
           git commit -m "Merge shard caches [skip ci]" || echo "Nothing to commit"
-          git push
+
+          # Uodpornienie na równoległe push'e / zmiany w repo
+          git pull --rebase || true
+          git push || true
