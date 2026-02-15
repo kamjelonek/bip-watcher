@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3]
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
 
     steps:
       - name: Checkout repo
@@ -56,9 +56,24 @@ jobs:
         continue-on-error: true
         env:
           PYTHONUNBUFFERED: "1"
-          SHARD_TOTAL: "4"
+
+          # --- SHARDING ---
+          SHARD_TOTAL: "8"
           SHARD_INDEX: "${{ matrix.shard }}"
+
+          # --- RUN TIME BUDGET ---
           RUN_DEADLINE_MIN: "345"
+
+          # --- THROTTLING PER JOB (ważne przy 8 jobach naraz) ---
+          # mniej workerów per job, bo i tak masz 8 jobów równolegle
+          CONCURRENT_GMINY: "4"
+          CONCURRENT_REQUESTS: "16"
+          LIMIT_PER_HOST: "2"
+          RATE_MIN_DELAY: "0.8"
+
+          # checkpoint częściej, żeby nie tracić postępu przy timeoutach
+          CHECKPOINT_EVERY_SEC: "30"
+
         run: |
           python bip_watcher.py
 
@@ -265,7 +280,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # najpierw rebase na świeże repo
           git pull --rebase || true
 
           git add data/cache.zip data/cache.json || true
