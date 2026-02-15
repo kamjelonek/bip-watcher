@@ -61,11 +61,10 @@ jobs:
           SHARD_TOTAL: "8"
           SHARD_INDEX: "${{ matrix.shard }}"
 
-          # --- RUN TIME BUDGET ---
+          # --- RUN TIME BUDGET (miękki deadline w kodzie) ---
           RUN_DEADLINE_MIN: "345"
 
           # --- THROTTLING PER JOB (ważne przy 8 jobach naraz) ---
-          # mniej workerów per job, bo i tak masz 8 jobów równolegle
           CONCURRENT_GMINY: "4"
           CONCURRENT_REQUESTS: "16"
           LIMIT_PER_HOST: "2"
@@ -73,7 +72,6 @@ jobs:
 
           # checkpoint częściej, żeby nie tracić postępu przy timeoutach
           CHECKPOINT_EVERY_SEC: "30"
-
         run: |
           python bip_watcher.py
 
@@ -108,22 +106,44 @@ jobs:
           zip -9 "cache_shard_${{ matrix.shard }}.zip" cache.json
           cd ..
 
-      - name: Upload shard outputs
+      - name: Shard summary to Step Summary
+        if: always()
+        run: |
+          echo "## Shard ${{ matrix.shard }}" >> $GITHUB_STEP_SUMMARY
+          if [ -f data/summary_report.txt ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -n 80 data/summary_report.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- No summary_report.txt" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          for f in data/diag_gminy.csv data/diag_errors.csv data/log.csv; do
+            if [ -f "$f" ]; then
+              echo "- ✅ $(basename "$f") exists ($(wc -l < "$f") lines)" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "- ❌ $(basename "$f") missing" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+
+      - name: Upload shard outputs (artifacts)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: bip-output-shard-${{ matrix.shard }}
           if-no-files-found: warn
+          retention-days: 30
           path: |
             data/cache_shard_${{ matrix.shard }}.zip
+            data/cache.json
             data/summary_report.txt
             data/log.csv
             data/diag_gminy.csv
             data/diag_errors.csv
-            data/cache.json
 
   merge:
-    name: Merge caches + publish
+    name: Merge caches + publish report
     runs-on: ubuntu-latest
     needs: [scan]
     if: always()
@@ -274,6 +294,98 @@ jobs:
 
           print(f"Merged {len(shard_zips)} shard caches -> {zpath}")
           PY
+
+      - name: Merge CSVs (diag/log) + summary into data/merged_*
+        if: always()
+        run: |
+          python - << 'PY'
+          import os, glob, csv, shutil
+
+          os.makedirs("data", exist_ok=True)
+
+          def merge_csv(pattern, out_path):
+            files = sorted(glob.glob(pattern, recursive=True))
+            if not files:
+              return 0, []
+            header = None
+            rows = 0
+            used = []
+            with open(out_path, "w", encoding="utf-8", newline="") as fout:
+              w = None
+              for fp in files:
+                try:
+                  with open(fp, "r", encoding="utf-8", newline="") as fin:
+                    r = csv.reader(fin)
+                    h = next(r, None)
+                    if not h:
+                      continue
+                    if header is None:
+                      header = h
+                      w = csv.writer(fout)
+                      w.writerow(header)
+                    # jeśli header inny, próbujemy dalej, ale pomijamy
+                    if h != header:
+                      continue
+                    for row in r:
+                      w.writerow(row)
+                      rows += 1
+                    used.append(fp)
+                except Exception:
+                  continue
+            return rows, used
+
+          # diag_gminy.csv, diag_errors.csv, log.csv
+          rows1, used1 = merge_csv("artifacts/**/diag_gminy.csv", "data/merged_diag_gminy.csv")
+          rows2, used2 = merge_csv("artifacts/**/diag_errors.csv", "data/merged_diag_errors.csv")
+          rows3, used3 = merge_csv("artifacts/**/log.csv", "data/merged_log.csv")
+
+          # summary_report.txt: zbieramy w jeden plik (doklejamy shardami)
+          sum_files = sorted(glob.glob("artifacts/**/summary_report.txt", recursive=True))
+          merged_sum = "data/merged_summary_report.txt"
+          if sum_files:
+            with open(merged_sum, "w", encoding="utf-8") as out:
+              for fp in sum_files:
+                out.write("\n" + ("="*80) + "\n")
+                out.write(f"FILE: {fp}\n")
+                out.write(("="*80) + "\n")
+                try:
+                  with open(fp, "r", encoding="utf-8", errors="ignore") as fin:
+                    out.write(fin.read())
+                except Exception as e:
+                  out.write(f"[read error] {e}\n")
+
+          print("merged_diag_gminy_rows:", rows1)
+          print("merged_diag_errors_rows:", rows2)
+          print("merged_log_rows:", rows3)
+          print("merged_summary_files:", len(sum_files))
+          PY
+
+      - name: Merge summary to Step Summary
+        if: always()
+        run: |
+          echo "## Merge results" >> $GITHUB_STEP_SUMMARY
+          for f in data/cache.zip data/cache.json data/merged_diag_gminy.csv data/merged_diag_errors.csv data/merged_log.csv data/merged_summary_report.txt; do
+            if [ -f "$f" ]; then
+              echo "- ✅ $(basename "$f") exists ($(wc -l < "$f" 2>/dev/null || echo "?") lines)" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "- ❌ $(basename "$f") missing" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+
+      - name: Upload merged report artifact (one-click download)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bip-merged-report
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            data/cache.zip
+            data/cache.json
+            data/merged_diag_gminy.csv
+            data/merged_diag_errors.csv
+            data/merged_log.csv
+            data/merged_summary_report.txt
 
       - name: Commit merged cache.zip back to repo
         run: |
