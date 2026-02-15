@@ -5,7 +5,6 @@ on:
     - cron: "0 5 * * 1"   # poniedziałek 05:00 UTC
   workflow_dispatch: {}
 
-# Żeby dwa uruchomienia nie mieszały cache (np. ręczne + cron)
 concurrency:
   group: bip-watcher
   cancel-in-progress: false
@@ -18,8 +17,6 @@ jobs:
   scan:
     name: Scan shard ${{ matrix.shard }}
     runs-on: ubuntu-latest
-
-    # GitHub-hosted runner ma twardy limit ~6h na job; dajemy bufor na zapis/artefakty.
     timeout-minutes: 355
 
     strategy:
@@ -41,7 +38,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # ===================== CACHE RESTORE (from repo) =====================
+      - name: Ensure zip/unzip
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zip unzip
+
       - name: Unpack cache.zip (if exists)
         run: |
           mkdir -p data
@@ -51,20 +52,16 @@ jobs:
             echo "No cache.zip found (first run)."
           fi
 
-      # ===================== RUN SCRIPT (this shard only) =====================
-      # continue-on-error: true => nawet jeśli jedna gmina wysypie skan,
-      # job spróbuje spakować cache/diag i wrzucić artefakty.
       - name: Run watcher (sharded)
         continue-on-error: true
         env:
+          PYTHONUNBUFFERED: "1"
           SHARD_TOTAL: "4"
           SHARD_INDEX: "${{ matrix.shard }}"
-          # soft-deadline dla kodu (jeśli obsłużysz to w bip_watcher.py)
           RUN_DEADLINE_MIN: "345"
         run: |
           python bip_watcher.py
 
-      # ===================== ENSURE cache.json exists (so merge can always run) =====================
       - name: Ensure cache.json exists
         if: always()
         run: |
@@ -88,7 +85,6 @@ jobs:
             PY
           fi
 
-      # ===================== PACK SHARD CACHE =====================
       - name: Pack shard cache
         if: always()
         run: |
@@ -97,7 +93,6 @@ jobs:
           zip -9 "cache_shard_${{ matrix.shard }}.zip" cache.json
           cd ..
 
-      # ===================== ARTIFACTS (per shard) =====================
       - name: Upload shard outputs
         if: always()
         uses: actions/upload-artifact@v4
@@ -171,7 +166,7 @@ jobs:
               kwb = set(vb.get("keywords") or [])
               outv["keywords"] = sorted(kwa | kwb)
 
-              pri = {"ZMIANA": 4, "NOWE": 3, "HIT": 2, "NO_MATCH": 1}
+              pri = {"ZMIANA": 4, "NOWE": 3, "HIT": 2, "NO_MATCH": 1, "ALIAS": 0}
               sa = va.get("status") or ""
               sb = vb.get("status") or ""
               outv["status"] = sa if pri.get(sa, 0) >= pri.get(sb, 0) else sb
@@ -270,11 +265,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          # najpierw rebase na świeże repo
+          git pull --rebase || true
+
           git add data/cache.zip data/cache.json || true
           git status --porcelain
 
           git commit -m "Merge shard caches [skip ci]" || echo "Nothing to commit"
-
-          # Uodpornienie na równoległe push'e / zmiany w repo
-          git pull --rebase || true
           git push || true
