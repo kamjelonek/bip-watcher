@@ -2682,6 +2682,7 @@ def write_summary(diag_rows, new_items_for_mail):
 
 
 # ===================== WORKER =====================
+# ===================== WORKER =====================
 async def worker(name: str,
                  queue: asyncio.Queue,
                  session_default: aiohttp.ClientSession,
@@ -2692,20 +2693,32 @@ async def worker(name: str,
                  checkpoint_counter: dict):
 
     while True:
-        gmina, start_url = await queue.get()
+        got_item = False
+        gmina = start_url = None
         diag = diag_new()
 
         try:
+            # czekamy na zadanie
+            gmina, start_url = await queue.get()
+            got_item = True
+
             # soft deadline całego runa
             if RUN_DEADLINE_MIN > 0 and (time.time() - GLOBAL_T0) > (RUN_DEADLINE_MIN * 60):
                 state.request_shutdown()
 
+            # Jeżeli mamy shutdown (deadline/cancel/CTRL+C), NIE „zjadaj” zadań.
+            # Odkładamy element z powrotem i kończymy worker.
             if state.shutdown_requested:
-                continue
+                try:
+                    await queue.put((gmina, start_url))
+                except Exception:
+                    pass
+                return
 
-            # jeśli filtrujesz jedną gminę, resztę pomijamy
+            # jeśli filtrujesz jedną gminę, resztę pomijamy (ale NIE odkładamy z powrotem,
+            # bo to świadomy filtr)
             if ONLY_GMINA and ONLY_GMINA.strip().lower() != (gmina or "").strip().lower():
-                continue
+                return
 
             print(f"\n🔎 [{name}] START: {gmina} -> {start_url}", flush=True)
 
@@ -2722,7 +2735,6 @@ async def worker(name: str,
             if (p1meta or {}).get("status") != "OK":
                 print_start_fail_report(diag, gmina, start_url)
 
-                # diag dla START_FAIL
                 state.diag_rows.append({
                     "datetime": now_iso(),
                     "gmina": gmina,
@@ -2735,6 +2747,8 @@ async def worker(name: str,
                 })
                 for e in diag.get("errors", []):
                     state.diag_errors.append(e)
+
+                print(f"✅ [{name}] DONE: {gmina} (found 0)", flush=True)
                 continue
 
             allowed_host = (p1meta or {}).get("allowed_host", "")
@@ -2748,7 +2762,6 @@ async def worker(name: str,
                 diag=diag
             )
 
-            # status OK vs INCOMPLETE na podstawie stop_reason
             stop_reason = ((p2meta or {}).get("stop_reason") or "")
             frontier_len = int((p2meta or {}).get("frontier_len", 0) or 0)
             retry_len = int((p2meta or {}).get("retry_len", 0) or 0)
@@ -2775,34 +2788,55 @@ async def worker(name: str,
                 state.diag_errors.append(e)
 
             checkpoint_counter["done"] = int(checkpoint_counter.get("done", 0) or 0) + 1
+
+            # checkpoint co N gmin
             if USE_CACHE and (checkpoint_counter["done"] % CACHE_CHECKPOINT_EVERY_N_GMINY == 0):
                 try:
                     save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints)
                     purge_old_cache(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints)
                 except Exception as ex:
-                    print(f"⚠️ checkpoint save failed: {ex}")
+                    print(f"⚠️ checkpoint save failed: {ex}", flush=True)
 
             print(f"✅ [{name}] DONE: {gmina} (found {len(found)})", flush=True)
 
-        except Exception as e:
-            print(f"❌ [{name}] ERROR: {gmina} -> {e}", flush=True)
-            diag_add_error(diag, gmina, start_url, "worker", "exc", None, str(e))
-            for er in diag.get("errors", []):
-                state.diag_errors.append(er)
+        except asyncio.CancelledError:
+            # Cancel z Actions / końcówka runu: nie rób hałasu, po prostu wyjdź.
+            return
 
-            state.diag_rows.append({
-                "datetime": now_iso(),
-                "gmina": gmina,
-                "start_url": start_url,
-                "status": "WORKER_ERROR",
-                "phase1_seeds": 0,
-                "phase2_pages_ok": 0,
-                "notes": (diag.get("notes", []) or []) + [f"worker_exc={str(e)[:160]}"],
-                "counts": dict(diag.get("counts", {})),
-            })
+        except Exception as e:
+            # Nie gubimy gminy: jak coś wywali worker, odkładamy zadanie do retry kolejki
+            print(f"❌ [{name}] ERROR: {gmina} -> {e}", flush=True)
+            try:
+                diag_add_error(diag, gmina or "", start_url or "", "worker", "exc", None, str(e))
+                for er in diag.get("errors", []):
+                    state.diag_errors.append(er)
+            except Exception:
+                pass
+
+            try:
+                state.diag_rows.append({
+                    "datetime": now_iso(),
+                    "gmina": gmina or "",
+                    "start_url": start_url or "",
+                    "status": "WORKER_ERROR",
+                    "phase1_seeds": 0,
+                    "phase2_pages_ok": 0,
+                    "notes": (diag.get("notes", []) or []) + [f"worker_exc={str(e)[:160]}"],
+                    "counts": dict(diag.get("counts", {})),
+                })
+            except Exception:
+                pass
+
+            # jeśli mieliśmy item, to odkładamy na koniec kolejki, żeby nie zniknął
+            if gmina and start_url:
+                try:
+                    await queue.put((gmina, start_url))
+                except Exception:
+                    pass
 
         finally:
-            queue.task_done()
+            if got_item:
+                queue.task_done()
 
 
 
@@ -2972,6 +3006,7 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
 
