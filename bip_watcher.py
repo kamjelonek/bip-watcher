@@ -32,6 +32,18 @@ from bs4 import XMLParsedAsHTMLWarning
 warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 warnings.filterwarnings("ignore", category=requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
+def env_int(name, default):
+    try:
+        return int(os.getenv(name, str(default)))
+    except Exception:
+        return default
+
+def env_float(name, default):
+    try:
+        return float(os.getenv(name, str(default)))
+    except Exception:
+        return default
+
 # ===================== PATHS (VS CODE / WINDOWS) =====================
 BASE_DIR = Path(__file__).resolve().parent / "data"
 BASE_DIR.mkdir(parents=True, exist_ok=True)
@@ -143,9 +155,9 @@ BAD_EXT = (
 )
 
 # ===================== PERFORMANCE =====================
-CONCURRENT_GMINY = 8
-CONCURRENT_REQUESTS = 30
-LIMIT_PER_HOST = 4
+CONCURRENT_GMINY = env_int("CONCURRENT_GMINY", 8)
+CONCURRENT_REQUESTS = env_int("CONCURRENT_REQUESTS", 30)
+LIMIT_PER_HOST = env_int("LIMIT_PER_HOST", 4)
 
 PHASE1_MAX_PAGES = 5000     # było 120
 PHASE1_MAX_SEEDS = 100000    # było 2000
@@ -235,8 +247,11 @@ class DomainRateLimiter:
     def report_403(self, domain: str):
         self.problem_domains[domain] += 1
 
-rate_limiter = DomainRateLimiter()
-
+rate_limiter = DomainRateLimiter(
+    min_delay=env_float("RATE_MIN_DELAY", 0.5),
+    max_delay=env_float("RATE_MAX_DELAY", 1.5),
+)
+# ===================== GLOBAL STATE =====================
 # ===================== GLOBAL STATE =====================
 class GlobalState:
     def __init__(self):
@@ -252,7 +267,6 @@ class GlobalState:
         self.gmina_frontiers = {}   # gmina_cache_key -> list[[url, depth], ...]
         self.gmina_retry = {}       # gmina_cache_key -> list[url, ...]
 
-
         # PATCH: ochrona przed race-condition (wiele workerów) + dedup maili per-run
         self.cache_lock = asyncio.Lock()
         self.mail_dedup = set()   # set((url_dedup, "NOWE"/"ZMIANA"))
@@ -262,7 +276,12 @@ class GlobalState:
         print("\n⚠️  CTRL+C detected - graceful shutdown...", flush=True)
 
 
+# ✅ MUSI BYĆ UTWORZONE PRZED signal_handler
 state = GlobalState()
+
+RUN_DEADLINE_MIN = env_int("RUN_DEADLINE_MIN", 0)
+GLOBAL_T0 = time.time()
+
 
 def signal_handler(signum, frame):
     state.request_shutdown()
@@ -271,6 +290,10 @@ signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
 # ===================== UTILS =====================
+
+
+
+
 def iso_now():
     return datetime.now()
 
@@ -2306,6 +2329,31 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
         title_show = (title or h1 or h2 or h3t or final).strip()
         cu_final = canonical_url(final)
         url_dedup_final = sha1(cu_final)
+        
+        # ✅ ALIAS: jeśli weszliśmy innym URL-em niż final (redirect / warianty),
+        # to zapamiętaj alias żeby nie robić NOWE w kolejnym runie.
+        try:
+            cu_req = canonical_url(url)
+            if cu_req and cu_req != cu_final:
+                alias_key = sha1(cu_req)
+                async with state.cache_lock:
+                    if alias_key not in content_seen:
+                        content_seen[alias_key] = {
+                            "found_at": now_iso(),
+                            "last_checked": now_iso(),
+                            "etag": "",
+                            "last_modified": "",
+                            "gmina": gmina,
+                            "title": "",
+                            "url": final,
+                            "keywords": [],
+                            "att_sig": "",
+                            "status": "ALIAS",
+                        }
+        except Exception:
+            pass
+
+
 
         # ✅ MATCH TYLKO PO NAGŁÓWKACH (bez meta, bez body)
         header_blob = f"{title} {h1} {h2} {h3t}"
@@ -2527,11 +2575,27 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
     except Exception:
         pass
 
+    frontier_len = 0
+    retry_len = 0
+    try:
+        if isinstance(state.gmina_frontiers, dict):
+            frontier_len = len(state.gmina_frontiers.get(gkey, []) or [])
+    except Exception:
+        pass
+    try:
+        if isinstance(state.gmina_retry, dict):
+            retry_len = len(state.gmina_retry.get(gkey, []) or [])
+    except Exception:
+        pass
+
     return found, {
         "status": "OK",
         "pages_ok": pages_ok,
-        "stop_reason": stop_reason
+        "stop_reason": stop_reason,
+        "frontier_len": frontier_len,
+        "retry_len": retry_len,
     }
+
 
 
 
@@ -2632,22 +2696,15 @@ async def worker(name: str,
         diag = diag_new()
 
         try:
+            # soft deadline całego runa
+            if RUN_DEADLINE_MIN > 0 and (time.time() - GLOBAL_T0) > (RUN_DEADLINE_MIN * 60):
+                state.request_shutdown()
+
             if state.shutdown_requested:
-                queue.task_done()
                 continue
 
+            # jeśli filtrujesz jedną gminę, resztę pomijamy
             if ONLY_GMINA and ONLY_GMINA.strip().lower() != (gmina or "").strip().lower():
-                state.diag_rows.append({
-                    "datetime": now_iso(),
-                    "gmina": gmina,
-                    "start_url": start_url,
-                    "status": "SKIP_ONLY_GMINA",
-                    "phase1_seeds": 0,
-                    "phase2_pages_ok": 0,
-                    "notes": ["filtered_by_ONLY_GMINA"],
-                    "counts": dict(diag.get("counts", {})),
-                })
-                queue.task_done()
                 continue
 
             print(f"\n🔎 [{name}] START: {gmina} -> {start_url}", flush=True)
@@ -2662,26 +2719,25 @@ async def worker(name: str,
                 diag=diag
             )
 
-            if p1meta.get("status") != "OK":
+            if (p1meta or {}).get("status") != "OK":
                 print_start_fail_report(diag, gmina, start_url)
 
+                # diag dla START_FAIL
                 state.diag_rows.append({
                     "datetime": now_iso(),
                     "gmina": gmina,
                     "start_url": start_url,
                     "status": "START_FAIL",
-                    "phase1_seeds": 0,
+                    "phase1_seeds": int((p1meta or {}).get("seeds", 0) or 0),
                     "phase2_pages_ok": 0,
-                    "notes": diag.get("notes", []),
+                    "notes": (diag.get("notes", []) or []),
                     "counts": dict(diag.get("counts", {})),
                 })
                 for e in diag.get("errors", []):
                     state.diag_errors.append(e)
-
-                queue.task_done()
                 continue
 
-            allowed_host = p1meta.get("allowed_host", "")
+            allowed_host = (p1meta or {}).get("allowed_host", "")
             found, p2meta = await phase2_focus(
                 gmina=gmina,
                 seed_urls=seed_urls,
@@ -2692,14 +2748,27 @@ async def worker(name: str,
                 diag=diag
             )
 
+            # status OK vs INCOMPLETE na podstawie stop_reason
+            stop_reason = ((p2meta or {}).get("stop_reason") or "")
+            frontier_len = int((p2meta or {}).get("frontier_len", 0) or 0)
+            retry_len = int((p2meta or {}).get("retry_len", 0) or 0)
+
+            status = "OK"
+            if stop_reason and stop_reason != "QUEUE_EMPTY":
+                status = "INCOMPLETE"
+
             state.diag_rows.append({
                 "datetime": now_iso(),
                 "gmina": gmina,
                 "start_url": start_url,
-                "status": "OK",
-                "phase1_seeds": int(p1meta.get("seeds", 0) or 0),
-                "phase2_pages_ok": int(p2meta.get("pages_ok", 0) or 0),
-                "notes": diag.get("notes", []),
+                "status": status,
+                "phase1_seeds": int((p1meta or {}).get("seeds", 0) or 0),
+                "phase2_pages_ok": int((p2meta or {}).get("pages_ok", 0) or 0),
+                "notes": (diag.get("notes", []) or []) + [
+                    f"stop_reason={stop_reason}",
+                    f"frontier_len={frontier_len}",
+                    f"retry_len={retry_len}",
+                ],
                 "counts": dict(diag.get("counts", {})),
             })
             for e in diag.get("errors", []):
@@ -2728,11 +2797,13 @@ async def worker(name: str,
                 "status": "WORKER_ERROR",
                 "phase1_seeds": 0,
                 "phase2_pages_ok": 0,
-                "notes": diag.get("notes", []) + [f"worker_exc={str(e)[:160]}"],
+                "notes": (diag.get("notes", []) or []) + [f"worker_exc={str(e)[:160]}"],
                 "counts": dict(diag.get("counts", {})),
             })
+
         finally:
             queue.task_done()
+
 
 
 # ===================== MAIN =====================
@@ -2821,11 +2892,30 @@ async def main():
             for i in range(CONCURRENT_GMINY)
         ]
 
+        async def periodic_checkpoint():
+            every = env_int("CHECKPOINT_EVERY_SEC", 60)
+            while True:
+                await asyncio.sleep(every)
+                try:
+                    if USE_CACHE:
+                        save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints)
+                    # diag też warto flushować
+                    save_diag(state.diag_rows, state.diag_errors)
+                except Exception as ex:
+                    print(f"⚠️ periodic checkpoint failed: {ex}", flush=True)
+
+        checkpoint_task = asyncio.create_task(periodic_checkpoint())
+
+                   
         try:
             await queue.join()
         except KeyboardInterrupt:
             state.request_shutdown()
         finally:
+            # zatrzymaj checkpoint
+            checkpoint_task.cancel()
+            await asyncio.gather(checkpoint_task, return_exceptions=True)
+
             for t in workers:
                 t.cancel()
             await asyncio.gather(*workers, return_exceptions=True)
@@ -2882,6 +2972,7 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
 
