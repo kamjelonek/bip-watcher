@@ -143,16 +143,16 @@ BAD_EXT = (
 )
 
 # ===================== PERFORMANCE =====================
-CONCURRENT_GMINY = 6
+CONCURRENT_GMINY = 8
 CONCURRENT_REQUESTS = 30
-LIMIT_PER_HOST = 3
+LIMIT_PER_HOST = 4
 
-PHASE1_MAX_PAGES = 500     # było 120
-PHASE1_MAX_SEEDS = 10000    # było 2000
-PHASE2_MAX_DEPTH = 4       # było 4 (często BIPy mają głębiej)
-PHASE2_MAX_PAGES = 100000   # było 5000 (przy UNLIMITED_SCAN i tak ogranicza Cię czas)
-ABSOLUTE_MAX_SEC_PER_GMINA = 7200  # np. 2h jeśli chcesz realnie domykać gminy
-MAX_SEC_PER_GMINA = 7200
+PHASE1_MAX_PAGES = 5000     # było 120
+PHASE1_MAX_SEEDS = 100000    # było 2000
+PHASE2_MAX_DEPTH = 5       # było 4 (często BIPy mają głębiej)
+PHASE2_MAX_PAGES = 1000000   # było 5000 (przy UNLIMITED_SCAN i tak ogranicza Cię czas)
+ABSOLUTE_MAX_SEC_PER_GMINA = 10**9
+MAX_SEC_PER_GMINA = 10**9
 
 REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=None, sock_connect=12, sock_read=35)
 
@@ -2882,6 +2882,7 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
 
