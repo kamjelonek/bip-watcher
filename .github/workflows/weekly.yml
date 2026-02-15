@@ -65,10 +65,10 @@ jobs:
           RUN_DEADLINE_MIN: "345"
 
           # --- THROTTLING PER JOB (ważne przy 8 jobach naraz) ---
-          CONCURRENT_GMINY: "4"
-          CONCURRENT_REQUESTS: "16"
-          LIMIT_PER_HOST: "2"
-          RATE_MIN_DELAY: "0.8"
+          CONCURRENT_GMINY: "6"
+          CONCURRENT_REQUESTS: "28"
+          LIMIT_PER_HOST: "3"
+          RATE_MIN_DELAY: "0.3"
 
           # checkpoint częściej, żeby nie tracić postępu przy timeoutach
           CHECKPOINT_EVERY_SEC: "30"
