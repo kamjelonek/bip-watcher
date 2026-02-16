@@ -1,20 +1,30 @@
 {
   "schema": 10,
   "urls_seen": {
-    "95ca19113331139f2e9897c216df167cb5e29867": "2026-02-16T19:44:22",
     "594083a720208c379ea1837ad77b86c070b572bb": "2026-02-16T19:43:09",
-    "21354412c8cee20623184eef73e6b66dfd3b0171": "2026-02-16T19:18:58",
     "9e2835aafca82110e81d3d1a9ba05d5945184375": "2026-02-16T19:51:18",
-    "012779a3d103b4ee69f294078506d13e3831e751": "2026-02-16T19:50:51",
     "616fe0ee21ee87ca4e8f874e8ce210a35b53247e": "2026-02-16T19:50:57",
+    "063f6ca8faf0493630760430e7bc7449686c4ca3": "2026-02-16T20:44:21",
+    "5cc032927565b6041259dac5a755288e2c200d79": "2026-02-16T19:50:50",
+    "8ee72e9f42b53134e5f9d7e8b8860f7aca6e7182": "2026-02-16T19:50:53",
+    "742f46f40fb3d8102a74a11f12a62dafa00ab82c": "2026-02-16T20:44:25",
+    "95ca19113331139f2e9897c216df167cb5e29867": "2026-02-16T19:44:22",
+    "e767adc2ef03758c6aad35263f06d6ed1186643b": "2026-02-16T20:44:46",
+    "012779a3d103b4ee69f294078506d13e3831e751": "2026-02-16T19:50:51",
+    "e0dab4aaa06b0b712e727a26263417a64745b3a6": "2026-02-16T20:44:22",
+    "90433704d6d0e8ba885eba4e745a4393a24eb857": "2026-02-16T20:44:20",
+    "ffd8bc19d899af51570867041b3d77dc37ac04d7": "2026-02-16T19:50:56",
+    "ed3734f30186dcf03a08a1f43d4d7198a628c8f0": "2026-02-16T20:44:26",
     "d7f62e0de1adeb50e1eb8ca5320517b3c4f5f369": "2026-02-16T19:44:09",
     "9848deab44d7da28a1ee06d98b2d7c2f0e5984e6": "2026-02-16T19:50:55",
     "73bc60adbaf96b662d29282be85300ce9fc57762": "2026-02-16T19:50:52",
     "306173728c6e9d141958fe52a30f8137814f860a": "2026-02-16T19:50:57",
-    "5cc032927565b6041259dac5a755288e2c200d79": "2026-02-16T19:50:50",
-    "8ee72e9f42b53134e5f9d7e8b8860f7aca6e7182": "2026-02-16T19:50:53",
-    "a4c32970b9e4e318277b2fbfded675314dfd6415": "2026-02-16T19:50:53",
-    "ffd8bc19d899af51570867041b3d77dc37ac04d7": "2026-02-16T19:50:56"
+    "9a8ba9edbfb0623dc0bf08e86b5ef26886ea7335": "2026-02-16T20:44:18",
+    "21354412c8cee20623184eef73e6b66dfd3b0171": "2026-02-16T19:18:58",
+    "78a4faa6de4d2c0a722e408b10dbeeca54890ea6": "2026-02-16T20:44:24",
+    "394afd48199bc43621f53c03f852f15a5ae43036": "2026-02-16T20:44:23",
+    "241a7d59f6156be7c2dfa216ac4aef9281a2927a": "2026-02-16T20:44:19",
+    "a4c32970b9e4e318277b2fbfded675314dfd6415": "2026-02-16T19:50:53"
   },
   "content_seen": {
     "4ff20a84a71c0cb4d58fdfe7a665ea54c2dda45b": {
@@ -954,6 +964,1190 @@
       ],
       "att_sig": "46bf3767019f6090ce492335d5dafd591555d126",
       "status": "NOWE"
+    },
+    "7bf6f134825092f18754501aebd5426b964adcc6": {
+      "found_at": "2026-02-16T20:32:06",
+      "last_checked": "2026-02-16T20:32:06",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "UCHWAŁA NR XII/111/03 Rady Miejskiej w Bojanowie z dnia 19 grudnia 2003 roku w sprawie przystąpienia do sporządzenia miejscowego planu zagospodarowania przestrzennego terenu położonego w miejscowości Bojanowo - Rok 2003, menu 1029, artykuł ",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1029&id=1334",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "8dda66ab11aaa6ee48b936d3437fedcafcdd6c7d",
+      "status": "NOWE"
+    },
+    "c9cad67e5073ce41e17c0f42372c6240ea14efd0": {
+      "found_at": "2026-02-16T20:32:09",
+      "last_checked": "2026-02-16T20:32:09",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "UCHWAŁA NR XII/112/03 Rady Miejskiej w Bojanowie z dnia19 grudnia 2003 roku w sprawie przystąpienia do sporządzenia miejscowego planu zagospodarowania przestrzennego terenu położonego w miejscowości Giżyn - Rok 2003, menu 1029, artykuł 1335",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1029&id=1335",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "a6b0a15035a27587fef409fc82feb004ea061ea1",
+      "status": "NOWE"
+    },
+    "1c4194a9abccc605670bd96da34b91afc1089a46": {
+      "found_at": "2026-02-16T20:32:29",
+      "last_checked": "2026-02-16T20:32:29",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Radna Ewa Szczepaniak, rejestr 5248, menu 1346 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=3&rejid=5248",
+      "keywords": [
+        "planu ogólnego"
+      ],
+      "att_sig": "ed48b44ea18bc6788b8d041dbcd1b4a6242457f2",
+      "status": "NOWE"
+    },
+    "91fb0342fe5ffd479de7f9e03d3000b57f134391": {
+      "found_at": "2026-02-16T20:32:29",
+      "last_checked": "2026-02-16T20:32:29",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Radna Ewa Szczepaniak, rejestr 5247, menu 1346 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=3&rejid=5247",
+      "keywords": [
+        "planu ogólnego"
+      ],
+      "att_sig": "ed48b44ea18bc6788b8d041dbcd1b4a6242457f2",
+      "status": "NOWE"
+    },
+    "04b3a5f67ecdf620aaa141a236c2e039590df073": {
+      "found_at": "2026-02-16T20:32:30",
+      "last_checked": "2026-02-16T20:32:30",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Radna Ewa Szczepaniak, rejestr 5250, menu 1346 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=3&rejid=5250",
+      "keywords": [
+        "planu ogólnego"
+      ],
+      "att_sig": "c24e7235d9f4f915b0b5bc7ace37c163e9db0a26",
+      "status": "NOWE"
+    },
+    "0620053fd95450fcf662031f582db4b6f22e49e0": {
+      "found_at": "2026-02-16T20:32:30",
+      "last_checked": "2026-02-16T20:32:30",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Radna Ewa Szczepaniak, rejestr BIPA63E9A058AEB52Z, menu 1346 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=3&code=BIPA63E9A058AEB52Z&rpg=0",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "602f0d0ee948d5f8348c1af2821c30ac83417d9d": {
+      "found_at": "2026-02-16T20:32:31",
+      "last_checked": "2026-02-16T20:32:31",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Radna Ewa Szczepaniak, rejestr BIPA5BFC2154CE278Z, menu 1346 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=3&code=BIPA5BFC2154CE278Z&rpg=0",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "32d400fcee86382e1dce690f08208081bab8040b": {
+      "found_at": "2026-02-16T20:32:31",
+      "last_checked": "2026-02-16T20:32:31",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Radna Ewa Szczepaniak, rejestr BIPA5BFC21C3185A0Z, menu 1346 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=3&code=BIPA5BFC21C3185A0Z&rpg=0",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "cce4999b5b2fd966a0ff61a8da8469f2aab7c3a9": {
+      "found_at": "2026-02-16T20:32:32",
+      "last_checked": "2026-02-16T20:32:32",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Radna Ewa Szczepaniak, rejestr BIPA5BFC222166A6AZ, menu 1346 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=3&code=BIPA5BFC222166A6AZ&rpg=0",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "d245cbf6918d2ff1964ed8bb5a769bb275583459": {
+      "found_at": "2026-02-16T20:32:32",
+      "last_checked": "2026-02-16T20:32:32",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Radna Ewa Szczepaniak, rejestr BIPA5BFC2292219B8Z, menu 1346 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=3&code=BIPA5BFC2292219B8Z&rpg=0",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "27fe8af136d48733b00a1bd452751b3966d0ef41": {
+      "found_at": "2026-02-16T20:32:33",
+      "last_checked": "2026-02-16T20:32:33",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Radna Ewa Szczepaniak, rejestr BIPA5DA68E3C6E158Z, menu 1346 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=3&code=BIPA5DA68E3C6E158Z&rpg=0",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "b1d246ba11cd8718be325821fba73198486e474b": {
+      "found_at": "2026-02-16T20:32:33",
+      "last_checked": "2026-02-16T20:32:33",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Radna Ewa Szczepaniak, rejestr BIPA5DA68E71C8421Z, menu 1346 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=3&code=BIPA5DA68E71C8421Z&rpg=0",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "90e807e74038fb9ec96d46ef35256e8786c723a5": {
+      "found_at": "2026-02-16T20:32:34",
+      "last_checked": "2026-02-16T20:32:34",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Radna Ewa Szczepaniak, rejestr BIPA5DFA9CF3F06E2Z, menu 1346 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=3&code=BIPA5DFA9CF3F06E2Z&rpg=0",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "bb640315a8193922d7733bb3a1bf350b64283ee8": {
+      "found_at": "2026-02-16T20:32:34",
+      "last_checked": "2026-02-16T20:32:34",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Radna Ewa Szczepaniak, rejestr BIPA5E57A0AEFFA1AZ, menu 1346 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=3&code=BIPA5E57A0AEFFA1AZ&rpg=0",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "b31dbb4be42d5a281f7a5e23cf8805587e54ff6a": {
+      "found_at": "2026-02-16T20:32:35",
+      "last_checked": "2026-02-16T20:32:35",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Radna Ewa Szczepaniak, rejestr BIPA5FADD727CE0E0Z, menu 1346 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=3&code=BIPA5FADD727CE0E0Z&rpg=0",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "1b96c7c0d2e9360919e4a24dbce3ac1c926731e5": {
+      "found_at": "2026-02-16T20:32:35",
+      "last_checked": "2026-02-16T20:32:35",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Radna Ewa Szczepaniak, rejestr BIPA62743FEEE219Z, menu 1346 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=3&code=BIPA62743FEEE219Z&rpg=0",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "64c98fb3e654cef4b7ff06cdfc6be89b5b2b2ac9": {
+      "found_at": "2026-02-16T20:32:36",
+      "last_checked": "2026-02-16T20:32:36",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Radna Ewa Szczepaniak, rejestr BIPA627F5C3D61226Z, menu 1346 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=3&code=BIPA627F5C3D61226Z&rpg=0",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "b9284355d628b0fc6ec5074ffc9f4a8a40f10c8d": {
+      "found_at": "2026-02-16T20:32:36",
+      "last_checked": "2026-02-16T20:32:36",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Radna Ewa Szczepaniak, rejestr BIPA5D939FC84C9E6Z, menu 1346 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=3&code=BIPA5D939FC84C9E6Z&rpg=0",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "7a1647b616aed6c4394fab00701c140cd9601169": {
+      "found_at": "2026-02-16T20:32:57",
+      "last_checked": "2026-02-16T20:32:57",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Decyzja o środowiskowych uwarunkowaniach IR.6220.12.2025 - Rok 2025, menu 1488, artykuł 10301 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1488&id=10301",
+      "keywords": [
+        "decyzja o środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "397f960c5085f5acbca505bf2e092f7cb0f3ac39",
+      "status": "NOWE"
+    },
+    "484caf82896c9016d37c1a5e7f3642ba42442c56": {
+      "found_at": "2026-02-16T20:32:58",
+      "last_checked": "2026-02-16T20:32:58",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Decyzja o warunkach zabudowy - Rok 2025, menu 1488, artykuł 10221 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1488&id=10221",
+      "keywords": [
+        "decyzja o warunkach zabudowy"
+      ],
+      "att_sig": "ee3f58e21570f163c25f28d208a9199f8b080a43",
+      "status": "NOWE"
+    },
+    "4a2510fbb31c8fe2bc3f115063e7eccd0c47a947": {
+      "found_at": "2026-02-16T20:32:58",
+      "last_checked": "2026-02-16T20:32:58",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Obwieszczenie o wydanej w dniu 30 maja 2025 r. decyzji Burmistrza Bojanowa znak IR.6220.10.2024 o środowiskowych uwarunkowaniach - Rok 2025, menu 1488, artykuł 9928 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1488&id=9928",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "66cee07bb5f58d877fdaf97dacafb7adc1c147bb",
+      "status": "NOWE"
+    },
+    "7e5e2850ab37f325c89a98700d956825426326be": {
+      "found_at": "2026-02-16T20:32:59",
+      "last_checked": "2026-02-16T20:32:59",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Decyzja o środowiskowych uwarunkowaniach IR.6220.9.2024 - Rok 2025, menu 1488, artykuł 10117 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1488&id=10117",
+      "keywords": [
+        "decyzja o środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "fe54c17fc7d0e0534c591779281f7093af85eb77",
+      "status": "NOWE"
+    },
+    "323c6f2f753c2e8c659c96953cbbe7693f423b17": {
+      "found_at": "2026-02-16T20:33:05",
+      "last_checked": "2026-02-16T20:33:05",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Rok 2025, rejestr BIPA62A8DC8AE0452Z, menu 1488 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=3&code=BIPA62A8DC8AE0452Z&rpg=0",
+      "keywords": [
+        "warunki zabudowy"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "0590831fff0c8ebf7aeb95efbf1ee7763ce1abb8": {
+      "found_at": "2026-02-16T20:33:08",
+      "last_checked": "2026-02-16T20:33:08",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Obwieszczenie o wystąpieniu do organów o uzgodnienie projektu decyzji ustalającej warunki zabudowy - Rok 2024, menu 1451, artykuł 9512 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1451&id=9512",
+      "keywords": [
+        "warunki zabudowy"
+      ],
+      "att_sig": "f3085de8689f919aceab4d131211962c547f162d",
+      "status": "NOWE"
+    },
+    "575c3e7ea0ae30a9ab50417f57a4fb895aa4da3c": {
+      "found_at": "2026-02-16T20:33:10",
+      "last_checked": "2026-02-16T20:33:10",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "OBWIESZCZENIE o przystąpieniu do sporządzenia planu ogólnego Gminy Bojanowo - Rok 2024, menu 1451, artykuł 9495 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1451&id=9495",
+      "keywords": [
+        "planu ogólnego"
+      ],
+      "att_sig": "c24e7235d9f4f915b0b5bc7ace37c163e9db0a26",
+      "status": "NOWE"
+    },
+    "28ba611f9b381ed3457d7b401563d6cb2102fadc": {
+      "found_at": "2026-02-16T20:33:13",
+      "last_checked": "2026-02-16T20:33:13",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Obwieszczenie o udziale społeczeństwa w sprawie wydania decyzji o środowiskowych uwarunkowaniach IR.6220.15.2022/2024.EZ - Rok 2024, menu 1451, artykuł 9342 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1451&id=9342",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "1d2d12cb49f011fb30b14a10884474f3fa8aafed",
+      "status": "NOWE"
+    },
+    "152186a81e6e992f2214cb24615c6a97452d7763": {
+      "found_at": "2026-02-16T20:33:14",
+      "last_checked": "2026-02-16T20:33:14",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Decyzja o środowiskowych uwarunkowaniach realizacji inwestycji IR.6220.2.2024.EZ.7 - Rok 2024, menu 1451, artykuł 9153 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1451&id=9153",
+      "keywords": [
+        "decyzja o środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "44c2ede951161bd59d79d37a3af65cb12778cab4",
+      "status": "NOWE"
+    },
+    "d4fdf53de4181cfc05d4e7034bf2770b57a74771": {
+      "found_at": "2026-02-16T20:33:14",
+      "last_checked": "2026-02-16T20:33:14",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Decyzja o środowiskowych uwarunkowaniach realizacji inwestycji R.6220.19.2022/2024.EZ - Rok 2024, menu 1451, artykuł 9065 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1451&id=9065",
+      "keywords": [
+        "decyzja o środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "1980a0e06e49d6ca88dd949b1d3a017b60bd1227",
+      "status": "NOWE"
+    },
+    "c2d562bb27578a3721c7e5a7f21f535b51deaa27": {
+      "found_at": "2026-02-16T20:33:16",
+      "last_checked": "2026-02-16T20:33:16",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Rok 2024, rejestr BIPA60B35481D9BBDZ, menu 1451 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=3&code=BIPA60B35481D9BBDZ&rpg=0",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "99792682f0472f746d4c9694d25c3a9c835ab0ac": {
+      "found_at": "2026-02-16T20:33:17",
+      "last_checked": "2026-02-16T20:33:17",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Rok 2024, rejestr BIPA60B353AAF4BBEZ, menu 1451 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=3&code=BIPA60B353AAF4BBEZ&rpg=0",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "896cbce011a2a46cb0766279b6c488c9fa458add": {
+      "found_at": "2026-02-16T20:33:20",
+      "last_checked": "2026-02-16T20:33:20",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Obwieszczenie o wydaniu decyzji o przeniesieniu decyzji o środowiskowych uwarunkowaniach IR.6220.6.2023.EZ.2 - Rok 2023, menu 1427, artykuł 8721 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1427&id=8721",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "e342161cb69c47a8d8dd31dbcf888aee9fc4ac7e",
+      "status": "NOWE"
+    },
+    "93af21adce8e2ebc4051d2d89cc5f8e30a19422a": {
+      "found_at": "2026-02-16T20:33:26",
+      "last_checked": "2026-02-16T20:33:26",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Decyzja o środowiskowych uwarunkowaniach realizacji inwestycji IR.6220.14.2023.EZ - Rok 2023, menu 1427, artykuł 8956 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1427&id=8956",
+      "keywords": [
+        "decyzja o środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "ad7f4c0d59648bd5cafa6033469d5c31b3f3f6bd",
+      "status": "NOWE"
+    },
+    "3a5710bb76dafb7d496e3b44ee80d0609e790961": {
+      "found_at": "2026-02-16T20:33:26",
+      "last_checked": "2026-02-16T20:33:26",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Decyzja o środowiskowych uwarunkowaniach realizacji inwestycji IR.6220.18.2022.EZ.8 - Rok 2023, menu 1427, artykuł 8552 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1427&id=8552",
+      "keywords": [
+        "decyzja o środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "d05fe68277098221af77683f82721415cecc9020",
+      "status": "NOWE"
+    },
+    "fe5c749c5d6c7954ce1b47b5a06da174f281a9c9": {
+      "found_at": "2026-02-16T20:33:32",
+      "last_checked": "2026-02-16T20:33:32",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Zawiadomienie o wydanym postanowieniu zawieszającym postępowanie w sprawie wydania decyzji o środowiskowych uwarunkowaniach IR.6220.14.2022.EZ.9 - Rok 2022, menu 1404, artykuł 8368 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1404&id=8368",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "8e68a27e88e38adc2af9f975ad60a299b709d6e1",
+      "status": "NOWE"
+    },
+    "07430b6ea13c6224267fd200ee2db07b7ce5b324": {
+      "found_at": "2026-02-16T20:33:36",
+      "last_checked": "2026-02-16T20:33:36",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Zawiadomienie o wszczęciu postępowania w sprawie zmiany decyzji o środowiskowych uwarunkowaniach realizacji inwestycji IR.6220.17.2022.EZ - Rok 2022, menu 1404, artykuł 8328 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1404&id=8328",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "22f4b8328e70c30855a5079710dcbfe22c203bbf",
+      "status": "NOWE"
+    },
+    "f2585d78714d25d6230b351344f88cb56d71bdcd": {
+      "found_at": "2026-02-16T20:33:37",
+      "last_checked": "2026-02-16T20:33:37",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Decyzja o środowiskowych uwarunkowaniach realizacji inwestycji IR.6220.16.2022.EZ.11 - Rok 2022, menu 1404, artykuł 8492 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1404&id=8492",
+      "keywords": [
+        "decyzja o środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "30b6a41d5e39c196988fd28757f40c4dce5c97d7",
+      "status": "NOWE"
+    },
+    "f30b422e1f89b62ede7ea0056e4ca4d5917457cb": {
+      "found_at": "2026-02-16T20:33:37",
+      "last_checked": "2026-02-16T20:33:37",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Decyzja o zmianie decyzji o środowiskowych uwarunkowaniach realizacji inwestycji IR.6220.17.2022.EZ.7 - Rok 2022, menu 1404, artykuł 8465 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1404&id=8465",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "3aa82da5e64aedf16ee772500e5943462915b907",
+      "status": "NOWE"
+    },
+    "a6da1c7500f7291fe739890d6ff53a541ede93b2": {
+      "found_at": "2026-02-16T20:33:38",
+      "last_checked": "2026-02-16T20:33:38",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Decyzja o umorzeniu postępowania administracyjnego w sprawie zmiany decyzji o środowiskowych uwarunkowaniach znak: IR.6220.13.2022.EZ.7 - Rok 2022, menu 1404, artykuł 8436 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1404&id=8436",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "37ef6eb0b050662c6c4a07eb09f1b1b8b67360e9",
+      "status": "NOWE"
+    },
+    "b45e0f117124ac38ccd645a049a9248e084fe3a5": {
+      "found_at": "2026-02-16T20:33:39",
+      "last_checked": "2026-02-16T20:33:39",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Decyzja o środowiskowych uwarunkowaniach realizacji inwestycji IR.6220.7.2022.EZ.9 - Rok 2022, menu 1404, artykuł 8335 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1404&id=8335",
+      "keywords": [
+        "decyzja o środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "7ffed5c7488005148100f4c3a24bc8a5b5996d68",
+      "status": "NOWE"
+    },
+    "e2d82749f38e111a466f2cb7f84906595b59da95": {
+      "found_at": "2026-02-16T20:33:40",
+      "last_checked": "2026-02-16T20:33:40",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Decyzja o przeniesieniu decyzji o środowiskowych uwarunkowaniach IR.6220.12.2021.EZ - Rok 2022, menu 1404, artykuł 8235 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1404&id=8235",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "15477b1164a8682a1f146a492131bf09e0d9309c",
+      "status": "NOWE"
+    },
+    "ce459c883fdf55360e99cd6213a3db1886f0ec7e": {
+      "found_at": "2026-02-16T20:33:40",
+      "last_checked": "2026-02-16T20:33:40",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Decyzja o przeniesieniu decyzji o środowiskowych uwarunkowaniach IR.6220.10.2021.EZ - Rok 2022, menu 1404, artykuł 8169 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1404&id=8169",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "528991ce4f454067b949b61c9a71097616a9a2dd",
+      "status": "NOWE"
+    },
+    "0487bcd611a69527a0947bd1f811610ebf33c36d": {
+      "found_at": "2026-02-16T20:33:41",
+      "last_checked": "2026-02-16T20:33:41",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Decyzja o przeniesieniu decyzji o środowiskowych uwarunkowaniach IR.6220.9.2021.EZ - Rok 2022, menu 1404, artykuł 8167 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1404&id=8167",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "a10b0f90013d0480779a2954b6c86c73a56e6b3c",
+      "status": "NOWE"
+    },
+    "496394347cabfb02811a81412df0345790859048": {
+      "found_at": "2026-02-16T20:33:52",
+      "last_checked": "2026-02-16T20:33:52",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Zawiadomienie o wszczęciu postępowania w sprawie zmiany decyzji o środowiskowych uwarunkowaniach - Rok 2021, menu 1373, artykuł 7894 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1373&id=7894",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "c6a6e2d6d0685d1afa155cf706248b8bc78f76c3",
+      "status": "NOWE"
+    },
+    "d85c02fb74f892bf058a55e6590fc9c7e62cc810": {
+      "found_at": "2026-02-16T20:34:01",
+      "last_checked": "2026-02-16T20:34:01",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Decyzja o środowiskowych uwarunkowaniach realizacji inwestycji IR.6220.6.2020.EZ.8 - Rok 2020, menu 1350, artykuł 7107 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1350&id=7107",
+      "keywords": [
+        "decyzja o środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "5c26de5392191d2cc305bf8c6a87f472abdad0a4",
+      "status": "NOWE"
+    },
+    "9ed1b1bb594d2d91f931ffb89bebca5cf2d7d2da": {
+      "found_at": "2026-02-16T20:34:03",
+      "last_checked": "2026-02-16T20:34:03",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Decyzja o środowiskowych uwarunkowaniach realizacji inwestycji IR.6220.4.2020.EZ.12 - Rok 2020, menu 1350, artykuł 7097 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1350&id=7097",
+      "keywords": [
+        "decyzja o środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "d921110322f28f5c950330ec5c78438a786e46f1",
+      "status": "NOWE"
+    },
+    "705b218ef78b872aecd21e87c6ade5d0ced5cbbe": {
+      "found_at": "2026-02-16T20:34:03",
+      "last_checked": "2026-02-16T20:34:03",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Decyzja o środowiskowych uwarunkowaniach realizacji inwestycji IR.6220.3.2020.EZ.12 - Rok 2020, menu 1350, artykuł 7096 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1350&id=7096",
+      "keywords": [
+        "decyzja o środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "3dfae836993d62603b799e963c4453f6e047b7d0",
+      "status": "NOWE"
+    },
+    "56ce883de0e4c77c17324888ee34d98853697ff5": {
+      "found_at": "2026-02-16T20:34:09",
+      "last_checked": "2026-02-16T20:34:09",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Zawiadomienie o wydaniu decyzji o środowiskowych uwarunkowaniach - Rok 2020, menu 1350, artykuł 6862 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1350&id=6862",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "b6f5abd6ea25010af28b027dfd864c7323846124",
+      "status": "NOWE"
+    },
+    "76ea4ea8da19ba48d5c6db60865bd5cf43fbea28": {
+      "found_at": "2026-02-16T20:34:10",
+      "last_checked": "2026-02-16T20:34:10",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Obwieszczenie w sprawie wydania decyzji o środowiskowych uwarunkowaniach - Rok 2020, menu 1350, artykuł 6865 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1350&id=6865",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "b551b6723e00517c686f24ae5f222386c5e00400",
+      "status": "NOWE"
+    },
+    "f47a4d21c88d0020a3bbf3f168a6425026806943": {
+      "found_at": "2026-02-16T20:34:11",
+      "last_checked": "2026-02-16T20:34:11",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Zawiadomienie o wydaniu decyzji o środowiskowych uwarunkowaniach - Rok 2020, menu 1350, artykuł 6873 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1350&id=6873",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "e769beaf9724fe697c0d441b98d1c1a3901eaaaa",
+      "status": "NOWE"
+    },
+    "0c0cebe9286a4286bab38eb9ef5a7af81979468b": {
+      "found_at": "2026-02-16T20:34:33",
+      "last_checked": "2026-02-16T20:34:33",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "OBWIESZCZENIE o wydaniu decyzji o środowiskowych uwarunkowaniach zgody na realizację przedsięwzięcia o braku obowiązku przeprowadzenia oceny oddziaływania przedsięwzięcia na środowisko - Rok 2015, menu 1237, artykuł 4884 - BIP - Urząd Miejs",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1237&id=4884",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "88d3bf8ab25e14c47486fb1346161d72fadf0762",
+      "status": "NOWE"
+    },
+    "00bde353bbfd6cc5dded7939556b56fcb29d7734": {
+      "found_at": "2026-02-16T20:34:38",
+      "last_checked": "2026-02-16T20:34:38",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Postanowienie o podjęciu postępowania dotyczącego wydania decyzji o środowiskowych uwarunkowaniach dla przedsięwzięcia - Rok 2014, menu 1227, artykuł 4469 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1227&id=4469",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "772d79ea44ae823deb679afabd737f3fb62b1918",
+      "status": "NOWE"
+    },
+    "5ee1ea9beb1340cb2ab07f170a623bf3775dab8d": {
+      "found_at": "2026-02-16T20:34:39",
+      "last_checked": "2026-02-16T20:34:39",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Postanowienie o zawieszeniu postępowania w sprawie wydania decyzji o środowiskowych uwarunkowaniach dla przedsięwzięcia polegającego na budowie bezściółkowej odchowalni prosiąt i loch na rusztach dla obsady 41 DJP wraz z - Rok 2014, menu 12",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1227&id=4340",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "31791a9f73caa9be88b763e9d7bd7863e693cb09",
+      "status": "NOWE"
+    },
+    "93213cbeb641592e4b366c7044db5d3198cf3591": {
+      "found_at": "2026-02-16T20:34:40",
+      "last_checked": "2026-02-16T20:34:40",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Postanowienie o zawieszeniu postępowania w sprawie wydania decyzji o środowiskowych uwarunkowaniach dla przedsięwzięcia polegającego na budowie chlewni tuczników o obsadzie 140 DJP na działce nr 7 obręb Tarchalin - Rok 2014, menu 1227, arty",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1227&id=4337",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "cfe94644d97c43cae705d175e5172906190e0a25",
+      "status": "NOWE"
+    },
+    "6d9295df9b22dbb19ad7e9da6d8ebf68ad6c6a8f": {
+      "found_at": "2026-02-16T20:34:45",
+      "last_checked": "2026-02-16T20:34:45",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Informacja o wydaniu decyzji o środowiskowych uwarunkowaniach zgody na realizacje przedsięwzięcia - Rok 2013, menu 1206, artykuł 4092 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1206&id=4092",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "9717af31e35ff726179a19385e135135201d10a4",
+      "status": "NOWE"
+    },
+    "5163f26e6f581118edda0f3dc6b67a5a4d90f33b": {
+      "found_at": "2026-02-16T20:34:47",
+      "last_checked": "2026-02-16T20:34:47",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Informacja o wydaniu decyzji o środowiskowych uwarunkowaniach zgody na realizacje przedsięwzięcia - Rok 2013, menu 1206, artykuł 4075 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1206&id=4075",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "1c460392c6f08fb619321a7056573c88b1c51511",
+      "status": "NOWE"
+    },
+    "a663024ba2394a92e7089a6892f6d0ce990ffa90": {
+      "found_at": "2026-02-16T20:34:50",
+      "last_checked": "2026-02-16T20:34:50",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Ogłoszenie o wydaniu decyzji o środowiskowych uwarunkowaniach - Rok 2012, menu 1194, artykuł 3689 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1194&id=3689",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "ba9e59546ead210151acd03b5a2fcc07c778dc37",
+      "status": "NOWE"
+    },
+    "013c73c566afee43478645d16a528a425d28b0e8": {
+      "found_at": "2026-02-16T20:34:59",
+      "last_checked": "2026-02-16T20:34:59",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Ogłoszenie o wydaniu decyzji o środowiskowych uwarunkowaniach dla przedsięwzięcia polegającego na: \"Budowie biogazowni o mocy 0,9 MW zlokalizowanej w Czechnowie gm. Bojanowo na działce nr 321, 354/1 pow. rawicki, województwo wielkopolskie.\"",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1140&id=3026",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "bb4dd183673ccc6d17c40a58ee292f914717d0b5",
+      "status": "NOWE"
+    },
+    "163b6bb1aee4ebf6d48390b14e60c9a89e5f5b9b": {
+      "found_at": "2026-02-16T20:35:07",
+      "last_checked": "2026-02-16T20:35:07",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Obwieszczenie Burmistrza Bojanowa o przystąpieniu do sporządzenia planu miejscowego zagospodarowania przestrzennego terenów obejmujących rolniczą przestrzeń produkcyjną, lasy i inne formy zagospodarowania, położonych w obrębie wyznaczonych ",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1124&id=2549",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "641ae8a556b9f5dd1beec91799c88218aa3a395a",
+      "status": "NOWE"
+    },
+    "a524a478aae29ea9e972b203c15714a333f5096e": {
+      "found_at": "2026-02-16T20:35:12",
+      "last_checked": "2026-02-16T20:35:12",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Obwieszczenie Wojewody Wielkopolskiego o mozliwości zapoznania się i wypowiedzenia co do zebranych dowodów i materiałów przed wydaniem decyzji o środowiskowych uwarunkowaniach zgody na realizację przedsięwzięcia - Rok 2008, menu 1102, artyk",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1102&id=2472",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "b0e68aca19a43c74d177eb99c0ac2cd21f1a2942",
+      "status": "NOWE"
+    },
+    "59d03334e395068bc892459bd87cac9a3a1027ac": {
+      "found_at": "2026-02-16T20:35:12",
+      "last_checked": "2026-02-16T20:35:12",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Obwieszczenie Burmistrza Bojanowa o środowiskowych uwarunkowaniach zgody na realizację przedsięwzięcia - Rok 2008, menu 1102, artykuł 2269 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1102&id=2269",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "2e11f6e5cf1c3cf6babc38e7e9ccf7ec7ba7eb6f",
+      "status": "NOWE"
+    },
+    "2c5cb34be7f285f3f8b792dbc1821ab74ae7bc3d": {
+      "found_at": "2026-02-16T20:35:13",
+      "last_checked": "2026-02-16T20:35:13",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "OBWIESZCZENIE Burmistrza Bojanowa - DECYZJA o środowiskowych uwarunkowaniach. - Rok 2008, menu 1102, artykuł 1001 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1102&id=1001",
+      "keywords": [
+        "decyzja o środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "f0cf8a073e50e981ff3279435e2b31be6558dba8",
+      "status": "NOWE"
+    },
+    "a1510479f6329b3c68a02c25e7982e407f54ffb3": {
+      "found_at": "2026-02-16T20:35:14",
+      "last_checked": "2026-02-16T20:35:14",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "OBWIESZCZENIE Burmistrza Bojanowa - DECYZJA o środowiskowych uwarunkowaniach zgody na realizację przedsięwzięcia. - Rok 2008, menu 1102, artykuł 1002 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1102&id=1002",
+      "keywords": [
+        "decyzja o środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "952f5594b648f9d889d7d9cd6e979cabcf79ad35": {
+      "found_at": "2026-02-16T20:35:17",
+      "last_checked": "2026-02-16T20:35:17",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Ogłoszenie o rozpoczęciu procedury udziału społeczeństwa w postępowaniu w sprawie wydania decyzji o środowiskowych uwarunkowaniach - Rok 2007, menu 1101, artykuł 1008 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1101&id=1008",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "8fe7b64b0bef840172cf1ec4819179925b2ede1a",
+      "status": "NOWE"
+    },
+    "20d86082c73e37cffbe07cc70d79bfbbc6a1d5af": {
+      "found_at": "2026-02-16T20:35:17",
+      "last_checked": "2026-02-16T20:35:17",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "OGŁOSZENIE o rozpoczęciu procedury udziału społeczeństwa w postępowaniu w sprawie wydania decyzji o środowiskowych uwarunkowaniach - Rok 2007, menu 1101, artykuł 1009 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1101&id=1009",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "ac4c6074f6b70341d789545915870507af86e708",
+      "status": "NOWE"
+    },
+    "9013c044f8f573a5afa8d557a8fc04a62238c12d": {
+      "found_at": "2026-02-16T20:35:17",
+      "last_checked": "2026-02-16T20:35:17",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "OBWIESZCZENIE BURMISTRZA BOJANOWA - DECYZJA o środowiskowych uwarunkowaniach - Rok 2007, menu 1101, artykuł 1010 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1101&id=1010",
+      "keywords": [
+        "decyzja o środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "3c695550cde102fd477b82a0e51db17e5410bafc",
+      "status": "NOWE"
+    },
+    "806be805ee49af35ce3835d4be4e19508f906193": {
+      "found_at": "2026-02-16T20:35:18",
+      "last_checked": "2026-02-16T20:35:18",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "OBWIESZCZENIE Burmistrza Bojanowa - DECYZJA o środowiskowych uwarunkowaniach - Kanalizacja sanitarna z przyłączami dla miejscowości Giżyn - Rok 2007, menu 1101, artykuł 1017 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1101&id=1017",
+      "keywords": [
+        "decyzja o środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "7dcc87e290af97445ba8f318adb42846873205ea",
+      "status": "NOWE"
+    },
+    "e5ac50442d469b6a0d1c5bf9cca367195acab190": {
+      "found_at": "2026-02-16T20:35:18",
+      "last_checked": "2026-02-16T20:35:18",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "OBWIESZCZENIE Burmistrza Bojanowa - DECYZJA o środowiskowych uwarunkowaniach - Kanalizacja sanitarna z przyłączami dla miejscowości Giżyn - Rok 2007, menu 1101, artykuł 1018 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1101&id=1018",
+      "keywords": [
+        "decyzja o środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "4f3081804ab111208ca2512d3c04c4c595b47faf",
+      "status": "NOWE"
+    },
+    "24fdc35e9f4b9fba66ccbde76897309499c49fec": {
+      "found_at": "2026-02-16T20:35:32",
+      "last_checked": "2026-02-16T20:35:32",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Zawiadomienie o zakończeniu postępowania w sprawie wydania decyzji o środowiskowych uwarunkowaniach realizacji przedsięwzięcia - Rok 2015, menu 1244, artykuł 4534 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1244&id=4534",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "295bed063405025ba03f43a30d0b68fc1b60f027",
+      "status": "NOWE"
+    },
+    "a0f34ad0f93885a19c062f462bc65ce1a3cadeb6": {
+      "found_at": "2026-02-16T20:35:37",
+      "last_checked": "2026-02-16T20:35:37",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "DECYZJA o środowiskowych uwarunkowaniach zgody na realizację przedsięwzięcia polegającego na \"Uruchomieniu tymczasowej kontenerowej wytwórni mas bitumicznych na terenie działki o nr ewidencyjnym 410/21 obręb Gołaszyn - Rok 2012, menu 1198, ",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1198&id=3778",
+      "keywords": [
+        "decyzja o środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "da4e4c5deabb08951c95ada67d6e4f43d2801243",
+      "status": "NOWE"
+    },
+    "5a41ff00729ca84d289e8ed79db6fbd600c91596": {
+      "found_at": "2026-02-16T20:35:38",
+      "last_checked": "2026-02-16T20:35:38",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Obwieszczenie o przystąpieniu do sporządzenia zmiany w Studium Uwarunkowań i Kierunków Zagospodarowania Przestrzennego Gminy Bojanowo - Rok 2010, menu 1150, artykuł 3167 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1150&id=3167",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "8ec0afd58b67b4ec8c82a644d8afa9bf65d59769",
+      "status": "NOWE"
+    },
+    "22b08b1284a7f8fdf365afe097d9091f071d4674": {
+      "found_at": "2026-02-16T20:35:39",
+      "last_checked": "2026-02-16T20:35:39",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Obwieszczenie o przystąpieniu do sporządzenia planu miejscowego zagospodarowania przestrzennego terenów obejmujących rolniczą przestrzeń produkcyjną, lasy i inne formy zagospodarowania, położonych w obrębie wyznaczonych obszarów gminy Bojan",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1150&id=3168",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "a6e8e6d83eb9e61cae7754bcb532925180cc80cb",
+      "status": "NOWE"
+    },
+    "657ecd2e23fa0e3728a0154a708d5cc57e66e269": {
+      "found_at": "2026-02-16T20:35:39",
+      "last_checked": "2026-02-16T20:35:39",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Zawiadomienie Burmistrza Bojanowa że na wniosek firmy Biomodus Sp. z o.o. Czechnów 51, 63-940 Bojanowo toczy się postępowanie w sprawie wydania decyzji o środowiskowych uwarunkowaniach - Rok 2010, menu 1150, artykuł 2878 - BIP - Urząd Miejs",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1150&id=2878",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "4d2580197adccc74f45ec78d0393e053c714d12d",
+      "status": "NOWE"
+    },
+    "e5d9904a8b31b12cddcc0aa1bc16b85f1ae27c5a": {
+      "found_at": "2026-02-16T20:35:52",
+      "last_checked": "2026-02-16T20:35:52",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Obwieszczenie Burmistrza o wydaniu decyzji o środowiskowych uwarunkowaniach zgody na realizację przedsięwzięcia pn. ˝Budowa sieci wodociągowej z przyłączami w Bojanowie˝ - Rok 2005 i 2006, menu 1104, artykuł 1047 - BIP - Urząd Miejski w Boj",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1104&id=1047",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "950a11b2f7eb8a4158df3f5de7960cda193ab2f3",
+      "status": "NOWE"
+    },
+    "cde3548eefc8a003ccf304985b6cb44b32241c29": {
+      "found_at": "2026-02-16T20:37:56",
+      "last_checked": "2026-02-16T20:37:56",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Ogłoszenie o przetargu; dotyczy: Montaż hybrydowego (słoneczno-wiatrowego) oświetlenia ulicznego z energooszczędnymi źródłami światła LED na terenie Gminy Bojanowo - Ogłoszenia 2016, menu 1262, artykuł 5067 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1262&id=5067",
+      "keywords": [
+        "wiatr"
+      ],
+      "att_sig": "df7b1c1bea500b81d630b3fe47119941d7391867",
+      "status": "NOWE"
+    },
+    "e771bc88d9a7732408239d5ecbe976aa73d11824": {
+      "found_at": "2026-02-16T20:37:57",
+      "last_checked": "2026-02-16T20:37:57",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Ogłoszenie o przetargu; dotyczy: Montaż hybrydowego (słoneczno-wiatrowego) oświetlenia ulicznego z energooszczędnymi źródłami światła LED na terenie Gminy Bojanowo - Ogłoszenia 2016, menu 1262, artykuł 5018 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1262&id=5018",
+      "keywords": [
+        "wiatr"
+      ],
+      "att_sig": "5c25874a4194056ff17a82cbc8e42bd6bd7dc227",
+      "status": "NOWE"
+    },
+    "a8cfc863a2861744f93d9d1dfc4d4b0f7d7afa8e": {
+      "found_at": "2026-02-16T20:41:03",
+      "last_checked": "2026-02-16T20:41:03",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Rok 2025, rejestr BIPA62880ED34D791Z, menu 1492 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=3&code=BIPA62880ED34D791Z&rpg=0",
+      "keywords": [
+        "planu ogólnego"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "9a8ba9edbfb0623dc0bf08e86b5ef26886ea7335": {
+      "found_at": "2026-02-16T20:44:18",
+      "last_checked": "2026-02-16T20:44:18",
+      "etag": "",
+      "last_modified": "Tue, 31 Mar 2020 14:05:06 GMT",
+      "gmina": "Bojanowo",
+      "title": "ZARZDZENIE NR 202",
+      "url": "https://gminabojanowo.biuletyn.net/fls/bip_pliki/2020_03/BIPOLD001921/1921.html",
+      "keywords": [],
+      "att_sig": "",
+      "status": "NO_MATCH"
+    },
+    "241a7d59f6156be7c2dfa216ac4aef9281a2927a": {
+      "found_at": "2026-02-16T20:44:19",
+      "last_checked": "2026-02-16T20:44:19",
+      "etag": "",
+      "last_modified": "Tue, 31 Mar 2020 14:05:06 GMT",
+      "gmina": "Bojanowo",
+      "title": "ZARZDZENIE NR 203",
+      "url": "https://gminabojanowo.biuletyn.net/fls/bip_pliki/2020_03/BIPOLD001922/1922.html",
+      "keywords": [],
+      "att_sig": "17d5b1bcc17877dc2b03326af18022d1c82d03cd",
+      "status": "NO_MATCH"
+    },
+    "90433704d6d0e8ba885eba4e745a4393a24eb857": {
+      "found_at": "2026-02-16T20:44:20",
+      "last_checked": "2026-02-16T20:44:20",
+      "etag": "",
+      "last_modified": "Tue, 31 Mar 2020 14:05:06 GMT",
+      "gmina": "Bojanowo",
+      "title": "ZARZDZENIE NR 204",
+      "url": "https://gminabojanowo.biuletyn.net/fls/bip_pliki/2020_03/BIPOLD001923/1923.html",
+      "keywords": [],
+      "att_sig": "",
+      "status": "NO_MATCH"
+    },
+    "063f6ca8faf0493630760430e7bc7449686c4ca3": {
+      "found_at": "2026-02-16T20:44:21",
+      "last_checked": "2026-02-16T20:44:21",
+      "etag": "",
+      "last_modified": "Tue, 31 Mar 2020 14:05:06 GMT",
+      "gmina": "Bojanowo",
+      "title": "ZARZDZENIE NR 205",
+      "url": "https://gminabojanowo.biuletyn.net/fls/bip_pliki/2020_03/BIPOLD001924/1924.html",
+      "keywords": [],
+      "att_sig": "",
+      "status": "NO_MATCH"
+    },
+    "e0dab4aaa06b0b712e727a26263417a64745b3a6": {
+      "found_at": "2026-02-16T20:44:22",
+      "last_checked": "2026-02-16T20:44:22",
+      "etag": "",
+      "last_modified": "Tue, 31 Mar 2020 14:05:06 GMT",
+      "gmina": "Bojanowo",
+      "title": "ZARZDZENIE NR 206",
+      "url": "https://gminabojanowo.biuletyn.net/fls/bip_pliki/2020_03/BIPOLD001925/1925.html",
+      "keywords": [],
+      "att_sig": "",
+      "status": "NO_MATCH"
+    },
+    "394afd48199bc43621f53c03f852f15a5ae43036": {
+      "found_at": "2026-02-16T20:44:23",
+      "last_checked": "2026-02-16T20:44:23",
+      "etag": "",
+      "last_modified": "Tue, 31 Mar 2020 14:05:06 GMT",
+      "gmina": "Bojanowo",
+      "title": "ZARZDZENIE NR 207",
+      "url": "https://gminabojanowo.biuletyn.net/fls/bip_pliki/2020_03/BIPOLD001926/1926.html",
+      "keywords": [],
+      "att_sig": "",
+      "status": "NO_MATCH"
+    },
+    "78a4faa6de4d2c0a722e408b10dbeeca54890ea6": {
+      "found_at": "2026-02-16T20:44:24",
+      "last_checked": "2026-02-16T20:44:24",
+      "etag": "",
+      "last_modified": "Tue, 31 Mar 2020 14:05:06 GMT",
+      "gmina": "Bojanowo",
+      "title": "ZARZDZENIE NR 208",
+      "url": "https://gminabojanowo.biuletyn.net/fls/bip_pliki/2020_03/BIPOLD001927/1927.html",
+      "keywords": [],
+      "att_sig": "",
+      "status": "NO_MATCH"
+    },
+    "742f46f40fb3d8102a74a11f12a62dafa00ab82c": {
+      "found_at": "2026-02-16T20:44:25",
+      "last_checked": "2026-02-16T20:44:25",
+      "etag": "",
+      "last_modified": "Tue, 31 Mar 2020 14:05:06 GMT",
+      "gmina": "Bojanowo",
+      "title": "ZARZDZENIE NR 209",
+      "url": "https://gminabojanowo.biuletyn.net/fls/bip_pliki/2020_03/BIPOLD001928/1928.html",
+      "keywords": [],
+      "att_sig": "b0097a02cd448fcc9e646abdc172f8a70d99b2a4",
+      "status": "NO_MATCH"
+    },
+    "ed3734f30186dcf03a08a1f43d4d7198a628c8f0": {
+      "found_at": "2026-02-16T20:44:26",
+      "last_checked": "2026-02-16T20:44:26",
+      "etag": "",
+      "last_modified": "Tue, 31 Mar 2020 14:05:06 GMT",
+      "gmina": "Bojanowo",
+      "title": "ZARZDZENIE NR 210",
+      "url": "https://gminabojanowo.biuletyn.net/fls/bip_pliki/2020_03/BIPOLD001929/1929.html",
+      "keywords": [],
+      "att_sig": "eb6a02257d949dc46a3a22b8d63766ffda5ad9ab",
+      "status": "NO_MATCH"
+    },
+    "e767adc2ef03758c6aad35263f06d6ed1186643b": {
+      "found_at": "2026-02-16T20:44:46",
+      "last_checked": "2026-02-16T20:44:46",
+      "etag": "",
+      "last_modified": "Tue, 31 Mar 2020 14:05:05 GMT",
+      "gmina": "Bojanowo",
+      "title": "Zarzdzenie Nr 64/03",
+      "url": "https://gminabojanowo.biuletyn.net/fls/bip_pliki/2020_03/BIPOLD001863/1863.html",
+      "keywords": [],
+      "att_sig": "",
+      "status": "NO_MATCH"
     }
   },
   "gmina_seeds": {
