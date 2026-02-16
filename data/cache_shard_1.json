@@ -2148,6 +2148,34 @@
       "keywords": [],
       "att_sig": "",
       "status": "NO_MATCH"
+    },
+    "514852d16165f4df413f9768d656e81a731330ee": {
+      "found_at": "2026-02-16T20:52:02",
+      "last_checked": "2026-02-16T20:52:02",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Działalność lobbingowa, rejestr BIPOLDPROC42, menu 1317 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=3&code=BIPOLDPROC42&rpg=0",
+      "keywords": [
+        "decyzja o środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "8b4cbd197a09a4b1b6d839d81cea02d98f46731f": {
+      "found_at": "2026-02-16T20:53:47",
+      "last_checked": "2026-02-16T20:53:47",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Ogłoszenia, obwieszczenia, wykazy, postanowienia, komunikaty / Rok 2014 - BIP Urząd Miejski w Bojanowie",
+      "url": "http://www.biuletyn.net/nt-bin/start.asp?menu=100&podmenu=227&podmiot=gminabojanowo%2F&str=1&strona=13&typ=podmenu&typmenu=13",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "46bf3767019f6090ce492335d5dafd591555d126",
+      "status": "NOWE"
     }
   },
   "gmina_seeds": {
