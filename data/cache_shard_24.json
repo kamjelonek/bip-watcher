@@ -9492,7 +9492,9 @@
     }
   },
   "page_fprints": {},
-  "gmina_frontiers": {},
+  "gmina_frontiers": {
+    "1d0e87176b739267ed0db04716cae770ffaec425": []
+  },
   "gmina_retry": {
     "1d0e87176b739267ed0db04716cae770ffaec425": [
       "https://bip.gminasrokowo.pl/lokalizacje/113/"
