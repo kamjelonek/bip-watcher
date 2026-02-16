@@ -17,12 +17,16 @@ jobs:
   scan:
     name: Scan shard ${{ matrix.shard }}
     runs-on: ubuntu-latest
+
+    # ✅ klucz: shard może się wywalić/cancelować, a i tak lecimy dalej i merge działa
+    continue-on-error: true
+
     timeout-minutes: 355
 
     strategy:
       fail-fast: false
       matrix:
-        shard: [0,1,2,3,4,5,6,7,8,9,10,11]   # 🔥 12 shardów
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11]   # 12 shardów
 
     steps:
       - name: Checkout repo
@@ -54,24 +58,24 @@ jobs:
 
       # ===================== RUN =====================
       - name: Run watcher (sharded)
+        # ✅ krok może się wysypać, ale artifacty i tak pójdą
         continue-on-error: true
         env:
           PYTHONUNBUFFERED: "1"
 
-          # 🔥 SHARDING
           SHARD_TOTAL: "12"
           SHARD_INDEX: "${{ matrix.shard }}"
 
           # soft stop BEFORE github hard kill
           RUN_DEADLINE_MIN: "345"
 
-          # Twoje szybkie wartości
           CONCURRENT_GMINY: "8"
           CONCURRENT_REQUESTS: "28"
           LIMIT_PER_HOST: "4"
           RATE_MIN_DELAY: "0.3"
 
-          CHECKPOINT_EVERY_SEC: "60"
+          # ✅ najważniejsze: mniej I/O, mniej cancel przez mulenie
+          CHECKPOINT_EVERY_SEC: "900"
         run: |
           python bip_watcher.py
 
@@ -82,7 +86,21 @@ jobs:
           mkdir -p data
           if [ ! -f data/cache.json ]; then
             echo "cache.json missing - creating placeholder"
-            python -c "import json,os; os.makedirs('data',exist_ok=True); cache={'schema':10,'urls_seen':{},'content_seen':{},'gmina_seeds':{},'page_fprints':{},'gmina_frontiers':{},'gmina_retry':{}}; open('data/cache.json','w',encoding='utf-8').write(json.dumps(cache,ensure_ascii=False,indent=2))"
+            python - <<'PY'
+            import json, os
+            os.makedirs('data', exist_ok=True)
+            cache = {
+              "schema": 10,
+              "urls_seen": {},
+              "content_seen": {},
+              "gmina_seeds": {},
+              "page_fprints": {},
+              "gmina_frontiers": {},
+              "gmina_retry": {}
+            }
+            with open('data/cache.json','w',encoding='utf-8') as f:
+              json.dump(cache,f,ensure_ascii=False,indent=2)
+            PY
           fi
 
       - name: Pack shard cache
@@ -126,61 +144,101 @@ jobs:
           python-version: "3.11"
 
       - name: Download shard artifacts
+        if: always()
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      - name: Merge caches
+      - name: Merge caches (best-effort)
+        if: always()
         run: |
           python - <<'PY'
-          import os, json, zipfile
+          import os, json, zipfile, sys
 
-          def load(zp):
-              with zipfile.ZipFile(zp,"r") as z:
+          def load_zip(zp):
+              with zipfile.ZipFile(zp, "r") as z:
                   with z.open("cache.json") as f:
                       return json.load(f)
 
-          def iso_max(a,b):
+          def iso_max(a, b):
               return a if (a or "") >= (b or "") else b
 
-          zips=[]
-          for r,_,fs in os.walk("artifacts"):
+          # znajdź wszystkie shard zipy
+          zips = []
+          for r, _, fs in os.walk("artifacts"):
               for f in fs:
                   if f.startswith("cache_shard_") and f.endswith(".zip"):
-                      zips.append(os.path.join(r,f))
+                      zips.append(os.path.join(r, f))
           zips.sort()
 
           if not zips:
-              raise SystemExit("No shard caches found")
+              print("No shard caches found -> creating empty cache", file=sys.stderr)
+              merged = {
+                  "schema": 10,
+                  "urls_seen": {},
+                  "content_seen": {},
+                  "gmina_seeds": {},
+                  "page_fprints": {},
+                  "gmina_frontiers": {},
+                  "gmina_retry": {}
+              }
+          else:
+              merged = None
+              used = 0
+              for zp in zips:
+                  try:
+                      c = load_zip(zp)
+                  except Exception as e:
+                      print(f"SKIP bad zip {zp}: {e}", file=sys.stderr)
+                      continue
 
-          merged=load(zips[0])
+                  if merged is None:
+                      merged = c
+                      used = 1
+                      continue
 
-          for zp in zips[1:]:
-              c=load(zp)
+                  # urls_seen: max timestamp per key
+                  ua = merged.get("urls_seen", {}) or {}
+                  ub = c.get("urls_seen", {}) or {}
+                  for k, v in ub.items():
+                      ua[k] = iso_max(ua.get(k, ""), v)
+                  merged["urls_seen"] = ua
 
-              ua=merged.get("urls_seen",{})
-              ub=c.get("urls_seen",{})
-              for k,v in ub.items():
-                  ua[k]=iso_max(ua.get(k,""),v)
-              merged["urls_seen"]=ua
+                  # pozostałe: „last write wins” (wystarczy do cache)
+                  merged["content_seen"] = {**(merged.get("content_seen", {}) or {}), **(c.get("content_seen", {}) or {})}
+                  merged["gmina_seeds"] = {**(merged.get("gmina_seeds", {}) or {}), **(c.get("gmina_seeds", {}) or {})}
+                  merged["page_fprints"] = {**(merged.get("page_fprints", {}) or {}), **(c.get("page_fprints", {}) or {})}
+                  merged["gmina_frontiers"] = {**(merged.get("gmina_frontiers", {}) or {}), **(c.get("gmina_frontiers", {}) or {})}
+                  merged["gmina_retry"] = {**(merged.get("gmina_retry", {}) or {}), **(c.get("gmina_retry", {}) or {})}
 
-              merged["content_seen"]={**merged.get("content_seen",{}), **c.get("content_seen",{})}
-              merged["gmina_seeds"]={**merged.get("gmina_seeds",{}), **c.get("gmina_seeds",{})}
-              merged["page_fprints"]={**merged.get("page_fprints",{}), **c.get("page_fprints",{})}
-              merged["gmina_frontiers"]={**merged.get("gmina_frontiers",{}), **c.get("gmina_frontiers",{})}
-              merged["gmina_retry"]={**merged.get("gmina_retry",{}), **c.get("gmina_retry",{})}
+                  used += 1
 
-          os.makedirs("data",exist_ok=True)
-          with open("data/cache.json","w",encoding="utf-8") as f:
-              json.dump(merged,f,ensure_ascii=False)
+              if merged is None:
+                  merged = {
+                      "schema": 10,
+                      "urls_seen": {},
+                      "content_seen": {},
+                      "gmina_seeds": {},
+                      "page_fprints": {},
+                      "gmina_frontiers": {},
+                      "gmina_retry": {}
+                  }
 
-          with zipfile.ZipFile("data/cache.zip","w",compression=zipfile.ZIP_DEFLATED,compresslevel=9) as z:
-              z.write("data/cache.json",arcname="cache.json")
+              print(f"Merged shards used={used}/{len(zips)}")
 
-          print("Merged",len(zips),"shards")
+          os.makedirs("data", exist_ok=True)
+
+          with open("data/cache.json", "w", encoding="utf-8") as f:
+              json.dump(merged, f, ensure_ascii=False)
+
+          with zipfile.ZipFile("data/cache.zip", "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
+              z.write("data/cache.json", arcname="cache.json")
+
+          print("OK: data/cache.json + data/cache.zip written")
           PY
 
       - name: Upload merged artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: bip-merged-report
@@ -191,6 +249,7 @@ jobs:
             data/cache.json
 
       - name: Commit merged cache back to repo
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
