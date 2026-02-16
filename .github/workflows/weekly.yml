@@ -40,6 +40,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # ===================== PRZYGOTOWANIE CACHE =====================
+      # Jeśli istnieje cache.json z poprzedniego merge, zostanie użyty
+      # (program sam go wczyta). Nie potrzebujemy rozpakowywać zipa.
+
       # ===================== RUN =====================
       - name: Run watcher (sharded)
         continue-on-error: true
@@ -56,7 +60,7 @@ jobs:
         run: |
           python bip_watcher.py
 
-      # ===================== BACKUP ARTEFAKTÓW (opcjonalnie) =====================
+      # ===================== BACKUP LOGÓW =====================
       - name: Upload logs and reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -144,18 +148,24 @@ jobs:
           with open("data/cache.json", "w") as f:
               json.dump(merged, f, indent=2)
 
+          # Usuń pliki shardowe
           for f in shard_files:
               os.remove(f)
 
-          print("OK: data/cache.json updated")
+          # Spakuj cache.json do cache.zip (jeśli chcesz zachować zip)
+          import zipfile
+          with zipfile.ZipFile("data/cache.zip", "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
+              z.write("data/cache.json", arcname="cache.json")
+
+          print("OK: data/cache.json and data/cache.zip updated")
           PY
 
-      - name: Commit merged cache
+      - name: Commit merged cache and zip
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git pull --rebase || true
-          git add data/cache.json
+          git add data/cache.json data/cache.zip
           git commit -m "Merge shard caches [skip ci]" || echo "Nothing to commit"
           git push || true
 
@@ -168,5 +178,6 @@ jobs:
           if-no-files-found: warn
           path: |
             data/cache.json
+            data/cache.zip
             data/summary_report.txt
             data/log.csv
