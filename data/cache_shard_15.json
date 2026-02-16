@@ -6,7 +6,7 @@
   "content_seen": {
     "d2ce71eba8b4f35c9d95cc3310ffe40a7424c860": {
       "found_at": "2026-02-16T19:58:10",
-      "last_checked": "2026-02-16T19:58:10",
+      "last_checked": "2026-02-16T20:01:13",
       "etag": "",
       "last_modified": "",
       "gmina": "Kondratowice",
@@ -20,7 +20,7 @@
     },
     "f35628c278fade92c050640b848721e04851970b": {
       "found_at": "2026-02-16T19:58:12",
-      "last_checked": "2026-02-16T19:58:12",
+      "last_checked": "2026-02-16T20:01:16",
       "etag": "",
       "last_modified": "",
       "gmina": "Kondratowice",
@@ -34,7 +34,7 @@
     },
     "cc3e4d38f82d81da8ccf805a20e08427493aa814": {
       "found_at": "2026-02-16T19:58:49",
-      "last_checked": "2026-02-16T19:58:49",
+      "last_checked": "2026-02-16T20:01:53",
       "etag": "",
       "last_modified": "",
       "gmina": "Kondratowice",
@@ -48,7 +48,7 @@
     },
     "00835b1655e3dbbdd951abf22cc1c05cbb2d3a2b": {
       "found_at": "2026-02-16T19:58:49",
-      "last_checked": "2026-02-16T19:58:49",
+      "last_checked": "2026-02-16T20:01:53",
       "etag": "",
       "last_modified": "",
       "gmina": "Kondratowice",
@@ -62,12 +62,1076 @@
     },
     "58168069e294bf472da38e9825461bd9aabb4ba7": {
       "found_at": "2026-02-16T19:58:50",
-      "last_checked": "2026-02-16T19:58:50",
+      "last_checked": "2026-02-16T20:01:54",
       "etag": "",
       "last_modified": "",
       "gmina": "Kondratowice",
       "title": "Projekty miejscowych planów zagospodarowania przestrzennego, bieżące, menu 463 - BIP - Gmina Kondratowice",
       "url": "https://kondratowice.biuletyn.net/?bip=1&bsc=N&cid=463",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "7a3bf42fe82944408789748e27b36467cdcc666e": {
+      "found_at": "2026-02-16T20:03:32",
+      "last_checked": "2026-02-16T20:03:32",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Plany zagospodarowania przestrzennego i decyzje środowiskowe, menu 30 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=1&cid=30",
+      "keywords": [
+        "decyzje środowiskowe"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "40aedd65ed30cde29fdebaaa51044be99230b117": {
+      "found_at": "2026-02-16T20:05:28",
+      "last_checked": "2026-02-16T20:05:28",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Uchwała Nr XII 61 2019 w sprawie uchwalenia miejscowego planu zagospodarowania przestrzennego dla dz. nr 23 1 AM1 obręb Stachów",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2019_10/BIPF595A9293C2D0AZ/Uchwala_Nr_XII_61_2019_w_sprawie_uchwalenia_miejscowego_planu_zagospodarowania_przestrzennego_dla_dz._nr_23_1_AM1_obreb_Stachow.pdf",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "cc0b93d2efddf40d0c6e8d1a70cfcb0c1602dd88": {
+      "found_at": "2026-02-16T20:05:32",
+      "last_checked": "2026-02-16T20:05:32",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Uchwała Nr XXVII 182 2020 w sprawie przystapienia do sporzadzenia miejscowego planu zagospodarowania przestrzennego dla miejscowości Prusy",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2020_12/BIPF5B669EE6C40BBZ/Uchwala_Nr_XXVII_182_2020_w_sprawie_przystapienia_do_sporzadzenia_miejscowego_planu_zagospodarowania_przestrzennego_dla_miejscowosci_Prusy.pdf",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "ae1af8dbd1b165051ec1694717716a622ac11144": {
+      "found_at": "2026-02-16T20:05:32",
+      "last_checked": "2026-02-16T20:05:32",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Uchwała Nr XXVII 183 2020 w sprawie przystapienia dp sporzadzenia miejscowego planu zagospodarowania przestrzennego dla miejscowości Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2020_12/BIPF5B669EF1F656EZ/Uchwala_Nr_XXVII_183_2020_w_sprawie_przystapienia_dp_sporzadzenia_miejscowego_planu_zagospodarowania_przestrzennego_dla_miejscowosci_Kondratowice.pdf",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "c96cf53b61636682fdf665401a06e535bc4e5b60": {
+      "found_at": "2026-02-16T20:05:35",
+      "last_checked": "2026-02-16T20:05:35",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Uchwała Nr XXIII 153 2020 w sprawie uchwalenia miejscowego planu zagospodarowania przestrzennego dla miejscowosci Kondratowice - część 1",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2020_10/BIPF5B20B992F3791Z/Uchwala_Nr_XXIII_153_2020_w_sprawie_uchwalenia_miejscowego_planu_zagospodarowania_przestrzennego_dla_miejscowosci_Kondratowice_-_czesc_1.pdf",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "4219d2b937c94a59e716d46259d12aa0c8ef53c3": {
+      "found_at": "2026-02-16T20:05:35",
+      "last_checked": "2026-02-16T20:05:35",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Uchwała Nr XXIII 154 2020 w sprawie uchwalenia miejscowego planu zagospodarowania przestrzennego dla miejscowości Prusy",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2020_10/BIPF5B20BAA7D06E4Z/Uchwala_Nr_XXIII_154_2020_w_sprawie_uchwalenia_miejscowego_planu_zagospodarowania_przestrzennego_dla_miejscowosci_Prusy.pdf",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "b323867613178df58041e6572c0ddaed2b9ffe8e": {
+      "found_at": "2026-02-16T20:05:39",
+      "last_checked": "2026-02-16T20:05:39",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Uchwała Nr XXXVIII 228 2021 w sprawie przystąpienia do sporzadzenia zmiany Studium Uwarunkowań i Kierunków Zagospodarowania Przestrzennego Gminy Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2021_07/BIPF5C69BC399E5EFZ/Uchwala_Nr_XXXVIII_228_2021_w_sprawie_przystapienia_do_sporzadzenia_zmiany_Studium_Uwarunkowan_i_Kierunkow_Zagospodarowania_Przestrzennego_Gminy_Kondratowice.pdf",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "7da1cbe198b0a4d64531f959a227fabaa4d284ae": {
+      "found_at": "2026-02-16T20:05:39",
+      "last_checked": "2026-02-16T20:05:39",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Uchwała Nr XXXVIII 229 2021 w sprawie przystapienia do sporządzenia miejscowego planu zagospodarowania przestrzennego dla obrębu LIPOWA- SADOWICE",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2021_07/BIPF5C69BC3A874B1Z/Uchwala_Nr_XXXVIII_229_2021_w_sprawie_przystapienia_do_sporzadzenia_miejscowego_planu_zagospodarowania_przestrzennego_dla_obrebu_LIPOWA-_SADOWICE.pdf",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "cf52f4ff717182505de69d80b538b5b48c0f8b03": {
+      "found_at": "2026-02-16T20:05:39",
+      "last_checked": "2026-02-16T20:05:39",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Uchwała Nr XXXVIII 230 2021 w sprawie przystapienia do sporządzenia miejscowego planu zagospodarowania przestrzennego dla terenów planowanej farmy fotowoltaicznej na obszarze obrębu Podgaj",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2021_07/BIPF5C69BC3C940C9Z/Uchwala_Nr_XXXVIII_230_2021_w_sprawie_przystapienia_do_sporzadzenia_miejscowego_planu_zagospodarowania_przestrzennego_dla_terenow_planowanej_farmy_fotowoltaicznej_na_obszarze_obrebu_Podgaj.pdf",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "a5975fc2188ece7ab4412cb1dd445479a4cef9ef": {
+      "found_at": "2026-02-16T20:05:39",
+      "last_checked": "2026-02-16T20:05:39",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Uchwała Nr XXXVIII 231 2021 w sprawie przystąpienia do sporządzenia miejscowego planu zagospodarowania przestrzennego dla terenów planowanej farmy fotowoltaicznej na obszarze obrębu Gołostowice",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2021_07/BIPF5C69BC3D9C0FDZ/Uchwala_Nr_XXXVIII_231_2021_w_sprawie_przystapienia_do_sporzadzenia_miejscowego_planu_zagospodarowania_przestrzennego_dla_terenow_planowanej_farmy_fotowoltaicznej_na_obszarze_obrebu_Golostowice.pdf",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "0b60812490a64159583d134de6b5843edbea6179": {
+      "found_at": "2026-02-16T20:05:49",
+      "last_checked": "2026-02-16T20:05:49",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Uchwała Nr LXVI 406 2023 w sprawie przystąpienia do sporzadzania miejscowego planu zagospodarowania przestrzennego Farma wiatrowa Podgaj - Karczyn",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2023_06/BIPF5FDEB779BAF09Z/Uchwala_Nr_LXVI_406_2023_w_sprawie_przystapienia_do_sporzadzania_miejscowego_planu_zagospodarowania_przestrzennego_Farma_wiatrowa_Podgaj_-_Karczyn.pdf",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "2502910df551bc97d2d9cce22213d1898b9b9561": {
+      "found_at": "2026-02-16T20:05:50",
+      "last_checked": "2026-02-16T20:05:50",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Uchwała Nr LXV 394 2023 w w sprawie uchwalenia miejscowego planu zagospodarowania przestrzennego dla miejscowości KONDRATOWICE",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2023_05/BIPF5FB67B6501168Z/Uchwala_Nr_LXV_394_2023_w_w_sprawie_uchwalenia_miejscowego_planu_zagospodarowania_przestrzennego_dla_miejscowosci_KONDRATOWICE.pdf",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "4dd18088c7a02ae9fa26cfa61290a2631b85fc7e": {
+      "found_at": "2026-02-16T20:05:50",
+      "last_checked": "2026-02-16T20:05:50",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Uchwała Nr LXV 395 2023 w w sprawie uchwalenia miejscowego planu zagospodarowania przestrzennego dla miejscowości PRUSY",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2023_05/BIPF5FB67B6C7424Z/Uchwala_Nr_LXV_395_2023_w_w_sprawie_uchwalenia_miejscowego_planu_zagospodarowania_przestrzennego_dla_miejscowosci_PRUSY.pdf",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "e86b75a8242cc558f80f9890bb85491384474db8": {
+      "found_at": "2026-02-16T20:05:50",
+      "last_checked": "2026-02-16T20:05:50",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Uchwała Nr LXV 396 2023 w sprawie uchwalenia zmiany Studium Uwarunkowań i Kierunków Zagospodarowania Przestrzennego Gminy Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2023_05/BIPF5FB67B5B235C0Z/Uchwala_Nr_LXV_396_2023_w_sprawie_uchwalenia_zmiany_Studium_Uwarunkowan_i_Kierunkow_Zagospodarowania_Przestrzennego_Gminy_Kondratowice.pdf",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "f8b40ea94575537ab0a9cb5e8700cd624c9ec2ac": {
+      "found_at": "2026-02-16T20:05:50",
+      "last_checked": "2026-02-16T20:05:50",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Uchwała Nr LXV 397 2023 w sprawie uchwalenia miejscowego planu zagospodarowania przestrzennego dla terenów planowanej farmy fotowoltaicznej na obszarze obrębu Podgaj - część I",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2023_05/BIPF5FB67B4EEAD14Z/Uchwala_Nr_LXV_397_2023_w_sprawie_uchwalenia_miejscowego_planu_zagospodarowania_przestrzennego_dla_terenow_planowanej_farmy_fotowoltaicznej_na_obszarze_obrebu_Podgaj_-_czesc_I.pdf",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "f7ce879c1acb20641a5907a810a8a0573d86bb60": {
+      "found_at": "2026-02-16T20:05:50",
+      "last_checked": "2026-02-16T20:05:50",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Uchwała Nr LXV 398 2023 w sprawie uchwalenia miejscowego planu zagospodarowania przestrzennego dla terenów planowanej farmy fotowoltaicznej na obszarze obrębu Gołostowice",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2023_05/BIPF5FB67B4C27AFAZ/Uchwala_Nr_LXV_398_2023_w_sprawie_uchwalenia_miejscowego_planu_zagospodarowania_przestrzennego_dla_terenow_planowanej_farmy_fotowoltaicznej_na_obszarze_obrebu_Golostowice.pdf",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "2c76de33415e63639763207b39eb1cf7c1626da4": {
+      "found_at": "2026-02-16T20:05:51",
+      "last_checked": "2026-02-16T20:05:51",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Uchwała Nr IX/56/2024 Rady Gminy Kondratowice z dnia 27 listopada 2024 roku w sprawie przystąpienia do sporządzenia planu ogólnego Gminy Kondratowice.",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2024_12/BIPF6286B394B4B77Z/uchwala_IX.56.2024.pdf",
+      "keywords": [
+        "planu ogólnego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "1c38b0f65e84fd32956ed2343338ad81d793c001": {
+      "found_at": "2026-02-16T20:05:53",
+      "last_checked": "2026-02-16T20:05:53",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Uchwała nr VI 29 2024 w sprawie oceny aktualności Studium uwarunkowań i kierunków zagospodarowania przestrzennego Gminy Kondratowice oraz miejscowych planów zagospodarowania przestrzennego na terenie Gminy Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2024_08/BIPF620E164F7E5ADZ/doc10345120240830090757.pdf",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "d218736ea98c503e7c020e989a136454583974e7": {
+      "found_at": "2026-02-16T20:05:53",
+      "last_checked": "2026-02-16T20:05:53",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Uchwała nr VI 30 2024 w sprawie przystąpienia do sporządzenia miejscowego planu zagospodarowania przestrzennego dla miejscowości Gołostowice (dz. 82/2)",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2024_08/BIPF620E164CC408DZ/doc10345220240830090915.pdf",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "4a3eb08a0848362f6bdc421e5df3d360839fa01c": {
+      "found_at": "2026-02-16T20:05:56",
+      "last_checked": "2026-02-16T20:05:56",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Uchwała Nr XXIII/150/2025 z dnia 17 grudnia w sprawie uchwalenia miejscowego planu zagospodarowania przestrzennego dla miejscowości GOŁOSTOWICE ( dz. 82/2",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2025_12/BIPF647284C12BF64Z/Uchwala_Nr_XXIII_150_2025_.pdf",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "bb27ba9a6d8e85d6f9405ee785b2df18b149f59f": {
+      "found_at": "2026-02-16T20:05:56",
+      "last_checked": "2026-02-16T20:05:56",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Uchwała Nr XXIII/151/2025 z dnia 17 grudnia w sprawie uchwalenia miejscowego planu zagospodarowania przestrzennego na obszarze Gminy Kondratowice, dla obrębu LIPOWA - SADOWICE – cześć I.",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2025_12/BIPF647283A4692BBZ/Uchwala_Nr_XXIII_151_2025.pdf",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "fe5095086e735ebc2ac6e1fb9a84242e5f7ca476": {
+      "found_at": "2026-02-16T20:05:57",
+      "last_checked": "2026-02-16T20:05:57",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Uchwała Nr XXI/130/2025 z dnia 29 października 2025 roku w sprawie przystąpienia do sporządzenia miejscowego planu zagospodarowania przestrzennego dla części miejscowości Kondratowice ( dz.nr 11/1)",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2025_10/BIPF642737AF0BA45Z/Uchwala_Nr_XXI_130_2025.pdf",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "60fb519f2d1527acabdebc28d427cd31206e3719": {
+      "found_at": "2026-02-16T20:06:58",
+      "last_checked": "2026-02-16T20:06:58",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Miejscowe plany zagospodarowania przestrzennego, menu 134 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=1&cid=134",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "123e3d7709bd6c7e4cba9ec92e81caec293d7291": {
+      "found_at": "2026-02-16T20:06:59",
+      "last_checked": "2026-02-16T20:06:59",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Studium uwarunkowań i kierunków zagospodarowania przestrzennego, menu 354 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=1&cid=354",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "9745a434852f6419a3a60462eb30a8f8254f24f9": {
+      "found_at": "2026-02-16T20:07:00",
+      "last_checked": "2026-02-16T20:07:00",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Studium uwarunkowań i kierunków zagospodarowania przestrzennego, rejestr BIPA5918DFEB77113Z, menu 354 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&code=BIPA5918DFEB77113Z&rpg=0",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "0956822084733c446039678ff7bb5a8a6e2e6ee5": {
+      "found_at": "2026-02-16T20:07:01",
+      "last_checked": "2026-02-16T20:07:01",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Uchwała Nr XIII/37/2003 - w sprawie przystąpienia do sporządzenia miejscowego planu zagospodarowania przestrzennego dla miejscowości Górka Sobocka, Gmina Kondratowice. - Gospodarka komunalna, menu 71, artykuł 129 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=71&id=129",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "07f689dcb52ceab0cb45502f1a8d8e1fabd14c31",
+      "status": "NOWE"
+    },
+    "9de36d6496f3e49fabf2a965f8a3fc4e0f01d585": {
+      "found_at": "2026-02-16T20:07:01",
+      "last_checked": "2026-02-16T20:07:01",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Uchwała Nr XIII/36/2003 - w sprawie przystąpienia do sporządzenia miejscowego planu zagospodarowania przestrzennego dla miejscowości Prusy, Gmina Kondratowice. - Gospodarka komunalna, menu 71, artykuł 128 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=71&id=128",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "9a8c5ecd09e514f9016955724d4ed6b4e35790eb",
+      "status": "NOWE"
+    },
+    "17e4deb1cbbf83fd9890d24a753b1a1ed06f4d1b": {
+      "found_at": "2026-02-16T20:07:02",
+      "last_checked": "2026-02-16T20:07:02",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Uchwała Nr XIII/35/2003 - w sprawie przystąpienia do sporządzenia miejscowego planu zagospodarowania przestrzennego dla miejscowości Kondratowice, Gmina Kondratowice. - Gospodarka komunalna, menu 71, artykuł 127 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=71&id=127",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "bcde91cd0ef3292c450e74b69668a78a95ea7002",
+      "status": "NOWE"
+    },
+    "70326f74291eedb7671a64882ff7a3bc37408a7c": {
+      "found_at": "2026-02-16T20:07:05",
+      "last_checked": "2026-02-16T20:07:05",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "MPZP Gołostowice fotowoltaika - Miejscowe plany zagospodarowania przestrzennego, menu 134, artykuł 1426 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=134&id=1426",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "38224d7f329f1ac37f2178b3c688e067fbb02f02",
+      "status": "NOWE"
+    },
+    "ac8ca9ae197a8ee1d2d3f3321b8a3f6fd71652c8": {
+      "found_at": "2026-02-16T20:07:06",
+      "last_checked": "2026-02-16T20:07:06",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "MPZP Podgaj fotowoltaika - Miejscowe plany zagospodarowania przestrzennego, menu 134, artykuł 1427 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=134&id=1427",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "70428f2fde649bd61082a4dbed3d907dd291cea2",
+      "status": "NOWE"
+    },
+    "cd0331a185b5986262e65f940d0bcc87cc0a5f18": {
+      "found_at": "2026-02-16T20:07:06",
+      "last_checked": "2026-02-16T20:07:06",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "MPZP Kondratowice - Miejscowe plany zagospodarowania przestrzennego, menu 134, artykuł 1726 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=134&id=1726",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "27ae21979b2afc66e882e9e54998ef3901644146",
+      "status": "NOWE"
+    },
+    "95c6252d85e61c36cfea6d2d03f3ee90d4075f85": {
+      "found_at": "2026-02-16T20:07:07",
+      "last_checked": "2026-02-16T20:07:07",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "MPZP Prusy - Miejscowe plany zagospodarowania przestrzennego, menu 134, artykuł 1725 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=134&id=1725",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "4ed4b5f8ebf604d6cd9d6f5b14fdf8a62aa59dd3",
+      "status": "NOWE"
+    },
+    "e7f8af36bc8394637f995f993a4ba276e0f57ddc": {
+      "found_at": "2026-02-16T20:07:07",
+      "last_checked": "2026-02-16T20:07:07",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "MPZP Gołostowice - Miejscowe plany zagospodarowania przestrzennego, menu 134, artykuł 1686 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=134&id=1686",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "d9f0aed6aec1931c2d60e17bcd9b442ecb6ffee3",
+      "status": "NOWE"
+    },
+    "e0dfac0804c24b32c946522881b8c6aa3761aac0": {
+      "found_at": "2026-02-16T20:07:07",
+      "last_checked": "2026-02-16T20:07:07",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "MPZP Podgaj - Miejscowe plany zagospodarowania przestrzennego, menu 134, artykuł 1687 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=134&id=1687",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "d9f0aed6aec1931c2d60e17bcd9b442ecb6ffee3",
+      "status": "NOWE"
+    },
+    "b655bb945ea874e76396809611bd50b9721a5c9d": {
+      "found_at": "2026-02-16T20:07:08",
+      "last_checked": "2026-02-16T20:07:08",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "OBWIESZCZENIE o przystąpieniu do sporządzenia miejscowego planu zagospodarowania przestrzennego dla obrębu LIPOWA-SADOWICE - Miejscowe plany zagospodarowania przestrzennego, menu 134, artykuł 1483 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=134&id=1483",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "30b922952b21a0b844589c5a93fb2a7c5d3670aa",
+      "status": "NOWE"
+    },
+    "1b2478ec346650ba2a2e65a4323601ad3b2f203f": {
+      "found_at": "2026-02-16T20:07:08",
+      "last_checked": "2026-02-16T20:07:08",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "OBWIESZCZENIE WÓJTA GMINY KONDRATOWICE o przystąpieniu do sporządzenia zmiany \"Studium Uwarunkowań i Kierunków Zagospodarowania Przestrzennego Gminy Kondratowice\" - Miejscowe plany zagospodarowania przestrzennego, menu 134, artykuł 1459 - B",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=134&id=1459",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "f7d889c905cd6e33c76d118bc55538e86f0949f6",
+      "status": "NOWE"
+    },
+    "b0e9b22b8d67000e20dff7cb2272106484d0f7a2": {
+      "found_at": "2026-02-16T20:07:08",
+      "last_checked": "2026-02-16T20:07:08",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Studium Uwarunkowań i Kierunków Zagospodarowania Przestrzennego Gminy Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2021_09/BIPF5CC0F64202728Z/na_BIP_od_15-09-2021_-_ogloszenie_Studium.docx",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "e81ec51363b4347bc498d6e63554e29ff0fb298c": {
+      "found_at": "2026-02-16T20:07:09",
+      "last_checked": "2026-02-16T20:07:09",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "OBWIESZCZENIE WÓJTA GMINY KONDRATOWICE o przystąpieniu do sporządzenia: miejscowego planu zagospodarowania przestrzennego dla terenów planowanej farmy fotowoltaicznej na obszarze obrębu Podgaj i Gołostowice  - Miejscowe plany zagospodarowan",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=134&id=1458",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "5ab4f7c1e3fe7a0c3b007a9e563342b9f0e1e308",
+      "status": "NOWE"
+    },
+    "46654ea010f474d1ed04a84a0d8d997f7370484f": {
+      "found_at": "2026-02-16T20:07:09",
+      "last_checked": "2026-02-16T20:07:09",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "ogłoszenie MPZP - farma fotowoltaiczna",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2021_09/BIPF5CC0F64145ED9Z/na_BIP_od_15-09-2021_-_ogloszeni_MPZP_-_farma_fotowoltaiczna.docx",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "1d145262e545630f99f39078603768f5f22b0b29": {
+      "found_at": "2026-02-16T20:07:12",
+      "last_checked": "2026-02-16T20:07:12",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "SUiKZP Podgaj fotowoltaika - Studium uwarunkowań i kierunków zagospodarowania przestrzennego, menu 354, artykuł 1428 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=354&id=1428",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "03cf8fd7436bba027889846985421714d82328e0": {
+      "found_at": "2026-02-16T20:07:12",
+      "last_checked": "2026-02-16T20:07:12",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "OBWIESZCZENIE  WÓJTA GMINY KONDRATOWICE  o wyłożeniu do publicznego wglądu projektu zmiany „Studium Uwarunkowań i Kierunków Zagospodarowania Przestrzennego Gminy Kondratowice” wraz z prognozą oddziaływania na środowisko - Studium uwarunkowa",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=354&id=1685",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "a133d3c09e7216fcbb0e066ae578cfd00dbcb85d",
+      "status": "NOWE"
+    },
+    "0fb9c5c994983b56534c396f8950f28bf9c211e2": {
+      "found_at": "2026-02-16T20:07:12",
+      "last_checked": "2026-02-16T20:07:12",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "OBWIESZCZENIE WÓJTA GMINY KONDRATOWICE o wyłożeniu do publicznego wglądu projektu zmiany „Studium Uwarunkowań i Kierunków Zagospodarowania Przestrzennego Gminy Kondratowice” wraz z prognozą oddziaływania na środowisko",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2023_01/BIPF5F31621DA43BZ/13_obwieszczenie_ogloszenie_o_wyloz_zmiana_Studium_Podgaj_1__-_na_BIP_i_tablice.doc",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "9d54c82268da97f86d106e1a2382234ce82b1736": {
+      "found_at": "2026-02-16T20:08:44",
+      "last_checked": "2026-02-16T20:08:44",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Plan Ogólny gminy Kondratowice , menu 462 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=1&cid=462",
+      "keywords": [
+        "plan ogólny"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "053271974ed8173df9b8fbb9a9da741dc24d3c4e": {
+      "found_at": "2026-02-16T20:08:44",
+      "last_checked": "2026-02-16T20:08:44",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Projekty miejscowych planów zagospodarowania przestrzennego, menu 463 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=1&cid=463",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "e5e773019b22fb1fc0a10a0a8e1efcc36f1b5edf": {
+      "found_at": "2026-02-16T20:08:45",
+      "last_checked": "2026-02-16T20:08:45",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Zawiadomienie o przedłużeniu terminy wydania decyzji środowiskowej- Rozbudowa zakładu  produkcyjnego Funke  Polska - Plany zagospodarowania przestrzennego i decyzje środowiskowe, menu 30, artykuł 2392 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=30&id=2392",
+      "keywords": [
+        "decyzje środowiskowe"
+      ],
+      "att_sig": "5d647443c26ac39d0cb4f24b9363e0f2b100aaef",
+      "status": "NOWE"
+    },
+    "236150d76e564f06198c123c9bad114edaa5a4ba": {
+      "found_at": "2026-02-16T20:08:45",
+      "last_checked": "2026-02-16T20:08:45",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Zawiadomienie o toczącym się postępowaniu - Funke DŚ - Plany zagospodarowania przestrzennego i decyzje środowiskowe, menu 30, artykuł 2381 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=30&id=2381",
+      "keywords": [
+        "decyzje środowiskowe"
+      ],
+      "att_sig": "0632a4abfa2dfdc44988d9d3bcdcb07de619388b",
+      "status": "NOWE"
+    },
+    "f7b92fd6f8febb94c6b1e35104541f1425911c4a": {
+      "found_at": "2026-02-16T20:08:46",
+      "last_checked": "2026-02-16T20:08:46",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Zawiadomienie o wydanym postępowaniu odwieszającym postępowanie - Funke. - Plany zagospodarowania przestrzennego i decyzje środowiskowe, menu 30, artykuł 2380 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=30&id=2380",
+      "keywords": [
+        "decyzje środowiskowe"
+      ],
+      "att_sig": "d7cc3949be9818717a3af87c53863f150450f1c5",
+      "status": "NOWE"
+    },
+    "1f902a085732d9f1599af44fc7894eae5db6b94e": {
+      "found_at": "2026-02-16T20:08:46",
+      "last_checked": "2026-02-16T20:08:46",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Zawiadomienie o postępowaniu administracyjnym prowadzonym przy udziale społeczeństwa - DŚ FUNKE - Plany zagospodarowania przestrzennego i decyzje środowiskowe, menu 30, artykuł 2379 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=30&id=2379",
+      "keywords": [
+        "decyzje środowiskowe"
+      ],
+      "att_sig": "880f653270c1dec199ce5d92ab60891b0e66b386",
+      "status": "NOWE"
+    },
+    "5d92d578c40ec25c669380b4bc337e8e1bb061af": {
+      "found_at": "2026-02-16T20:08:47",
+      "last_checked": "2026-02-16T20:08:47",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Postanowienie o podjęciu zawieszonego postepowania w sprawie DŚ - Funke. - Plany zagospodarowania przestrzennego i decyzje środowiskowe, menu 30, artykuł 2378 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=30&id=2378",
+      "keywords": [
+        "decyzje środowiskowe"
+      ],
+      "att_sig": "6f93366af4347c04d3e2c2221f77446b24cc495e",
+      "status": "NOWE"
+    },
+    "4d6c62fd73f2381db16f7079e03a626d952a304a": {
+      "found_at": "2026-02-16T20:08:47",
+      "last_checked": "2026-02-16T20:08:47",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "OGŁOSZENIE WÓJTA GMINY KONDRATOWICE o przystąpieniu do sporządzenia miejscowego planu zagospodarowania przestrzennego dla części miejscowości KONDRATOWICE (dz.nr 11/1) - Plany zagospodarowania przestrzennego i decyzje środowiskowe, menu 30,",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=30&id=2367",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "9d08c160b330ac6174e3c97a23480a8924b72367",
+      "status": "NOWE"
+    },
+    "9323566ceb52129ccb761b109a13849edc999c80": {
+      "found_at": "2026-02-16T20:08:48",
+      "last_checked": "2026-02-16T20:08:48",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "UCHWAŁA RADY GMINY KONDRATOWICE w sprawie uchwalenia miejscowego planu zagospodarowania przestrzennego dla miejscowości GOŁOSTOWICE (dz. 82/2 - Plany zagospodarowania przestrzennego i decyzje środowiskowe, menu 30, artykuł 2366 - BIP - Gmin",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=30&id=2366",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "058a279968c6a047eada28fb425f91318c45352a",
+      "status": "NOWE"
+    },
+    "3df990fcebece7033e155127d7bdeed0cdf12c64": {
+      "found_at": "2026-02-16T20:08:48",
+      "last_checked": "2026-02-16T20:08:48",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Gołostowice dz 82-2_tekst mpzp",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2025_12/BIPF6450A01BDF869Z/Golostowice_dz_82-2_tekst_mpzp_do_uchwalenia_11.2025.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "d24fc6302312bc0de5176b1d77742c3da8d76e53": {
+      "found_at": "2026-02-16T20:08:48",
+      "last_checked": "2026-02-16T20:08:48",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Zawiadomienie o wydanym postanowieniu - Funke - Plany zagospodarowania przestrzennego i decyzje środowiskowe, menu 30, artykuł 2341 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=30&id=2341",
+      "keywords": [
+        "decyzje środowiskowe"
+      ],
+      "att_sig": "d8956b432a426ca030ae4727f3b364aaa8c8c3ea",
+      "status": "NOWE"
+    },
+    "61f8761d50033e5704243bb0fb07b91da9f3be91": {
+      "found_at": "2026-02-16T20:08:49",
+      "last_checked": "2026-02-16T20:08:49",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Zawiadomienie o zawieszeniu postępowania - Funke - Plany zagospodarowania przestrzennego i decyzje środowiskowe, menu 30, artykuł 2340 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=30&id=2340",
+      "keywords": [
+        "decyzje środowiskowe"
+      ],
+      "att_sig": "7cae10000f5198139991144e6a30f7cad3d47220",
+      "status": "NOWE"
+    },
+    "142e4ed3e8b2a6d1b3275b4e1731e7e3a120f66c": {
+      "found_at": "2026-02-16T20:08:49",
+      "last_checked": "2026-02-16T20:08:49",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Zawiadomienie o wydanych postanowieniach dot. \"Rozbudowy zakładu produkcyjnego Funke w Kondratowicach  - Plany zagospodarowania przestrzennego i decyzje środowiskowe, menu 30, artykuł 2319 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=30&id=2319",
+      "keywords": [
+        "decyzje środowiskowe"
+      ],
+      "att_sig": "c0144d922760f0577b9503f9ae77a51f6b390726",
+      "status": "NOWE"
+    },
+    "0eca5505709792ef43b8451f3b7851e36cd729d1": {
+      "found_at": "2026-02-16T20:08:50",
+      "last_checked": "2026-02-16T20:08:50",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Plany zagospodarowania przestrzennego i decyzje środowiskowe, menu 30, strona 5 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=30&pg=4",
+      "keywords": [
+        "decyzja środowiskowa"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "6dceeb24c4d6277f236aa312ece10b4a4c0ee9c1": {
+      "found_at": "2026-02-16T20:08:50",
+      "last_checked": "2026-02-16T20:08:50",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "PLAN OGÓLNY GMINY KONDRATOWICE - INFORMATOR - Plan Ogólny gminy Kondratowice , menu 462, artykuł 2328 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=462&id=2328",
+      "keywords": [
+        "plan ogólny"
+      ],
+      "att_sig": "65f786840112a00f6779e58cead43e36e3b3c13c",
+      "status": "NOWE"
+    },
+    "00c53d954086a01f210c36a8fc4d6a858778f3bd": {
+      "found_at": "2026-02-16T20:08:51",
+      "last_checked": "2026-02-16T20:08:51",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Ogłoszenie Wójta Gminy Kondratowice o przystąpieniu do sporządzenia planu ogólnego gminy Kondratowice - Plan Ogólny gminy Kondratowice , menu 462, artykuł 2320 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=462&id=2320",
+      "keywords": [
+        "plan ogólny"
+      ],
+      "att_sig": "0ea97bb32dabda8667dfa4528349b33f741dfe5e",
+      "status": "NOWE"
+    },
+    "7b1d120769acc1477a418b6a25aed75cabe09cbd": {
+      "found_at": "2026-02-16T20:08:51",
+      "last_checked": "2026-02-16T20:08:51",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Ogłoszenie Wójta Gminy Kondratowice o przystąpieniu do sporządzenia planu ogólnego gminy Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2025_09/BIPF63F9BA26563EEZ/Plan_Ogolny_Gminy_Kondratowice_-_ogloszenie_prasa_25-09-2025.pdf",
+      "keywords": [
+        "planu ogólnego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "b102b779f01ffed193b2944c2573de3f28b28bb7": {
+      "found_at": "2026-02-16T20:08:51",
+      "last_checked": "2026-02-16T20:08:51",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "OBWIESZCZENIE o wyłożeniu do publicznego wglądu projektu miejscowego planu zagospodarowania przestrzennego na obszarze Gminy Kondratowice, dla obrębu LIPOWA-SADOWICE - Projekty miejscowych planów zagospodarowania przestrzennego, menu 463, a",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=463&id=2339",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "6149556b34689c9238147ee0be30d661ebede435",
+      "status": "NOWE"
+    },
+    "1f837cd055ad7137bf4eed5977f1a4fc73f5549a": {
+      "found_at": "2026-02-16T20:08:52",
+      "last_checked": "2026-02-16T20:08:52",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Projekt MPZP dla części m. Gołostowice - etap uzgadniania i opiniowania - Projekty miejscowych planów zagospodarowania przestrzennego, menu 463, artykuł 2317 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=463&id=2317",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "e8c21d8e16460b7623f9cf64cc009cc40ad4755d",
+      "status": "NOWE"
+    },
+    "c4831e5c48fa6c9bf5cbedfef37044b30f2ed550": {
+      "found_at": "2026-02-16T20:08:52",
+      "last_checked": "2026-02-16T20:08:52",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Informacje w sprawie projektu  miejscowego planu zagospodarowania przestrzennego dla miejscowości GOŁOSTOWICE (dz. 82/2)  - Projekty miejscowych planów zagospodarowania przestrzennego, menu 463, artykuł 2321 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=463&id=2321",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "76ded788f07030878e63c15cd3199cbb3c0771c4",
+      "status": "NOWE"
+    },
+    "26796a1c68f2849f0527e654bdfe35cdc9b93d1c": {
+      "found_at": "2026-02-16T20:08:52",
+      "last_checked": "2026-02-16T20:08:52",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "OGŁOSZENIE WÓJTA GMINY KONDRATOWICE o rozpoczęciu konsultacji społecznych dotyczących projektu miejscowego planu zagospodarowania przestrzennego dla miejscowości GOŁOSTOWICE (dz. 82/2)",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2025_09/BIPF63F9BA27F1040Z/Golostowice_dz_82-2_ogloszenie_o_konsultacjach_spolecznych_09.2025_2__1_.pdf",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "e567fe4ecf4bfce9c3e4fdfb2ac7abfca536389c": {
+      "found_at": "2026-02-16T20:08:52",
+      "last_checked": "2026-02-16T20:08:52",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Uchwała nr -- Rady Gminy Kondratowice z dnia ---- w sprawie uchwalenia miejscowego planu zagospodarowania przestrzennego dla miejscowości Gołostowice (dz. 82/2)- projekt",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2025_09/BIPF63F9BA2B0A724Z/Golostowice_dz_82-2_tekst_mpzp_konsultacje_spoleczzne_09.2025_UG.pdf",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "1d941a81622cc8c7dc72ad12ae70ae3a73ed8fa4": {
+      "found_at": "2026-02-16T20:08:52",
+      "last_checked": "2026-02-16T20:08:52",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "PROGNOZA ODDZIAŁYWANIA NA ŚRODOWISKO SPORZĄDZONA DO PROJEKTU MIEJSCOWEGO PLANU ZAGOSPODAROWANIA PRZESTRZENNEGO DLA MIEJSCOWOŚCI GOŁOSTOWICE (DZ. 82/2)",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2025_09/BIPF63F9BA2989D5BZ/Golostowice_dz_82-2_tekst_prognozy_srodowiskowej_09.2025.pdf",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "92e219c333384bdce67f003565a0784d2955d876": {
+      "found_at": "2026-02-16T20:09:06",
+      "last_checked": "2026-02-16T20:09:06",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Studium uwarunkowań i kierunków zagospodarowania przestrzennego gminy - Zamierzenia działań władzy uchwałodawczej oraz wykonawczej, menu 72, artykuł 130 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=72&id=130",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "7968105c2228b440f92ee8004cb9de2d6e0eb43e",
+      "status": "NOWE"
+    },
+    "34c8d418d6a37d6b984757b28eb960d119eb64fe": {
+      "found_at": "2026-02-16T20:09:06",
+      "last_checked": "2026-02-16T20:09:06",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Studium uwarunkowań i kierunków zagospodarowania przestrzennego gminy",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2012_12/BIPF4D1D53B9C2774Z/1_KONDRATOWICE_STUDIUM_TEKST.pdf",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "a9bee86d65e6c6caabd9271a6a760b7c636de3dc": {
+      "found_at": "2026-02-16T20:13:39",
+      "last_checked": "2026-02-16T20:13:39",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "OGŁOSZENIE WÓJTA GMINY KONDRATOWICE o przystąpieniu do sporządzenia miejscowego planu zagospodarowania - Ogłoszenia, konkursy, menu 76, artykuł 581 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=76&id=581",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "135f8712a298ddb59b97095a712ba47e4d123748",
+      "status": "NOWE"
+    },
+    "6a8509b0eb4fdf834f02801e9d9fb8737b3800a3": {
+      "found_at": "2026-02-16T20:13:39",
+      "last_checked": "2026-02-16T20:13:39",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "OGŁOSZENIE WÓJTA GMINY KONDRATOWICE o przystąpieniu do sporządzenia miejscowego planu zagospodarowania",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2016_01/BIPF529350D51F504Z/OGLOSZENIE_prasa_-_mpzp.docx",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "1079221ca4e1d6cbcde6f2d15ad13ecb12dbdd92": {
+      "found_at": "2026-02-16T20:13:40",
+      "last_checked": "2026-02-16T20:13:40",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "OGŁOSZENIE WÓJTA GMINY KONDRATOWICE o przystąpieniu do sporządzenia miejscowego planu zagospodarowania - Ogłoszenia, konkursy, menu 76, artykuł 452 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=76&id=452",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "db2e870bec4cd895ceacb08ed2d03eda487cad3f",
+      "status": "NOWE"
+    },
+    "890f3f1c27f1a2403575026a3ba3d83f2497dbfc": {
+      "found_at": "2026-02-16T20:13:40",
+      "last_checked": "2026-02-16T20:13:40",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "OGŁOSZENIE O PONOWNYM WYŁOŻENIU DO PUBLICZNEGO WGLĄDU PROJEKTU MIEJSCOWEGO PLANU ZAGOSPODAROWANIA PRZESTRZENNEGO MIEJSCOWOŚCI PRUSY - Ogłoszenia, konkursy, menu 76, artykuł 214 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=76&id=214",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "b7d1650aa4786ed5baffc95bd104958fb608dcad",
+      "status": "NOWE"
+    },
+    "55c29b0f500a7e80d507fa605442e0fb02875035": {
+      "found_at": "2026-02-16T20:13:40",
+      "last_checked": "2026-02-16T20:13:40",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "OGŁOSZENIE O PONOWNYM WYŁOŻENIU DO PUBLICZNEGO WGLĄDU PROJEKTU MIEJSCOWEGO PLANU ZAGOSPODAROWANIA PRZESTRZENNEGO MIEJSCOWOŚCI PRUSY",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2013_06/BIPF4DF81EAB90988Z/ponowne_wylozenie_planu_prusy.pdf",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "d1579341e58aa8edec89fb92aa341a02a696b3a4": {
+      "found_at": "2026-02-16T20:13:41",
+      "last_checked": "2026-02-16T20:13:41",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "OGŁOSZENIE O PONOWNYM WYŁOŻENIU DO PUBLICZNEGO WGLĄDU PROJEKTU MIEJSCOWEGO PLANU ZAGOSPODAROWANIA PRZESTRZENNEGO MIEJSCOWOŚCI KONDRATOWICE - Ogłoszenia, konkursy, menu 76, artykuł 213 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=76&id=213",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "32a9cd675d15e69cad69d312663cad3b0cf2b7f5",
+      "status": "NOWE"
+    },
+    "5fb4f0c86d3199da2a92d082dd84a32f1b36ddff": {
+      "found_at": "2026-02-16T20:13:41",
+      "last_checked": "2026-02-16T20:13:41",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "OGŁOSZENIE O PONOWNYM WYŁOŻENIU DO PUBLICZNEGO WGLĄDU PROJEKTU MIEJSCOWEGO PLANU ZAGOSPODAROWANIA PRZESTRZENNEGO MIEJSCOWOŚCI KONDRATOWICE",
+      "url": "https://kondratowice.biuletyn.net/fls/bip_pliki/2013_06/BIPF4DF81EA842B2CZ/ponowne_wylozenie_planu_kondratowice.pdf",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "a843e83b5e1f7ff94bda81b384c55bfd5b47a768": {
+      "found_at": "2026-02-16T20:13:41",
+      "last_checked": "2026-02-16T20:13:41",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "OGŁOSZENIE O PONOWNYM WYŁOŻENIU DO PUBLICZNEGO WGLĄDU PROJEKTU MIEJSCOWEGO PLANU ZAGOSPODAROWANIA PRZESTRZENNEGO MIEJSCOWOŚCI BIAŁOBRZEZIE - Ogłoszenia, konkursy, menu 76, artykuł 144 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=76&id=144",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "76d17826a2f01ccf476442ee4ef83c077d832a48",
+      "status": "NOWE"
+    },
+    "853f0551f0d474c58c37089eb46a76666cc98984": {
+      "found_at": "2026-02-16T20:13:42",
+      "last_checked": "2026-02-16T20:13:42",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Ogłoszenie o ponownym wyłożeniu do publicznego wglądu projektu miejscowego planu zagospodarowania przestrzennego miejscowości Białobrzezie - Ogłoszenia, konkursy, menu 76, artykuł 143 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=2&cid=76&id=143",
       "keywords": [
         "miejscowego"
       ],
