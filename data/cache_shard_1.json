@@ -898,6 +898,62 @@
       ],
       "att_sig": "5205d7bb98c4935b63d17bebdb79fb343042d64a",
       "status": "NOWE"
+    },
+    "59276dd35d39ea7cfd8e496d904a1cf968241231": {
+      "found_at": "2026-02-16T20:22:45",
+      "last_checked": "2026-02-16T20:22:45",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Decyzja o środowiskowych uwarunkowaniach zgody na realizację przedsięwzięcia - Rolnictwo i ochrona środowiska, menu 1078, karta informacyjna 242 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1078&id=242",
+      "keywords": [
+        "decyzja o środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "af6d4b6218aea04afe54b4f3308b7c28bbc2194b",
+      "status": "NOWE"
+    },
+    "133e63084ae916d305fac6ec055ba5004bba7f31": {
+      "found_at": "2026-02-16T20:22:56",
+      "last_checked": "2026-02-16T20:22:56",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Wydanie wypisu i wyrysu z miejscowego planu zagospodarowania przestrzennego - Sprawy budowlane, menu 1204, karta informacyjna 308 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1204&id=308",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "11ebdcca3c0feb1dfbc9ee416abe03ae9cb49a18",
+      "status": "NOWE"
+    },
+    "4239769a1aeb186df860a30221e23cf7b0b9c2e9": {
+      "found_at": "2026-02-16T20:23:58",
+      "last_checked": "2026-02-16T20:23:58",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Studium Uwarunkowań i Kierunków Zagospodarowania Przestrzennego Gminy Bojanowo - BIP Urząd Miejski w Bojanowie",
+      "url": "http://www.biuletyn.net/nt-bin/start.asp?menu=270&podmenu=270&podmiot=gminabojanowo%2F&str=1&strona=13&typ=podmenu&typmenu=13",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "46bf3767019f6090ce492335d5dafd591555d126",
+      "status": "NOWE"
+    },
+    "dffc6de967d20f579494fc5965e05cdddea47f67": {
+      "found_at": "2026-02-16T20:24:23",
+      "last_checked": "2026-02-16T20:24:23",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Strona startowa - BIP Urząd Miejski w Bojanowie",
+      "url": "http://www.biuletyn.net/nt-bin/start.asp?menu=78&podmenu=78&podmiot=gminabojanowo%2F&str=1&strona=17&typ=podmenu&typmenu=17",
+      "keywords": [
+        "decyzja o środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "46bf3767019f6090ce492335d5dafd591555d126",
+      "status": "NOWE"
     }
   },
   "gmina_seeds": {
