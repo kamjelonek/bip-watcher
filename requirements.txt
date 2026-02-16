@@ -2,3 +2,5 @@ aiohttp
 requests
 beautifulsoup4
 pywin32; platform_system=="Windows"
+lxml>=4.9.0
+
