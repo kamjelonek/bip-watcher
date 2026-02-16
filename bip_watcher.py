@@ -1,20 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 BIP WATCHER v2.3 (CELL + VS Code / Windows) - PRODUCTION
-
-ZMIANY (bez rozjeżdżania Twojej logiki):
-- ✅ Działa jako KOMÓRKA (ipykernel / Interactive Window) i jako plik (VS Code)
-- ✅ Cache URL nadal przyspiesza kolejne runy (skip dla mało-istotnych URLi)
-- ✅ Dla stron "high-risk" (ogłoszenia/MPZP/OZE/wiatr/PV) robimy RESCAN co run -> wykrywanie zmian
-- ✅ Szybkie przeszukiwanie TREŚCI strony pod Twoje KEYWORDS (limit znaków, bez kosztownych analiz)
-- ✅ Fingerprint treści strony (page_fprints) -> wykrywanie zmian w ogłoszeniach przy tym samym URL
-- ✅ Lepsze zbieranie linków: mniej śmieci, mniej duplikatów, szybciej
-- ✅ Cache schema upgrade bez kasowania starych danych
-
-PATCH v2.3.1 (minimalny, zgodny z Twoją architekturą):
-- ✅ NIE loguj drugi raz tych samych stron/ogłoszeń między runami (mail tylko NOWE/ZMIANA)
-- ✅ HTML: dedup na (final_url + keyword), a "ZMIANA" tylko gdy fp faktycznie się zmieni
-- ✅ Link/PDF: dedup na canonical_url(abs_u), żeby warianty URL nie robiły "NOWE"
+... (komentarz bez zmian) ...
 """
 
 import os, csv, json, hashlib, asyncio, re, time, smtplib, warnings, socket, random, signal
@@ -54,12 +41,14 @@ def get_shard_index():
 def _git_commit_file(filepath, message):
     """Git add, commit, push a single file (synchronous)."""
     try:
-        subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=False, capture_output=True)
-        subprocess.run(["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"], check=False, capture_output=True)
-        subprocess.run(["git", "pull", "--rebase"], check=False, capture_output=True)
-        subprocess.run(["git", "add", str(filepath)], check=False, capture_output=True)
-        subprocess.run(["git", "commit", "-m", message], check=False, capture_output=True)
-        subprocess.run(["git", "push"], check=False, capture_output=True)
+        # Dodane print aby widzieć w logach co się dzieje
+        print(f"📤 Git commit: {filepath} with message: {message}")
+        subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=False)
+        subprocess.run(["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"], check=False)
+        subprocess.run(["git", "pull", "--rebase"], check=False)
+        subprocess.run(["git", "add", str(filepath)], check=False)
+        subprocess.run(["git", "commit", "-m", message], check=False)
+        subprocess.run(["git", "push"], check=False)
     except Exception as e:
         print(f"⚠️ git error: {e}")
 
@@ -81,6 +70,8 @@ async def save_shard_cache_and_commit(loop=None):
     out["page_fprints"] = state.page_fprints or {}
     out["gmina_frontiers"] = state.gmina_frontiers or {}
     out["gmina_retry"] = state.gmina_retry or {}
+    # Dodane przechowywanie martwych stron
+    out["dead_urls"] = getattr(state, 'dead_urls', {})
 
     filename = BASE_DIR / f"cache_shard_{shard}.json"
     try:
@@ -114,31 +105,24 @@ CRAWL_ALL_INTERNAL_LINKS = True  # ✅ bierz wszystko z domeny, poza ignorowanym
 BOOTSTRAP_MODE = False
 FORCE_PHASE1_REDISCOVERY = True   # ✅ Phase1 zawsze robi discovery, seed_cache tylko jako dodatek
 
-
 # ===================== EMAIL =====================
 EMAIL_TO = "planowanie@wpd-polska.pl"
 ENABLE_EMAIL = False
 
 # ===================== KEYWORDS (NAGŁÓWKI-ONLY / MINIMAL) =====================
 KEYWORDS = [
-
     # mpzp / plany
     "mpzp", "miejscowy plan", "plan miejscowy", "miejscowego", "miejscowy plan zagospodarowania przestrzennego", 
     "projekt mpzp", "miejscowego planu zagospodarowania przestrzennego",
-
     # plan ogólny
     "plan ogólny", "plan ogolny", "planu ogólnego",
-
     # studium
     "studium uwarunkowań", "studium uwarunkowan",
-
     # decyzje
     "warunki zabudowy", "decyzja o warunkach zabudowy", "decyzje o warunkach zabudowy",
-
     "decyzja środowiskowa", "decyzje środowiskowe",
     "decyzja o środowiskowych uwarunkowaniach", "środowiskowych uwarunkowaniach",
     "ooś", "oos", "kip", "raport o oddziaływaniu na środowisko",
-
     # OZE: wiatr / PV
     "oze",
     "elektrownia wiatrowa", "farma wiatrowa", "wiatr", "wiatrow", "turbina",
@@ -146,12 +130,9 @@ KEYWORDS = [
 ]
 
 # ===================== KEYWORD MATCH CONFIG (PATCH SAFETY) =====================
-# Jeśli nie chcesz specjalnego traktowania, zostaw pusty set().
-# Możesz też dodać tu krótkie tokeny, które mają być łapane tylko jako osobne słowa.
 STRICT_ONLY = {
     "pv", "wz", "ooś", "oos", "kip", "mpzp", "oze"
 }
-
 
 def keyword_match_in_blob(blob: str):
     """
@@ -178,8 +159,6 @@ def keyword_match_in_blob(blob: str):
                 return (True, kw)
 
     return (False, None)
-
-
 
 # ===================== IGNORE =====================
 IGNORE_URL_SUBSTR = [
@@ -238,7 +217,6 @@ FAST_TEXT_MAX_CHARS = 3500
 HIT_RECHECK_TTL_HOURS = 168   # HIT/NOWE/ZMIANA: recheck co 24h
 NO_MATCH_RECHECK_TTL_HOURS = 168  # NO_MATCH: recheck co 24 godziny (żeby złapać późniejsze publikacje)
 FAST_FPRINT_MAX_CHARS = 6000
-
 
 # ===================== USER AGENTS ROTATION =====================
 USER_AGENTS = [
@@ -301,7 +279,7 @@ rate_limiter = DomainRateLimiter(
     min_delay=env_float("RATE_MIN_DELAY", 0.5),
     max_delay=env_float("RATE_MAX_DELAY", 1.5),
 )
-# ===================== GLOBAL STATE =====================
+
 # ===================== GLOBAL STATE =====================
 class GlobalState:
     def __init__(self):
@@ -316,6 +294,8 @@ class GlobalState:
         self.diag_errors = []
         self.gmina_frontiers = {}   # gmina_cache_key -> list[[url, depth], ...]
         self.gmina_retry = {}       # gmina_cache_key -> list[url, ...]
+        # NOWE: słownik na martwe strony (404/410)
+        self.dead_urls = {}          # klucz: dead_{gkey}, wartość: lista url-i
 
         # PATCH: ochrona przed race-condition (wiele workerów) + dedup maili per-run
         self.cache_lock = asyncio.Lock()
@@ -325,13 +305,10 @@ class GlobalState:
         self.shutdown_requested = True
         print("\n⚠️  CTRL+C detected - graceful shutdown...", flush=True)
 
-
-# ✅ MUSI BYĆ UTWORZONE PRZED signal_handler
 state = GlobalState()
 
 RUN_DEADLINE_MIN = env_int("RUN_DEADLINE_MIN", 0)
 GLOBAL_T0 = time.time()
-
 
 def signal_handler(signum, frame):
     state.request_shutdown()
@@ -340,10 +317,6 @@ signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
 # ===================== UTILS =====================
-
-
-
-
 def iso_now():
     return datetime.now()
 
@@ -369,12 +342,7 @@ def pick_rows_for_shard(rows, shard_index: int, shard_total: int):
             out.append((name, url))
     return out
 
-
 def should_recheck_hit(prev: dict) -> bool:
-    """
-    True -> wolno/fajnie sprawdzić ponownie (minął TTL)
-    False -> za wcześnie, skip
-    """
     if not prev or not isinstance(prev, dict):
         return True
     last = prev.get("last_checked") or prev.get("found_at") or ""
@@ -384,9 +352,6 @@ def should_recheck_hit(prev: dict) -> bool:
     return (iso_now() - dt) >= timedelta(hours=HIT_RECHECK_TTL_HOURS)
 
 def should_recheck_no_match(prev: dict) -> bool:
-    """
-    Recheck NO_MATCH rzadziej, bo strony potrafią "nagle" dostać MPZP/OZE po czasie.
-    """
     if not prev or not isinstance(prev, dict):
         return True
     last = prev.get("last_checked") or prev.get("found_at") or ""
@@ -395,46 +360,31 @@ def should_recheck_no_match(prev: dict) -> bool:
         return True
     return (iso_now() - dt) >= timedelta(hours=NO_MATCH_RECHECK_TTL_HOURS)
 
-
 def is_monitored_hit(prev: dict) -> bool:
-    """
-    Monitorujemy tylko te ogłoszenia, które kiedyś były istotne.
-    """
     if not prev or not isinstance(prev, dict):
         return False
     return prev.get("status") in {"NOWE", "ZMIANA", "HIT"}
 
-
 def export_summary_to_onedrive():
-    """
-    Kopiuje summary_report.txt do OneDrive jako nowy plik z timestampem.
-    Power Automate odpali się na 'file created'.
-    """
     try:
         if not ONEDRIVE_EXPORT_DIR or str(ONEDRIVE_EXPORT_DIR).strip() == "":
             print("ℹ️ OneDrive export: pominięty (BIP_EXPORT_DIR nie ustawione).")
             return
-
         if not ONEDRIVE_EXPORT_DIR.exists():
             print(f"ℹ️ OneDrive export: folder nie istnieje: {ONEDRIVE_EXPORT_DIR}")
             return
-
         if not SUMMARY_FILE.exists():
             print(f"ℹ️ OneDrive export: brak pliku summary: {SUMMARY_FILE}")
             return
-
         ts = datetime.now().strftime("%Y-%m-%d_%H%M%S")
         out_file = ONEDRIVE_EXPORT_DIR / f"summary_{ts}.txt"
-
         def _do():
             data = SUMMARY_FILE.read_text(encoding="utf-8", errors="ignore")
             out_file.write_text(data, encoding="utf-8")
         retry_io(_do, tries=5, base_sleep=0.4)
-
         print(f"✅ OneDrive export: {out_file}")
     except Exception as e:
         print(f"⚠️ OneDrive export failed: {e}")
-
 
 def now_iso():
     return datetime.now().isoformat(timespec="seconds")
@@ -443,10 +393,6 @@ def sha1(s: str) -> str:
     return hashlib.sha1(s.encode("utf-8", errors="ignore")).hexdigest()
 
 def retry_io(action, tries: int = 5, base_sleep: float = 0.6):
-    """
-    Minimalny retry na PermissionError (np. Excel/AV blokuje plik na P:\).
-    action: funkcja bez argumentów
-    """
     last_exc = None
     for i in range(tries):
         try:
@@ -455,7 +401,6 @@ def retry_io(action, tries: int = 5, base_sleep: float = 0.6):
             last_exc = e
             time.sleep(base_sleep + (i * 0.4) + random.uniform(0.0, 0.3))
         except OSError as e:
-            # czasem blokada daje OSError zamiast PermissionError
             msg = str(e).lower()
             if "permission" in msg or "access" in msg or "denied" in msg:
                 last_exc = e
@@ -464,7 +409,6 @@ def retry_io(action, tries: int = 5, base_sleep: float = 0.6):
                 raise
     if last_exc:
         raise last_exc
-
 
 def normalize_url(url: str) -> str:
     try:
@@ -482,46 +426,26 @@ def normalize_url(url: str) -> str:
                 "lang","locale","language"
             }:
                 continue
-
-            # ✅ zapisuj klucz jako lowercase -> stabilniej
             q.append((kl, v))
-
-        # ✅ KLUCZOWE: sortuj parametry, żeby ?a=1&b=2 == ?b=2&a=1
         q.sort(key=lambda kv: kv[0])
-
         return urlunparse(p._replace(fragment="", query=urlencode(q, doseq=True)))
     except Exception:
         return url
 
-
-# --- PATCH: kanoniczny URL dla deduplikacji (minimalnie, bez zmiany logiki crawl) ---
 def canonical_url(url: str) -> str:
-    """
-    Minimalna kanonizacja do deduplikacji:
-    - normalize_url() usuwa fragment i śmieci query
-    - wymusza https (bo część BIPów skacze http/https)
-    - usuwa www. (bo czasem redirectuje)
-    - usuwa trailing slash poza root
-    """
     u = normalize_url((url or "").strip())
     try:
         p = urlparse(u)
-
         scheme = (p.scheme or "https").lower()
         if scheme not in ("http", "https"):
             scheme = "https"
-        # wymuś https (żeby http/https nie robiło dubli)
         scheme = "https"
-
         netloc = (p.netloc or "").lower().strip()
         if netloc.startswith("www."):
             netloc = netloc[4:]
-
         path = p.path or "/"
         if path != "/" and path.endswith("/"):
             path = path[:-1]
-
-        # query już oczyszczone w normalize_url(), ale zostawiamy to co zostało (posortowane jest przez urlencode)
         return urlunparse((scheme, netloc, path, "", p.query, ""))
     except Exception:
         return u
@@ -534,10 +458,6 @@ def is_home_url(u: str) -> bool:
         return False
 
 def is_listing_url(u: str) -> bool:
-    """
-    Listing = kategorie/listy/archiwa/paginacja itp.
-    UWAGA: NIE używamy tu słów typu mpzp/studium/planowanie – bo artykuły też to mają w URL.
-    """
     low = (u or "").lower()
     return any(x in low for x in [
         "/kategorie/", "/kategoria/", "kategoria=", "category", "/category/",
@@ -548,25 +468,14 @@ def is_listing_url(u: str) -> bool:
     ])
 
 def is_phase1_listing(u: str) -> bool:
-    """
-    Phase1 to DISCOVERY. Listing/home/paginacja muszą być odświeżane co run,
-    bo to są "spisy treści", które mogą dostać nowe linki w dowolnym momencie.
-    """
     return is_listing_url(u) or is_home_url(u)
-
 
 def url_key(url: str) -> str:
     return sha1(canonical_url(url))
 
 def migrate_content_seen_to_url_dedup(content_seen: dict):
-    """
-    Migracja wsteczna: stary cache miał klucze sha1(url|keyword).
-    Nowy dedup to sha1(url).
-    Dzięki temu nie dostaniesz fali 'NOWE' po aktualizacji.
-    """
     if not isinstance(content_seen, dict) or not content_seen:
         return
-
     added = 0
     for _k, meta in list(content_seen.items()):
         if not isinstance(meta, dict):
@@ -574,18 +483,13 @@ def migrate_content_seen_to_url_dedup(content_seen: dict):
         url = meta.get("url")
         if not url:
             continue
-
         url_dedup = sha1(canonical_url(url))
         if url_dedup in content_seen:
-            # już jest nowy wpis
             continue
-
-        # budujemy nowy rekord w nowym formacie
         kw = meta.get("keyword")
         kws = []
         if kw:
             kws = [kw]
-
         content_seen[url_dedup] = {
             "found_at": meta.get("found_at", now_iso()),
             "gmina": meta.get("gmina", ""),
@@ -596,10 +500,8 @@ def migrate_content_seen_to_url_dedup(content_seen: dict):
             "status": meta.get("status", "SEEN"),
         }
         added += 1
-
     if added:
         print(f"🔁 Migrated content_seen to url-dedup: added {added} url-keys (compat mode)")
-
 
 def is_valid_url(url: str) -> bool:
     try:
@@ -620,43 +522,24 @@ def anchor_is_ignored(text: str) -> bool:
 
 def should_skip_href(abs_href: str) -> bool:
     u = (abs_href or "").lower()
-
-    # 🚫 HARD EXCEPTION: Gmina Domaniów – cykliczna "Prognoza pogody" (ignorujemy zawsze)
     try:
         host = urlparse(abs_href).netloc.lower()
         if ("gminadomaniow.pl" in host) and ("/aktualnosci/" in u) and ("prognoza-pogody" in u):
             return True
     except Exception:
         pass
-
-    # --- ARCHIWALNE WERSJE (np. bip.* /wersja/9) ---
     if re.search(r"/wersja/\d+/?$", u):
         return True
-
     if url_is_ignored(u):
         return True
-
-    # skip typowych plików (obrazy/doc/zip itd.)
     if any(u.endswith(ext) for ext in BAD_EXT):
         return True
-
-    # ✅ KLUCZ: nie crawl'uj ZAŁĄCZNIKÓW (wliczamy je sygnaturą na stronie HTML)
     if any(u.endswith(ext) for ext in ATT_EXT):
         return True
-
     return False
-
-
 
 def is_wz_or_dus_keyword(kw: str) -> bool:
-    """
-    TRYB "ZMIANY DLA WSZYSTKIEGO":
-    Nic nie blokuje ZMIANA. Każda strona (także WZ/DUŚ/OOŚ/KIP)
-    może wygenerować ZMIANA, jeśli zmieniły się załączniki (att_sig).
-    """
     return False
-
-
 
 def base_domain(host: str) -> str:
     h = (host or "").lower().strip()
@@ -689,18 +572,10 @@ def safe_soup(html: str):
         return None
 
 # ===================== SITEMAP + ROBOTS + JS HEAVY =====================
-
 def detect_js_app(html: str) -> bool:
-    """
-    Heurystyka: wykrywa strony, które wyglądają jak SPA (React/Vue/Next/Nuxt),
-    gdzie w HTML jest mało treści, a reszta ładuje się przez JS.
-    """
     if not html:
         return False
-
     low = html.lower()
-
-    # typowe markery SPA
     markers = [
         'id="root"', "id='root'",
         'id="app"', "id='app'",
@@ -710,18 +585,14 @@ def detect_js_app(html: str) -> bool:
         "webpack", "vite",
     ]
     has_marker = any(m in low for m in markers)
-
-    # bardzo mało tekstu "widocznego" (prosta miara)
     try:
         soup = safe_soup(html)
         if not soup:
             return has_marker
         txt = soup.get_text(" ", strip=True)
         txt = re.sub(r"\s+", " ", txt).strip()
-        # jeśli tekstu jest naprawdę mało, a są markery -> JS-heavy
         if len(txt) < 200 and has_marker:
             return True
-        # jeśli tekstu mało i bardzo dużo skryptów, też podejrzane
         scripts = len(soup.find_all("script"))
         if len(txt) < 120 and scripts >= 8:
             return True
@@ -729,12 +600,7 @@ def detect_js_app(html: str) -> bool:
     except Exception:
         return has_marker
 
-
 def extract_sitemaps_from_robots(robots_text: str) -> list:
-    """
-    Wyciąga linki do sitemap z robots.txt.
-    Zwraca listę URLi sitemap.
-    """
     out = []
     if not robots_text:
         return out
@@ -742,12 +608,10 @@ def extract_sitemaps_from_robots(robots_text: str) -> list:
         line = (line or "").strip()
         if not line:
             continue
-        # robots: "Sitemap: https://example.com/sitemap.xml"
         if line.lower().startswith("sitemap:"):
             sm = line.split(":", 1)[-1].strip()
             if sm and is_valid_url(sm):
                 out.append(normalize_url(sm))
-    # dedup
     uniq = []
     seen = set()
     for u in out:
@@ -757,59 +621,40 @@ def extract_sitemaps_from_robots(robots_text: str) -> list:
             uniq.append(u)
     return uniq
 
-
 def _looks_like_xml_sitemap(text: str) -> bool:
     if not text:
         return False
     low = text.lstrip().lower()
     return ("<urlset" in low[:4000]) or ("<sitemapindex" in low[:4000]) or ("xmlns=\"http://www.sitemaps.org" in low[:4000])
 
-
 def parse_sitemap_xml(xml_text: str, base_url: str = "") -> tuple:
-    """
-    Parsuje XML sitemap (urlset albo sitemapindex).
-    Zwraca:
-      (urls, sitemap_children)
-    gdzie:
-      - urls = lista URL z <url><loc>
-      - sitemap_children = lista URL z <sitemap><loc> (czyli sitemap_index)
-    """
     urls = []
     children = []
     if not xml_text:
         return urls, children
-
     try:
         soup = BeautifulSoup(xml_text, "xml")
         if soup is None:
             return urls, children
-
-        # sitemap index
         for sm in soup.find_all("sitemap"):
             loc = sm.find("loc")
             if loc and loc.get_text(strip=True):
                 u = loc.get_text(strip=True)
                 if is_valid_url(u):
                     children.append(normalize_url(u))
-
-        # urlset
         for uel in soup.find_all("url"):
             loc = uel.find("loc")
             if loc and loc.get_text(strip=True):
                 u = loc.get_text(strip=True)
                 if is_valid_url(u):
                     urls.append(normalize_url(u))
-
     except Exception:
-        # fallback: regex (gdy xml parser się wywali)
         try:
             for m in re.findall(r"<loc>\s*(https?://[^<\s]+)\s*</loc>", xml_text, flags=re.IGNORECASE):
                 if is_valid_url(m):
                     urls.append(normalize_url(m))
         except Exception:
             pass
-
-    # dedup
     def _dedup(lst):
         seen = set()
         out = []
@@ -820,21 +665,13 @@ def parse_sitemap_xml(xml_text: str, base_url: str = "") -> tuple:
             seen.add(cx)
             out.append(x)
         return out
-
     return _dedup(urls), _dedup(children)
 
-
 async def fetch_text_best_effort(session: aiohttp.ClientSession, url: str, timeout: aiohttp.ClientTimeout = None):
-    """
-    Lekki fetch tekstu (robots/sitemap). Używa Twojego limiter'a i nagłówków.
-    Zwraca (text, final_url, status, ctype, ms)
-    """
     if timeout is None:
         timeout = START_TIMEOUT_FAST
-
     url = normalize_url(url)
     domain = urlparse(url).netloc
-
     for ssl_mode in (False, None):
         try:
             await rate_limiter.wait(domain)
@@ -853,22 +690,11 @@ async def fetch_text_best_effort(session: aiohttp.ClientSession, url: str, timeo
                 return text, final, status, ctype, ms
         except Exception:
             continue
-
     return "", url, None, "", None
 
-
 async def collect_sitemap_urls(session: aiohttp.ClientSession, base_site_url: str, diag, max_urls: int = 4000):
-    """
-    Zbiera URL-e z sitemap:
-    - bierze robots.txt -> sitemap links
-    - dodaje typowe /sitemap.xml /sitemap_index.xml
-    - obsługuje sitemapindex (rekurencyjnie w głąb, z limitami)
-    Zwraca listę URL-i.
-    """
     out_urls = []
     seen_sitemaps = set()
-
-    # 1) robots.txt
     try:
         robots_url = normalize_url(urljoin(base_site_url, "/robots.txt"))
         robots_text, r_final, r_status, r_ctype, r_ms = await fetch_text_best_effort(session, robots_url, timeout=START_TIMEOUT_FAST)
@@ -881,56 +707,39 @@ async def collect_sitemap_urls(session: aiohttp.ClientSession, base_site_url: st
     except Exception:
         diag["counts"]["robots_fail"] += 1
         sms = []
-
-    # 2) domyślne sitemap-y (Twoje START_AUX_HINTS już istnieje, ale tu bierzemy “na pewno”)
     default_sms = [
         normalize_url(urljoin(base_site_url, "/sitemap.xml")),
         normalize_url(urljoin(base_site_url, "/sitemap_index.xml")),
         normalize_url(urljoin(base_site_url, "/sitemap-index.xml")),
     ]
-
     sitemap_queue = deque()
-
     for sm in (sms + default_sms):
         csm = canonical_url(sm)
         if csm not in seen_sitemaps:
             seen_sitemaps.add(csm)
             sitemap_queue.append(sm)
-
-    # 3) przetwarzanie kolejki sitemap
     processed = 0
     while sitemap_queue and len(out_urls) < max_urls and processed < 40:
         processed += 1
         sm_url = sitemap_queue.popleft()
         diag["counts"]["sitemap_fetch_attempts"] += 1
-
         xml_text, sm_final, sm_status, sm_ctype, sm_ms = await fetch_text_best_effort(session, sm_url, timeout=START_TIMEOUT_LONG)
-
         if not xml_text or not (sm_status and 200 <= int(sm_status) < 400):
             diag["counts"]["sitemap_fetch_fail"] += 1
             continue
-
-        # czasem serwer daje XML bez dobrego Content-Type, więc sprawdzamy treść
         if ("xml" not in (sm_ctype or "").lower()) and (not _looks_like_xml_sitemap(xml_text)):
             diag["counts"]["sitemap_non_xml"] += 1
             continue
-
         diag["counts"]["sitemap_fetch_ok"] += 1
-
         urls, children = parse_sitemap_xml(xml_text, base_url=base_site_url)
-
         if urls:
             diag["counts"]["sitemap_urls_found"] += len(urls)
             out_urls.extend(urls)
-
-        # jeśli to index – dodaj dzieci
         for ch in children[:200]:
             cch = canonical_url(ch)
             if cch not in seen_sitemaps:
                 seen_sitemaps.add(cch)
                 sitemap_queue.append(ch)
-
-        # dedup + limit
         if out_urls:
             tmp = []
             seen = set()
@@ -941,14 +750,9 @@ async def collect_sitemap_urls(session: aiohttp.ClientSession, base_site_url: st
                 seen.add(cu)
                 tmp.append(u)
             out_urls = tmp[:max_urls]
-
     return out_urls[:max_urls]
 
-
 def looks_like_search_url(u: str) -> bool:
-    """
-    Prosta heurystyka: czy URL wygląda jak wyszukiwarka / filtr.
-    """
     low = (u or "").lower()
     if any(x in low for x in ["wyszuk", "szukaj", "search", "query", "filter", "filtr"]):
         return True
@@ -956,19 +760,11 @@ def looks_like_search_url(u: str) -> bool:
         return True
     return False
 
-
 def build_search_fuzz_urls(base_url: str) -> list:
-    """
-    Buduje kilka wariantów URL wyszukiwarki.
-    Minimalnie, bez reverse-engineering.
-    """
     base_url = normalize_url(base_url)
     parsed = urlparse(base_url)
     qs = dict(parse_qsl(parsed.query, keep_blank_values=True))
-
-    # Najczęstsze parametry
     param_candidates = ["q", "search", "szukaj", "query"]
-
     queries = [
         "mpzp",
         "oze",
@@ -977,7 +773,6 @@ def build_search_fuzz_urls(base_url: str) -> list:
         "plan ogólny",
         "plan miejscowy",
     ]
-
     out = []
     for param in param_candidates:
         for q in queries:
@@ -986,8 +781,6 @@ def build_search_fuzz_urls(base_url: str) -> list:
             new_q = urlencode(list(qs2.items()), doseq=True)
             u2 = urlunparse(parsed._replace(query=new_q, fragment=""))
             out.append(normalize_url(u2))
-
-    # dedup + limit do 12
     uniq = []
     seen = set()
     for u in out:
@@ -1000,18 +793,14 @@ def build_search_fuzz_urls(base_url: str) -> list:
             break
     return uniq
 
-
 def extract_title_h1_h2(soup: BeautifulSoup):
     title = soup.title.get_text(" ", strip=True) if soup.title else ""
-
     h1 = soup.find("h1")
     h2 = soup.find("h2")
     h3 = soup.find("h3")
     h1t = h1.get_text(" ", strip=True) if h1 else ""
     h2t = h2.get_text(" ", strip=True) if h2 else ""
     h3t = h3.get_text(" ", strip=True) if h3 else ""
-
-    # ✅ Fallback: gdy brak H1/H2/H3, spróbuj typowych kontenerów tytułu w BIP
     if not (h1t or h2t or h3t):
         fallback_selectors = [
             "#page-title", "#pagetitle", "#content-title", "#title",
@@ -1026,24 +815,20 @@ def extract_title_h1_h2(soup: BeautifulSoup):
                     txt = node.get_text(" ", strip=True)
                     txt = re.sub(r"\s+", " ", (txt or "")).strip()
                     if txt and len(txt) >= 6:
-                        h1t = txt  # traktujemy jako h1t
+                        h1t = txt
                         break
             except Exception:
                 pass
-
     meta_desc = ""
     meta = soup.find("meta", attrs={"name": "description"})
     if meta and meta.get("content"):
         meta_desc = meta.get("content", "").strip()
-
     blob = f"{title} {h1t} {h2t} {h3t} {meta_desc}"
     return title, h1t, h2t, blob
-
 
 def print_hit(tag: str, gmina: str, kw: str, title: str):
     shown = re.sub(r"\s+", " ", (title or "").strip())
     print(f"{tag} {gmina}: [{kw}] -> {shown[:180]}", flush=True)
-
 
 # ===================== LISTING URL BONUS (SITEMAP) =====================
 LISTING_URL_HINTS = [
@@ -1056,17 +841,28 @@ LISTING_URL_HINTS = [
     "ochrona-srodowiska", "ochrona_srodowiska",
     "srodowisko", "środowisko", "pv", "fotowolta", "fotowoltaika", "slonecz", "słonecz",
     "oze", "energia", "energetyka", "decyzje-srodowisk", "decyzje_srodowisk", "ooś", "oos",
+    # DODANE:
+    "archiwum-ogloszen", "archiwum_ogloszen", "bip-archiwum",
+    "kategoria", "kategorie", "lista-ogloszen", "lista_ogloszen",
+    "decyzje", "decyzja", "postanowienie", "obwieszczenie",
+    "srodowiskowe", "srodowiskowa", "srodowiskowych",
+    "plany", "plan", "plany-zagospodarowania", "plany_zagospodarowania",
+    "uchwala", "uchwaly", "uchwal", "uchwalone",
 ]
 
 JS_EXTRA_SEED_PATHS = [
     "/rss", "/feed", "/rss.xml", "/feed.xml",
     "/wp-json", "/wp-json/wp/v2/posts",
     "/api", "/api/ogloszenia", "/api/announcements",
+    # DODANE:
+    "/sitemap.xml.gz", "/sitemap_index.xml.gz", "/sitemap.php",
+    "/sitemap.xml?page=1", "/sitemap.xml?page=2",
+    "/ogloszenia.xml", "/ogloszenia.rss",
+    "/kategorie.xml", "/kategorie.rss",
+    "/bip-sitemap.xml", "/bip-sitemap_index.xml",
 ]
 
-
 # ===================== FAST TEXT + FINGERPRINT =====================
-# ===================== FAST TEXT HELPERS (PATCH) =====================
 _KILL_UI_RE = re.compile(
     r"(menu|nav|navbar|sidebar|panel|left|right|breadcrumbs|okruszk|stopka|footer|header|"
     r"cookie|rodo|deklaracja|dostepn|dostępn|wyszuk|search|login|logowan|"
@@ -1097,7 +893,6 @@ def _pick_main_container(soup: BeautifulSoup):
 def _strip_dynamic_noise(txt: str) -> str:
     if not txt:
         return ""
-
     txt = re.sub(
         r"wygenerowano:\s*\d{1,2}\s+[a-ząćęłńóśźż]+\s+\d{4}\s*r?\.?\s*\d{1,2}:\d{2}:\d{2}",
         "", txt, flags=re.IGNORECASE
@@ -1106,59 +901,36 @@ def _strip_dynamic_noise(txt: str) -> str:
         r"wygenerowano:\s*\d{4}[-/.]\d{1,2}[-/.]\d{1,2}\s+\d{1,2}:\d{2}:\d{2}",
         "", txt, flags=re.IGNORECASE
     )
-
     txt = re.sub(r"(wyświetleń|wyswietlen|odsłon|odslon|pobrań|pobran)\s*:\s*\d+", "", txt, flags=re.IGNORECASE)
     txt = re.sub(r"odsłony:\s*\d+", "", txt, flags=re.IGNORECASE)
-
     txt = re.sub(
         r"data\s+(publikacji|modyfikacji|utworzenia|aktualizacji)\s*:\s*[\d\-\.:/ ]{6,}",
         "", txt, flags=re.IGNORECASE
     )
-
     txt = re.sub(
         r"rejestr\s+zmian.*?(?=(załączniki|zalaczniki|dokumenty|pliki|$))",
         "", txt, flags=re.IGNORECASE | re.DOTALL
     )
-
     txt = re.sub(r"nowe zasady dotyczące cookies.*?(?=$)", "", txt, flags=re.IGNORECASE)
     txt = re.sub(r"polityka prywatności.*?(?=$)", "", txt, flags=re.IGNORECASE)
     txt = re.sub(r"deklaracja dostępności.*?(?=$)", "", txt, flags=re.IGNORECASE)
-
     txt = re.sub(r"(udostępniający|udostepniajacy)\s*:\s*.*?(?=\s{2,}|$)", "", txt, flags=re.IGNORECASE)
     txt = re.sub(r"(wytworzył|wytworzyl|wytworzone\s+przez)\s*:\s*.*?(?=\s{2,}|$)", "", txt, flags=re.IGNORECASE)
     txt = re.sub(r"(odpowiedzialny|odpowiedzialna)\s*:\s*.*?(?=\s{2,}|$)", "", txt, flags=re.IGNORECASE)
-
     txt = re.sub(r"(data\s+wytworzenia|data\s+utworzenia|data\s+publikacji)\s*:\s*.*?(?=\s{2,}|$)", "", txt, flags=re.IGNORECASE)
     txt = re.sub(r"(data\s+zmiany|data\s+modyfikacji|ostatnia\s+modyfikacja)\s*:\s*.*?(?=\s{2,}|$)", "", txt, flags=re.IGNORECASE)
-
     txt = re.sub(r"(rejestr\s+zmian|historia\s+zmian)\s*:\s*.*?(?=$)", "", txt, flags=re.IGNORECASE)
-
     txt = re.sub(r"\s+", " ", txt).strip()
     return txt
 
-
-
 def _soup_fast_text(soup: BeautifulSoup, max_chars: int = FAST_TEXT_MAX_CHARS) -> str:
-    """
-    PATCH:
-    - usuwa layout (nav/footer/header/aside) i typowe kontenery UI
-    - preferuje "main/article/content" zamiast całej strony
-    - wycina dynamiczne śmieci (metryki, rejestr zmian, daty generowania)
-    - usuwa sekcje "Metryka", "Rejestr zmian", "Historia zmian" z HTML DOM
-    """
     try:
         if not soup:
             return ""
-
-        # --- usuwanie JS/CSS ---
         for tag in soup(["script", "style", "noscript"]):
             tag.decompose()
-
-        # --- layout ---
         for tag in soup.find_all(["nav", "footer", "header", "aside"]):
             tag.decompose()
-
-        # --- UI kontenery po class ---
         for el in list(soup.find_all(True, attrs={"class": True})):
             try:
                 cls = " ".join(el.get("class") or [])
@@ -1166,8 +938,6 @@ def _soup_fast_text(soup: BeautifulSoup, max_chars: int = FAST_TEXT_MAX_CHARS) -
                     el.decompose()
             except Exception:
                 continue
-
-        # --- UI kontenery po id ---
         for el in list(soup.find_all(True, attrs={"id": True})):
             try:
                 _id = (el.get("id") or "")
@@ -1175,10 +945,6 @@ def _soup_fast_text(soup: BeautifulSoup, max_chars: int = FAST_TEXT_MAX_CHARS) -
                     el.decompose()
             except Exception:
                 continue
-
-        # =====================================================
-        # 🔥 KLUCZOWY PATCH: wycinanie "Metryka / Rejestr zmian"
-        # =====================================================
         for hdr in soup.find_all(["h2", "h3", "h4"]):
             try:
                 t = (hdr.get_text(" ", strip=True) or "").lower()
@@ -1190,27 +956,15 @@ def _soup_fast_text(soup: BeautifulSoup, max_chars: int = FAST_TEXT_MAX_CHARS) -
                         parent.decompose()
             except Exception:
                 pass
-        # =====================================================
-
-        # wybierz główny kontener treści
         main = _pick_main_container(soup)
-
         txt = main.get_text(" ", strip=True)
         txt = re.sub(r"\s+", " ", (txt or "")).strip()
-
-        # usuń dynamiczny szum (daty, liczniki, cookies)
         txt = _strip_dynamic_noise(txt)
-
-        # limit długości fingerprint
         if len(txt) > max_chars:
             txt = txt[:max_chars]
-
         return txt
-
     except Exception:
         return ""
-
-
 
 def page_fingerprint(title: str, h1: str, fast_text: str) -> str:
     base = f"{(title or '')[:180]}|{(h1 or '')[:180]}|{(fast_text or '')}"
@@ -1219,18 +973,14 @@ def page_fingerprint(title: str, h1: str, fast_text: str) -> str:
 def cache_mark_url(u: str):
     if not USE_CACHE:
         return
-
-    # ✅ nie zapisuj listingów/home do urls_seen (one mają być skanowane co run)
     if is_phase1_listing(u):
         return
-
     h = url_key(u)
     state.urls_seen.add(h)
     if isinstance(state.raw_cache, dict):
         d = state.raw_cache.setdefault("urls_seen", {})
         if isinstance(d, dict):
             d[h] = now_iso()
-
 
 ATT_EXT = (
     ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".odt", ".rtf",
@@ -1240,31 +990,18 @@ ATT_EXT = (
     ".tif", ".tiff",
 )
 
-
 def attachments_signature(soup: BeautifulSoup, base_url: str) -> str:
-    """
-    ZMIANA tylko gdy:
-      - dodano/usunięto załącznik
-      - zmienił się jego rozmiar
-    """
-
     if not soup:
         return ""
-
     items = []
-
     for a in soup.find_all("a", href=True):
         href = (a.get("href") or "").strip()
         if not href:
             continue
-
         abs_u = normalize_url(urljoin(base_url, href))
         low = abs_u.lower()
-
         if not any(low.endswith(ext) for ext in ATT_EXT):
             continue
-
-        # 🔴 KANONIZACJA: bez query i bez fragmentów
         p = urlparse(abs_u)
         clean_url = urlunparse((
             "https",
@@ -1274,11 +1011,8 @@ def attachments_signature(soup: BeautifulSoup, base_url: str) -> str:
             "",
             ""
         ))
-
-        # 🔴 rozmiar pliku (jeśli podany w HTML)
         txt = a.get_text(" ", strip=True) or ""
         size = ""
-
         m = re.search(
             r"(\d+(?:[.,]\d+)?)\s*(kb|mb|gb)",
             txt,
@@ -1286,18 +1020,12 @@ def attachments_signature(soup: BeautifulSoup, base_url: str) -> str:
         )
         if m:
             size = m.group(1).replace(",", ".") + m.group(2).lower()
-
         items.append((clean_url, size))
-
     if not items:
         return ""
-
     items.sort()
-
     blob = "||".join([f"{u}::{s}" for u, s in items])
     return sha1(blob)
-
-
 
 # ===================== START URL VARIANTS =====================
 def _www_variants(netloc: str):
@@ -1316,13 +1044,10 @@ def candidate_start_urls(start_url: str):
         u0 = "https://" + u0
     u0 = normalize_url(u0)
     p0 = urlparse(u0)
-
     schemes = [p0.scheme] if p0.scheme else ["https", "http"]
     if "https" not in schemes: schemes.append("https")
     if "http" not in schemes: schemes.append("http")
-
     hosts = _www_variants(p0.netloc.lower() if p0.netloc else "")
-
     base_paths = [
         p0.path or "/", "/",
         "/bip/", "/BIP/",
@@ -1335,7 +1060,6 @@ def candidate_start_urls(start_url: str):
         "/planowanie", "/planowanie-przestrzenne",
         "/dokumenty", "/prawo-miejscowe",
     ]
-
     yielded = set()
     for sch in schemes:
         for host in hosts:
@@ -1368,8 +1092,8 @@ def _empty_cache():
         "page_fprints": {},
         "gmina_frontiers": {},
         "gmina_retry": {},
+        "dead_urls": {},   # DODANE
     }
-
 
 def load_cache_v2():
     if not USE_CACHE:
@@ -1400,6 +1124,7 @@ def load_cache_v2():
             c.setdefault("page_fprints", {})
             c.setdefault("gmina_frontiers", {})
             c.setdefault("gmina_retry", {})
+            c.setdefault("dead_urls", {})   # DODANE
 
         urls = c.get("urls_seen", {})
         if not isinstance(urls, dict):
@@ -1420,6 +1145,7 @@ def load_cache_v2():
         if not isinstance(pf, dict):
             pf = {}
             c["page_fprints"] = pf
+
         gf = c.get("gmina_frontiers", {})
         if not isinstance(gf, dict):
             gf = {}
@@ -1430,58 +1156,45 @@ def load_cache_v2():
             gr = {}
             c["gmina_retry"] = gr
 
-        
+        dead = c.get("dead_urls", {})
+        if not isinstance(dead, dict):
+            dead = {}
+            c["dead_urls"] = dead
 
-        print(f"📦 Cache loaded: {len(urls)} URLs, {len(content)} content, {len(gseeds)} gmina seeds, {len(pf)} page_fprints")
-        return c, set(urls.keys()), content, gseeds, pf, gf, gr
+        print(f"📦 Cache loaded: {len(urls)} URLs, {len(content)} content, {len(gseeds)} gmina seeds, {len(pf)} page_fprints, {len(dead)} dead entries")
+        return c, set(urls.keys()), content, gseeds, pf, gf, gr, dead  # DODANE dead
 
     except Exception as e:
         print(f"⚠️  Cache load error: {e}")
         c = _empty_cache()
-        return c, set(), {}, {}, {}, {}, {}
+        return c, set(), {}, {}, {}, {}, {}, {}   # DODANE dead
 
 def save_cache_v2(raw_cache: dict, urls_seen_set: set, content_seen: dict, gmina_seeds: dict, page_fprints: dict):
     if not USE_CACHE:
         return
 
     out = {"schema": CACHE_SCHEMA}
-
     out["urls_seen"] = {}
     old_urls = (raw_cache or {}).get("urls_seen", {}) if isinstance(raw_cache, dict) else {}
     for h in urls_seen_set:
         out["urls_seen"][h] = old_urls.get(h, now_iso())
-
     out["content_seen"] = content_seen or {}
     out["gmina_seeds"] = gmina_seeds or {}
     out["page_fprints"] = page_fprints or {}
     out["gmina_frontiers"] = (state.gmina_frontiers or {}) if isinstance(state.gmina_frontiers, dict) else {}
     out["gmina_retry"] = (state.gmina_retry or {}) if isinstance(state.gmina_retry, dict) else {}
-
+    out["dead_urls"] = getattr(state, 'dead_urls', {})   # DODANE
 
     tmp = str(CACHE_FILE) + ".tmp"
-
     def _do_save():
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(out, f, indent=2, ensure_ascii=False)
         os.replace(tmp, CACHE_FILE)
-
     retry_io(_do_save, tries=6, base_sleep=0.7)
+    print(f"💾 Cache saved: {len(urls_seen_set)} URLs, {len(out['content_seen'])} content, {len(out['gmina_seeds'])} seeds, {len(out['page_fprints'])} fprints, {len(out['dead_urls'])} dead")
 
-
-    print(f"💾 Cache saved: {len(urls_seen_set)} URLs, {len(out['content_seen'])} content, {len(out['gmina_seeds'])} seeds, {len(out['page_fprints'])} fprints")
-
-def purge_old_cache(raw_cache: dict, urls_seen_set: set, content_seen: dict, gmina_seeds: dict, page_fprints: dict):
-    """
-    PATCH POD TWÓJ WYMÓG:
-    - czyścimy urls_seen (przyspieszacz crawl)
-    - czyścimy gmina_seeds (żeby odświeżać discovery)
-    - czyścimy page_fprints (diagnostyka)
-    - ✅ NIE czyścimy content_seen, bo to jest "pamięć" co już było widziane
-      i to gwarantuje: uruchomisz kiedy chcesz -> dostajesz tylko NOWE od ostatniego skanu.
-    """
+def purge_old_cache(raw_cache: dict, urls_seen_set: set, content_seen: dict, gmina_seeds: dict, page_fprints: dict, dead_urls: dict):
     cutoff = datetime.now() - timedelta(days=SCANNED_TTL_DAYS)
-
-    # 1) urls_seen TTL (cache szybkości)
     urls_dict = raw_cache.get("urls_seen", {}) if isinstance(raw_cache, dict) else {}
     to_del = []
     for h, ts in list(urls_dict.items()):
@@ -1490,14 +1203,10 @@ def purge_old_cache(raw_cache: dict, urls_seen_set: set, content_seen: dict, gmi
                 to_del.append(h)
         except Exception:
             to_del.append(h)
-
     for h in to_del:
         urls_seen_set.discard(h)
         urls_dict.pop(h, None)
 
-    # 2) content_seen – NIE USUWAMY
-
-    # 3) seed cache TTL (odświeżamy discovery, to może się zmieniać)
     seed_cutoff = datetime.now() - timedelta(days=SEED_CACHE_TTL_DAYS)
     to_del_seeds = []
     for k, meta in list((gmina_seeds or {}).items()):
@@ -1510,7 +1219,6 @@ def purge_old_cache(raw_cache: dict, urls_seen_set: set, content_seen: dict, gmi
     for k in to_del_seeds:
         gmina_seeds.pop(k, None)
 
-    # 4) page_fprints TTL (diagnostyka, nie krytyczne)
     to_del_pf = []
     for k, meta in list((page_fprints or {}).items()):
         try:
@@ -1522,9 +1230,14 @@ def purge_old_cache(raw_cache: dict, urls_seen_set: set, content_seen: dict, gmi
     for k in to_del_pf:
         page_fprints.pop(k, None)
 
+    # Martwe strony też mają TTL (możemy je trzymać, np. 30 dni)
+    dead_cutoff = datetime.now() - timedelta(days=30)
+    for gkey, urls in list(dead_urls.items()):
+        # nie mamy timestampów dla martwych, więc na razie nie usuwamy – można dodać później
+        pass
+
     if to_del or to_del_seeds or to_del_pf:
         print(f"🧹 Purged: {len(to_del)} URL, {len(to_del_seeds)} seeds, {len(to_del_pf)} fprints (content_seen kept)")
-
 
 # ===================== LOG + EMAIL =====================
 def log_new_item(gmina: str, title: str, url: str, kw: str):
@@ -1534,7 +1247,6 @@ def log_new_item(gmina: str, title: str, url: str, kw: str):
         if new_file:
             w.writerow(["datetime_found", "gmina", "keyword", "title", "url"])
         w.writerow([now_iso(), gmina, kw, title, url])
-
 
 def read_bipy_csv(path: Path):
     rows = []
@@ -1593,12 +1305,10 @@ async def fetch_with_retry(session: aiohttp.ClientSession, url: str, timeout: ai
                            ssl_mode, max_retries=3, method="GET"):
     url = normalize_url(url)
     domain = urlparse(url).netloc
-
     for attempt in range(max_retries):
         try:
             await rate_limiter.wait(domain)
             headers = get_random_headers()
-
             t0 = time.time()
             async with session.request(method, url, timeout=timeout, ssl=ssl_mode,
                                        allow_redirects=True, headers=headers) as resp:
@@ -1606,27 +1316,20 @@ async def fetch_with_retry(session: aiohttp.ClientSession, url: str, timeout: ai
                 status = resp.status
                 ctype = (resp.headers.get("Content-Type", "") or "").lower()
                 data = await resp.read()
-
                 try:
                     text = data.decode("utf-8", errors="ignore")
                 except Exception:
                     text = data.decode("latin-1", errors="ignore")
-
                 ms = round((time.time() - t0) * 1000)
-
                 if status in (403, 429):
                     rate_limiter.report_403(domain)
-
                 if status in (403, 429) and attempt < max_retries - 1:
                     await asyncio.sleep((2 ** attempt) * random.uniform(1.0, 2.0))
                     continue
-
                 if status >= 500 and attempt < max_retries - 1:
                     await asyncio.sleep((2 ** attempt) * random.uniform(0.5, 1.5))
                     continue
-
                 return final, status, ctype, text, ms
-
         except asyncio.TimeoutError:
             if attempt < max_retries - 1:
                 await asyncio.sleep(1.0 * (attempt + 1))
@@ -1637,7 +1340,6 @@ async def fetch_with_retry(session: aiohttp.ClientSession, url: str, timeout: ai
                 await asyncio.sleep(0.5 * (attempt + 1))
                 continue
             raise
-
     return url, None, "", "", None
 
 async def _aio_fetch_raw(session: aiohttp.ClientSession, url: str, timeout: aiohttp.ClientTimeout, ssl_mode, method="GET"):
@@ -1653,53 +1355,36 @@ async def _probe_with_requests(url: str, timeout_sec: float, verify: bool):
             return str(r.url), r.status_code, r.headers.get("Content-Type",""), (r.text or "")[:20000], ms
         except Exception as e:
             ms = round((time.time() - t0) * 1000)
-            # Zawsze zwracamy 5-tkę, nawet przy błędzie
             return url, None, "", "", ms
     return await asyncio.to_thread(run)
-
 
 async def fetch_start_matrix(session_default: aiohttp.ClientSession,
                              session_ipv4: aiohttp.ClientSession,
                              url: str,
                              diag):
     url = normalize_url(url)
-
     def looks_html(ctype: str, text: str) -> bool:
         low = (text or "").lower()
         return ("html" in (ctype or "").lower()) or ("<html" in low[:2000]) or ("<!doctype" in low[:2000]) or ("<body" in low[:2000])
-
     STRATEGIES = []
-
     for timeout, tname in ((START_TIMEOUT_FAST, "FAST"),):
         STRATEGIES.append(("aio_default", tname, "ssl=off", "GET", timeout, False))
         STRATEGIES.append(("aio_ipv4", tname, "ssl=off", "GET", timeout, False))
-
     for timeout, tname in ((START_TIMEOUT_FAST, "FAST"), (START_TIMEOUT_LONG, "LONG")):
         for ssl_mode, sname in ((None, "ssl=verify"), (False, "ssl=off")):
             for method in ("GET", "HEAD"):
                 STRATEGIES.append(("aio_default", tname, sname, method, timeout, ssl_mode))
                 STRATEGIES.append(("aio_ipv4", tname, sname, method, timeout, ssl_mode))
-
     STRATEGIES.append(("requests", "FAST", "verify=False", "GET", 18.0, False))
     STRATEGIES.append(("requests", "LONG", "verify=False", "GET", 40.0, False))
-
     last_fail = None
-
     for family, tname, sname, method, to, sslmode in STRATEGIES:
         strategy_name = f"{family}:{tname}:{sname}:{method}"
-
         try:
-            # --- 1) zawsze ustawiamy wynik tej strategii albo robimy continue ---
             if family == "aio_default":
-                final, status, ctype, text, ms = await _aio_fetch_raw(
-                    session_default, url, to, sslmode, method=method
-                )
-
+                final, status, ctype, text, ms = await _aio_fetch_raw(session_default, url, to, sslmode, method=method)
             elif family == "aio_ipv4":
-                final, status, ctype, text, ms = await _aio_fetch_raw(
-                    session_ipv4, url, to, sslmode, method=method
-                )
-
+                final, status, ctype, text, ms = await _aio_fetch_raw(session_ipv4, url, to, sslmode, method=method)
             elif family == "requests":
                 res = await _probe_with_requests(url, timeout_sec=to, verify=sslmode)
                 if not res:
@@ -1709,12 +1394,8 @@ async def fetch_start_matrix(session_default: aiohttp.ClientSession,
                         final, status, ctype, text, ms = res
                     except Exception:
                         final, status, ctype, text, ms = url, None, "", "", None
-
             else:
-                # NIEZNANA STRATEGIA -> olewamy i lecimy do następnej
                 continue
-
-            # --- 2) dopiero tu używamy status/text/ctype, bo mamy gwarancję że istnieją ---
             lu = url.lower()
             if any(ax in lu for ax in ("/robots.txt", "sitemap")):
                 ok = (status is not None) and (200 <= int(status) < 400) and bool(text)
@@ -1723,7 +1404,6 @@ async def fetch_start_matrix(session_default: aiohttp.ClientSession,
                     "status": status, "kind": ("aux_ok" if ok else "aux_fail")
                 })
                 continue
-
             if status is None or int(status) != 200:
                 diag["start_matrix"].append({
                     "ok": False, "strategy": strategy_name, "url": url,
@@ -1731,20 +1411,17 @@ async def fetch_start_matrix(session_default: aiohttp.ClientSession,
                 })
                 last_fail = (None, final, "http_err", status, ctype, f"HTTP {status}", ms)
                 continue
-
             if looks_html(ctype, text) and text:
                 diag["start_matrix"].append({
                     "ok": True, "strategy": strategy_name, "url": url,
                     "status": status, "kind": "html"
                 })
                 return text, final, "html", status, ctype, None, ms
-
             diag["start_matrix"].append({
                 "ok": False, "strategy": strategy_name, "url": url,
                 "status": status, "kind": "non_html"
             })
             last_fail = (None, final, "non_html", status, ctype, "start_non_html", ms)
-
         except Exception as e:
             msg = str(e)
             kind = "exc"
@@ -1755,22 +1432,18 @@ async def fetch_start_matrix(session_default: aiohttp.ClientSession,
                 "status": None, "kind": kind
             })
             last_fail = (None, url, kind, None, "", msg, None)
-
     return last_fail if last_fail else (None, url, "fail", None, "", "no_strategy_worked", None)
 
-# ===================== NORMAL FETCH =====================
 # ===================== NORMAL FETCH =====================
 async def fetch(session: aiohttp.ClientSession, url: str, extra_headers: dict = None):
     url = normalize_url(url)
     domain = urlparse(url).netloc
-
     for ssl_mode in (False, None):
         try:
             await rate_limiter.wait(domain)
             headers = get_random_headers()
             if extra_headers:
                 headers.update(extra_headers)
-
             t0 = time.time()
             async with session.get(
                 url,
@@ -1783,30 +1456,22 @@ async def fetch(session: aiohttp.ClientSession, url: str, extra_headers: dict = 
                 status = resp.status
                 ctype = (resp.headers.get("Content-Type", "") or "").lower()
                 data = await resp.read()
-
                 try:
                     text = data.decode("utf-8", errors="ignore")
                 except Exception:
                     text = data.decode("latin-1", errors="ignore")
-
                 ms = round((time.time() - t0) * 1000)
-
                 if status in (403, 429):
                     rate_limiter.report_403(domain)
-
                 if "pdf" in ctype or final.lower().endswith(".pdf"):
                     return None, final, "pdf", status, ctype, None, ms
-
                 if status != 200:
                     if ssl_mode is None:
                         return None, final, "http_err", status, ctype, f"HTTP {status}", ms
                     continue
-
                 if text and len(text) > 800 and re.search(r"<[^>]+>", text[:2500]) is None:
                     return None, final, "non_html", status, ctype, None, ms
-
                 return text, final, "html", status, ctype, None, ms
-
         except asyncio.TimeoutError:
             if ssl_mode is None:
                 return None, url, "timeout", None, "", "request_timeout", 0
@@ -1815,9 +1480,7 @@ async def fetch(session: aiohttp.ClientSession, url: str, extra_headers: dict = 
             if ssl_mode is None:
                 return None, url, "exc", None, "", str(e), 0
             continue
-
     return None, url, "exc", None, "", "fetch_failed", 0
-
 
 # ===================== PAGINATION GUARD =====================
 PAGINATION_KEYS = {"page","strona","p","start","offset","from","limit","per_page"}
@@ -1868,25 +1531,21 @@ def seed_cache_put(gmina: str, start_url: str, allowed_host: str, start_final: s
 # ===================== LINK EXTRACTION (FASTER/CLEANER) =====================
 def iter_links_fast(soup: BeautifulSoup, base_url: str):
     yielded = set()
-
     priority = []
     try:
         breadcrumbs = soup.find_all(["nav", "ol", "ul"], class_=lambda x: x and ("breadcrumb" in x.lower() or "okruszek" in x.lower()))
         for bc in breadcrumbs:
             priority.extend(bc.find_all("a", href=True))
-
         nav_elements = soup.find_all(["nav", "div"], class_=lambda x: x and ("nav" in x.lower() or "menu" in x.lower()))
         for nav in nav_elements[:3]:
             priority.extend(nav.find_all("a", href=True))
     except Exception:
         pass
-
     all_links = []
     try:
         all_links = soup.find_all("a", href=True)
     except Exception:
         all_links = []
-
     for a in priority + all_links:
         try:
             href = (a.get("href") or "").strip()
@@ -1896,19 +1555,11 @@ def iter_links_fast(soup: BeautifulSoup, base_url: str):
             if not is_valid_url(abs_u):
                 continue
             txt = a.get_text(" ", strip=True)
-
-            # --- PATCH: nie wycinaj załączników (PDF itd.) na etapie linków ---
             is_attachment = any(abs_u.lower().endswith(ext) for ext in ATT_EXT)
-
-            # standardowe śmieci wycinamy, ale ZAŁĄCZNIKI chcemy widzieć jako element ogłoszenia
             if should_skip_href(abs_u) and not is_attachment:
                 continue
-
-            # anchor "pobierz/drukuj" ignorujemy tylko dla nie-załączników
             if (not is_attachment) and anchor_is_ignored(txt):
                 continue
-
-
             if abs_u in yielded:
                 continue
             yielded.add(abs_u)
@@ -1922,12 +1573,9 @@ async def phase1_discover(gmina: str, start_url: str,
                          session_ipv4: aiohttp.ClientSession,
                          session_crawl: aiohttp.ClientSession,
                          urls_seen: set, diag):
-
     if state.shutdown_requested:
         return [], {"status": "SHUTDOWN"}
-
     cached = seed_cache_get(gmina, start_url)
-
     if (not FORCE_PHASE1_REDISCOVERY) and cached and (not CRAWL_ALL_INTERNAL_LINKS):
         diag["notes"].append("PHASE1_SKIP: seed_cache_hit")
         return cached.get("seeds", []) or [], {
@@ -1936,38 +1584,28 @@ async def phase1_discover(gmina: str, start_url: str,
             "start_final": cached.get("start_final", ""),
             "seeds": len(cached.get("seeds", []) or [])
         }
-
-
     seeds = {}
     visited = set()
     q = deque()
-
     html0 = final0 = None
     kind0 = "fail"
     status0 = None
     allowed_host = ""
-
     trace_set(diag, "PHASE1_START", url=start_url)
-
     tried = 0
     start_time = time.time()
-
     for su in candidate_start_urls(start_url):
         if (time.time() - start_time) > START_TOTAL_TIMEOUT_SEC:
             diag["notes"].append(f"START_TIMEOUT after {int(time.time()-start_time)}s")
             break
         if state.shutdown_requested:
             break
-
         tried += 1
         if tried > START_MAX_TRIES:
             break
-
         html0, final0, kind0, status0, ctype0, err0, ms = await fetch_start_matrix(session_default, session_ipv4, su, diag)
-
         diag["start_attempts"].append({"try_url": su, "kind": kind0, "status": status0, "final": (final0 or "")[:220], "ms": ms})
         trace_set(diag, "PHASE1_START", url=su, kind=kind0, status=status0, ms=ms)
-
         if len(diag["start_attempts"]) >= 8:
             recent = diag["start_attempts"][-8:]
             if all(x.get("status") == 403 for x in recent):
@@ -1976,201 +1614,130 @@ async def phase1_discover(gmina: str, start_url: str,
             if all(x.get("kind") == "ssl" for x in recent):
                 diag["notes"].append("EARLY_EXIT: 8/8 = SSL (cert invalid)")
                 break
-
         if kind0 == "html" and html0:
             allowed_host = urlparse(final0).netloc.lower()
             okm = [m for m in diag["start_matrix"] if m.get("ok")]
             if okm:
                 diag["notes"].append(f"START_OK strategy={okm[-1].get('strategy')}")
-
-            # ✅ NEW: wykrycie JS-heavy (React/Vue/Next/Nuxt)
             try:
                 if detect_js_app(html0):
                     diag["notes"].append("JS_HEAVY_DETECTED")
                     diag["counts"]["js_heavy_detected"] += 1
-
-                    # ✅ minimalne: dorzucamy kilka "tanich" endpointów, które czasem niosą indeks/RSS
                     try:
                         base_site = urlunparse((urlparse(final0).scheme, urlparse(final0).netloc, "/", "", "", ""))
                         for pth in JS_EXTRA_SEED_PATHS:
                             u2 = normalize_url(urljoin(base_site, pth))
-                            # tylko w obrębie domeny
                             if same_base_domain(urlparse(u2).netloc.lower(), allowed_host):
-                                # wysoki priorytet, żeby szybko sprawdzić
                                 seeds[u2] = max(seeds.get(u2, 0), 16)
                         diag["counts"]["js_extra_seeds_added"] += len(JS_EXTRA_SEED_PATHS)
                     except Exception:
                         diag["counts"]["js_extra_seeds_failed"] += 1
-
             except Exception:
                 pass
-
             break
-
     if kind0 != "html" or not html0:
         diag["notes"].append(f"START_FAIL tried={tried}")
         diag_add_error(diag, gmina, start_url, "phase1_start", kind0, status0, "no_html_start")
         return [], {"status": "START_FAIL"}
-
     def allow_url(u: str) -> bool:
         return same_base_domain(urlparse(u).netloc.lower(), allowed_host)
-
-    # ✅ NEW: SITEMAP + ROBOTS → dodatkowe seedy (duży boost na stronach JS)
     try:
         base_site = urlunparse((urlparse(final0).scheme, urlparse(final0).netloc, "/", "", "", ""))
         sitemap_urls = await collect_sitemap_urls(session_crawl, base_site, diag, max_urls=4000)
-
         added_sm = 0
         for u in sitemap_urls:
             if not allow_url(u):
                 continue
-            # tylko sensowne linki (bez obrazków itp.)
             if should_skip_href(u):
                 continue
-
-            # dajemy wysoką wagę tym, które są "hot" (mpzp/oze/wiatr/ogłoszenia)
             score = 10
             ul = (u or "").lower()
-
-            # bonus tylko dla typowych listingów (ogłoszenia/MPZP/środowisko/OZE)
             if any(h in ul for h in LISTING_URL_HINTS):
                 score = 18
-
-
             if u not in seeds or score > seeds.get(u, 0):
                 seeds[u] = score
                 added_sm += 1
-
         if added_sm:
             diag["counts"]["seeds_from_sitemap_added"] += added_sm
             diag["notes"].append(f"SITEMAP_SEEDS_ADDED={added_sm}")
-
     except Exception as ex:
         diag["counts"]["sitemap_block_exc"] += 1
         diag["notes"].append("SITEMAP_BLOCK_FAILED")
-
-
     q.append(final0)
     visited.add(final0)
-
     pages = 0
     trace_set(diag, "PHASE1_DISCOVERY", url=final0)
-
     while q and pages < PHASE1_MAX_PAGES and not state.shutdown_requested:
         url = normalize_url(q.popleft())
-
-        # ✅ Phase1: listing/home zawsze odświeżaj (to indeksy treści)
-        # ✅ Cache w Phase1 może skipować tylko "zwykłe" strony (non-listing),
-        #    żeby nie zabić discovery.
-
         html, final, kind, status, ctype, err, ms = await fetch(session_crawl, url)
         trace_set(diag, "PHASE1_DISCOVERY", url=url, kind=kind, status=status, ms=ms)
-
-
         if kind != "html" or not html:
             diag_add_error(diag, gmina, url, "phase1_fetch", kind, status, err)
             continue
-
         pages += 1
         diag["counts"]["phase1_pages_ok"] += 1
-
         if USE_CACHE:
             cache_mark_url(url)
             cache_mark_url(final)
-
         soup = safe_soup(html)
         if not soup:
             diag_add_error(diag, gmina, final, "phase1_parse", "parse", status, "soup_failed")
             continue
-
         for abs_u, txt in iter_links_fast(soup, final):
             if not allow_url(abs_u):
                 continue
-
             if CRAWL_ALL_INTERNAL_LINKS:
                 low_u = abs_u.lower()
-
-                # ❌ NIE rób seedów z załączników (PDF, DOC itd.)
                 if any(low_u.endswith(ext) for ext in ATT_EXT):
                     continue
-
-                # ❌ NIE rób seedów z ewidentnych śmieci
                 if anchor_is_ignored(txt):
                     continue
-
                 seeds.setdefault(abs_u, 1)
-
                 if abs_u not in visited:
                     visited.add(abs_u)
                     q.append(abs_u)
-
-            # else: usunięte (ranking hot_score nieużywany w FULL CRAWL)
-
-
     seed_urls = list(seeds.keys())[:PHASE1_MAX_SEEDS]
-
-
     seed_cache_put(gmina, start_url, allowed_host, final0, seed_urls)
-
     return seed_urls, {"status": "OK", "allowed_host": allowed_host, "start_final": final0, "seeds": len(seed_urls)}
 
-
 async def fetch_conditional(session: aiohttp.ClientSession, url: str, extra_headers: dict = None):
-    """
-    Conditional GET:
-    - If-None-Match / If-Modified-Since
-    - obsługa 304 Not Modified
-    Zwraca: (html_or_none, final, kind, status, ctype, err, ms, resp_meta)
-    """
     url = normalize_url(url)
     domain = urlparse(url).netloc
-
     for ssl_mode in (False, None):
         try:
             await rate_limiter.wait(domain)
             headers = get_random_headers()
             if extra_headers:
                 headers.update(extra_headers)
-
             t0 = time.time()
             async with session.get(url, timeout=REQUEST_TIMEOUT, ssl=ssl_mode,
                                    allow_redirects=True, headers=headers) as resp:
                 final = normalize_url(str(resp.url))
                 status = resp.status
                 ctype = (resp.headers.get("Content-Type", "") or "").lower()
-
                 etag = resp.headers.get("ETag", "") or resp.headers.get("Etag", "") or ""
                 last_mod = resp.headers.get("Last-Modified", "") or resp.headers.get("last-modified", "") or ""
                 resp_meta = {"etag": etag, "last_modified": last_mod}
-
                 if status == 304:
                     ms = round((time.time() - t0) * 1000)
                     return None, final, "not_modified", status, ctype, None, ms, resp_meta
-
                 data = await resp.read()
                 try:
                     text = data.decode("utf-8", errors="ignore")
                 except Exception:
                     text = data.decode("latin-1", errors="ignore")
-
                 ms = round((time.time() - t0) * 1000)
-
                 if status in (403, 429):
                     rate_limiter.report_403(domain)
-
                 if "pdf" in ctype or final.lower().endswith(".pdf"):
                     return None, final, "pdf", status, ctype, None, ms, resp_meta
-
                 if status != 200:
                     if ssl_mode is None:
                         return None, final, "http_err", status, ctype, f"HTTP {status}", ms, resp_meta
                     continue
-
                 if text and len(text) > 800 and re.search(r"<[^>]+>", text[:2500]) is None:
                     return None, final, "non_html", status, ctype, None, ms, resp_meta
-
                 return text, final, "html", status, ctype, None, ms, resp_meta
-
         except asyncio.TimeoutError:
             if ssl_mode is None:
                 return None, url, "timeout", None, "", "request_timeout", 0, {}
@@ -2179,85 +1746,68 @@ async def fetch_conditional(session: aiohttp.ClientSession, url: str, extra_head
             if ssl_mode is None:
                 return None, url, "exc", None, "", str(e), 0, {}
             continue
-
     return None, url, "exc", None, "", "fetch_failed", 0, {}
 
 # ===================== PHASE 2 =====================
-# Znajdź tę funkcję w swoim kodzie i dodaj return na końcu:
-
-
-# ===================== ZMIANA 2: POPRAWIONA phase2_focus =====================
-
 async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                       urls_seen: set, content_seen: dict, diag):
-
     if state.shutdown_requested:
         return [], {"status": "SHUTDOWN"}
-
     found = []
     visited = set()
     q = deque()
-
-    gkey = gmina_cache_key(gmina, "https://" + allowed_host)  # stabilny klucz per gmina+domena
-
-    # ✅ 1) najpierw retry (błędy z poprzedniego runu)
+    gkey = gmina_cache_key(gmina, "https://" + allowed_host)
+    # Pomijanie martwych URLi
+    dead_key = f"dead_{gkey}"
+    dead_set = set()
+    if hasattr(state, 'dead_urls'):
+        dead_set = set(state.dead_urls.get(dead_key, []) or [])
+    # retry
     retry_list = []
     try:
         retry_list = (state.gmina_retry or {}).get(gkey, []) or []
     except Exception:
         retry_list = []
-
     for u in retry_list[:3000]:
         u = normalize_url(u)
-        if u and u not in visited:
+        if u and u not in visited and u not in dead_set:
             visited.add(u)
-            q.appendleft((u, 0))  # retry ma priorytet
-
-    # czyścimy retry po załadowaniu (jak znowu padnie, to znowu trafi)
+            q.appendleft((u, 0))
     if isinstance(state.gmina_retry, dict):
         state.gmina_retry[gkey] = []
-
-    # ✅ 2) potem frontier (niedokończona kolejka)
+    # frontier
     frontier = []
     try:
         frontier = (state.gmina_frontiers or {}).get(gkey, []) or []
     except Exception:
         frontier = []
-
     for item in frontier[:50000]:
         try:
             u, d = item[0], int(item[1])
         except Exception:
             continue
         u = normalize_url(u)
-        if u and u not in visited:
+        if u and u not in visited and u not in dead_set:
             visited.add(u)
             q.append((u, d))
-
-    # ✅ 3) dopiero potem seedy (nowe discovery)
+    # seedy
     for su in seed_urls:
         su = normalize_url(su)
-        if su not in visited:
+        if su not in visited and su not in dead_set:
             visited.add(su)
             q.append((su, 0))
-
-
     def allow_url(u: str) -> bool:
         return same_base_domain(urlparse(u).netloc.lower(), allowed_host)
-
     pages_ok = 0
     stop_reason = "QUEUE_EMPTY"
     t0 = time.time()
-
     trace_set(diag, "PHASE2_FOCUS", url=seed_urls[0] if seed_urls else "")
-
     while q and not state.shutdown_requested:
         elapsed = time.time() - t0
         if elapsed >= ABSOLUTE_MAX_SEC_PER_GMINA:
             stop_reason = "ABSOLUTE_TIMEOUT"
             diag["notes"].append(f"ABSOLUTE_TIMEOUT: {int(elapsed)}s")
             break
-
         if not UNLIMITED_SCAN:
             if pages_ok >= PHASE2_MAX_PAGES:
                 stop_reason = "PAGE_LIMIT"
@@ -2265,25 +1815,18 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             if elapsed >= MAX_SEC_PER_GMINA:
                 stop_reason = "TIME_BUDGET"
                 break
-
         url, depth = q.popleft()
         if depth > PHASE2_MAX_DEPTH:
             continue
-
         url = normalize_url(url)
         url_hash = url_key(url)
-
-        # listing pages skanuj zawsze (żeby zbierać nowe linki)
         is_listing = is_listing_url(url) or is_home_url(url)
-
         prev = None
         url_dedup = None
-
         if USE_CACHE and not is_listing:
             cu = canonical_url(url)
             url_dedup = sha1(cu)
             prev = content_seen.get(url_dedup)
-
             if prev and is_monitored_hit(prev):
                 if not should_recheck_hit(prev):
                     diag["counts"]["hit_ttl_skip"] += 1
@@ -2299,8 +1842,6 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                 if url_hash in urls_seen:
                     diag["counts"]["phase2_url_cache_skip"] += 1
                     continue
-
-        # Conditional headers (ETag/Last-Modified) tylko dla monitorowanych HITów
         extra_headers = None
         if prev and is_monitored_hit(prev):
             extra_headers = {}
@@ -2310,11 +1851,9 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                 extra_headers["If-None-Match"] = et
             if lm:
                 extra_headers["If-Modified-Since"] = lm
-
         html, final, kind, status, ctype, err, ms, resp_meta = await fetch_conditional(
             session_crawl, url, extra_headers=extra_headers
         )
-
         if kind == "not_modified":
             diag["counts"]["hit_304_not_modified"] += 1
             if prev and isinstance(prev, dict) and url_dedup:
@@ -2326,62 +1865,47 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                         prev["last_modified"] = resp_meta["last_modified"]
                 content_seen[url_dedup] = prev
             continue
-
         trace_set(diag, "PHASE2_FOCUS", url=url, kind=kind, status=status, ms=ms)
-
         if kind == "pdf":
             continue
         if kind != "html" or not html:
             diag_add_error(diag, gmina, url, "phase2_fetch", kind, status, err)
-
-            # ✅ RETRY: zbieraj problemy (timeout/403/429/5xx)
+            # Obsługa martwych stron (404/410) i retry dla innych błędów
             try:
-                bad = (kind in {"timeout", "exc"} or (status in {403, 429}) or (status and int(status) >= 500))
-                if bad and isinstance(state.gmina_retry, dict):
-                    lst = state.gmina_retry.get(gkey, []) or []
-                    if len(lst) < 60000:
-                        lst.append(url)
-                    state.gmina_retry[gkey] = lst
-                    diag["counts"]["retry_added"] += 1
+                if status in (404, 410):
+                    # Strona nie istnieje – dodaj do dead listy
+                    dead_list = state.dead_urls.get(dead_key, [])
+                    if len(dead_list) < 50000:
+                        dead_list.append(url)
+                        state.dead_urls[dead_key] = dead_list
+                    diag["counts"]["dead_added"] += 1
+                elif status in (403, 429) or kind in {"timeout", "exc"} or (status and int(status) >= 500):
+                    if isinstance(state.gmina_retry, dict):
+                        lst = state.gmina_retry.get(gkey, []) or []
+                        if len(lst) < 60000:
+                            lst.append(url)
+                        state.gmina_retry[gkey] = lst
+                        diag["counts"]["retry_added"] += 1
             except Exception:
                 pass
-
             continue
-
-
         pages_ok += 1
         diag["counts"]["phase2_pages_ok"] += 1
-
         if USE_CACHE:
             cache_mark_url(url)
             if final and not re.search(r"/wersja/\d+/?$", (final or "").lower()) and "print=" not in (final or "").lower():
                 cache_mark_url(final)
-
         soup = safe_soup(html)
         if not soup or not soup.find():
             diag_add_error(diag, gmina, final, "phase2_parse", "parse", status, "empty_soup")
             continue
-
         title, h1, h2, meta_blob = extract_title_h1_h2(soup)
-
-        # ✅ Weź też h3 (bo Twoja funkcja extract_title_h1_h2 zbiera h3 do blob,
-        # ale go nie zwraca — więc bierzemy h3 bezpośrednio)
         h3 = soup.find("h3")
         h3t = h3.get_text(" ", strip=True) if h3 else ""
-
-        # ✅ SYGNATURA ZAŁĄCZNIKÓW (TO JEST ŹRÓDŁO PRAWDY DLA ZMIANA)
         att_sig = attachments_signature(soup, final)
-
-        # ✅ fingerprint (bez skanowania treści strony)
-        # Jeśli chcesz zostawić page_fprints diagnostycznie: OK.
-
-
         title_show = (title or h1 or h2 or h3t or final).strip()
         cu_final = canonical_url(final)
         url_dedup_final = sha1(cu_final)
-        
-        # ✅ ALIAS: jeśli weszliśmy innym URL-em niż final (redirect / warianty),
-        # to zapamiętaj alias żeby nie robić NOWE w kolejnym runie.
         try:
             cu_req = canonical_url(url)
             if cu_req and cu_req != cu_final:
@@ -2402,21 +1926,11 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                         }
         except Exception:
             pass
-
-
-
-        # ✅ MATCH TYLKO PO NAGŁÓWKACH (bez meta, bez body)
         header_blob = f"{title} {h1} {h2} {h3t}"
         ok_any, kw_any = keyword_match_in_blob(header_blob)
-
-
-
-        # --- MATCH -> NOWE/ZMIANA/HIT (w locku + dedup) ---
         if ok_any and kw_any:
             async with state.cache_lock:
                 prev2 = content_seen.get(url_dedup_final)
-
-                # =============== CASE: WIDZIANE WCZEŚNIEJ ===============
                 if prev2 and isinstance(prev2, dict):
                     prev2["last_checked"] = now_iso()
                     if resp_meta:
@@ -2424,30 +1938,21 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                             prev2["etag"] = resp_meta["etag"]
                         if resp_meta.get("last_modified"):
                             prev2["last_modified"] = resp_meta["last_modified"]
-
                     prev_att = (prev2.get("att_sig") or "")
                     att_changed = (att_sig != prev_att)
-
-                    # ✅ DLA WZ/DUŚ/ŚRODOWISKO: tylko NOWE, bez ZMIANA
                     only_new_mode = is_wz_or_dus_keyword(kw_any)
-
                     if att_changed and (not only_new_mode):
-                        # ✅ ZMIANA tylko jeśli zmieniły się ZAŁĄCZNIKI (ale NIE dla WZ/DUŚ)
                         diag["counts"]["hit_change"] += 1
                         print_hit("🟡 ZMIANA (ATT)", gmina, kw_any, title_show)
-
                         prev2["found_at"] = now_iso()
                         prev2["title"] = title_show[:240]
                         prev2["url"] = final
                         prev2["att_sig"] = att_sig
                         prev2["status"] = "ZMIANA"
-
                         seen_kws = set(prev2.get("keywords") or [])
                         seen_kws.add(kw_any)
                         prev2["keywords"] = sorted(seen_kws)
-
                         content_seen[url_dedup_final] = prev2
-
                         dedup_key = (url_dedup_final, "ZMIANA")
                         if dedup_key not in state.mail_dedup:
                             state.mail_dedup.add(dedup_key)
@@ -2455,29 +1960,20 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                             state.new_items_for_mail.append(msg)
                             log_new_item(gmina, title_show[:240], final, kw_any)
                             found.append((gmina, kw_any, title_show, final, "ZMIANA"))
-
                     else:
-                        # ✅ HIT (bez maila). Dla WZ/DUŚ także tu trafimy nawet jak att_changed=True
                         diag["counts"]["hit_no_change"] += 1
-
                         seen_kws = set(prev2.get("keywords") or [])
                         if kw_any not in seen_kws:
                             seen_kws.add(kw_any)
                             prev2["keywords"] = sorted(seen_kws)
-
                         if prev2.get("status") == "NO_MATCH":
                             prev2["status"] = "HIT"
-
                         prev2["att_sig"] = att_sig
                         content_seen[url_dedup_final] = prev2
-
-                # =============== CASE: PIERWSZY RAZ ===============
                 else:
-                    # ✅ BOOTSTRAP: budujemy bazę, ale bez maili i bez logowania "NOWE"
                     if BOOTSTRAP_MODE:
                         diag["counts"]["bootstrap_hit_seeded"] += 1
                         print_hit("⚪ SEED (BOOTSTRAP)", gmina, kw_any, title_show)
-
                         content_seen[url_dedup_final] = {
                             "found_at": now_iso(),
                             "last_checked": now_iso(),
@@ -2488,12 +1984,11 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                             "url": final,
                             "keywords": [kw_any],
                             "att_sig": att_sig,
-                            "status": "HIT",   # ważne: to jest "już znamy", więc później nie zrobi "NOWE"
+                            "status": "HIT",
                         }
                     else:
                         diag["counts"]["hit_new"] += 1
                         print_hit("🟢 NOWE", gmina, kw_any, title_show)
-
                         content_seen[url_dedup_final] = {
                             "found_at": now_iso(),
                             "last_checked": now_iso(),
@@ -2506,7 +2001,6 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                             "att_sig": att_sig,
                             "status": "NOWE",
                         }
-
                         dedup_key = (url_dedup_final, "NOWE")
                         if dedup_key not in state.mail_dedup:
                             state.mail_dedup.add(dedup_key)
@@ -2514,10 +2008,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                             state.new_items_for_mail.append(msg)
                             log_new_item(gmina, title_show[:240], final, kw_any)
                             found.append((gmina, kw_any, title_show, final, "NOWE"))
-
-
         else:
-            # NO_MATCH -> zapisuj tylko dla non-listing (żeby TTL działał)
             if not is_listing:
                 async with state.cache_lock:
                     if url_dedup_final not in content_seen:
@@ -2538,30 +2029,22 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                             content_seen[url_dedup_final]["last_checked"] = now_iso()
                         except Exception:
                             pass
-
-# ===================== FULL CRAWL: linki z KAŻDEJ strony =====================
         for abs_u, txt in iter_links_fast(soup, final):
             if not allow_url(abs_u):
                 continue
-
             low_u = abs_u.lower()
-
-            # 1) PDF/załączniki: zostaw Twoją logikę wykrywania "NOWE (PDF LINK)" po anchorze
             if any(low_u.endswith(ext) for ext in ATT_EXT):
                 anchor_txt = (txt or "").strip()
-
                 if len(anchor_txt) >= 12:
                     ok_pdf, kw_pdf = keyword_match_in_blob(anchor_txt)
                 else:
                     ok_pdf, kw_pdf = (False, None)
-
                 if ok_pdf and kw_pdf:
                     pdf_key = sha1(canonical_url(abs_u))
                     async with state.cache_lock:
                         prev_pdf = content_seen.get(pdf_key)
                         if not prev_pdf:
                             title_pdf = (anchor_txt or "ZAŁĄCZNIK").strip()[:240]
-
                             if BOOTSTRAP_MODE:
                                 diag["counts"]["bootstrap_pdf_seeded"] += 1
                                 content_seen[pdf_key] = {
@@ -2589,34 +2072,22 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                                     "att_sig": "",
                                     "status": "NOWE",
                                 }
-
                                 dedup_key = (pdf_key, "NOWE")
                                 if dedup_key not in state.mail_dedup:
                                     state.mail_dedup.add(dedup_key)
                                     msg = f"🟢 NOWE (PDF LINK) | {gmina} | [{kw_pdf}] | {title_pdf}\n{abs_u}"
                                     state.new_items_for_mail.append(msg)
                                     log_new_item(gmina, title_pdf, abs_u, kw_pdf)
-
-                # nie enqueue załącznika jako HTML
                 continue
-
-            # 2) Nie idź w wyszukiwarki/filtry (bo generują nieskończoność)
             if looks_like_search_url(abs_u):
                 diag["counts"]["search_url_skip"] += 1
                 continue
-
-            # 3) Enqueue wszystko (wewnętrzne), bez hot_score
-            if abs_u not in visited:
+            if abs_u not in visited and abs_u not in dead_set:
                 visited.add(abs_u)
                 q.append((abs_u, depth + 1))
-
-
-
-    # ✅ FRONTIER SAVE: zapisz resztę kolejki na następny run
     try:
         if isinstance(state.gmina_frontiers, dict):
             remaining = []
-            # zachowujemy jeszcze nieprzerobione elementy kolejki
             for (u, d) in list(q)[:50000]:
                 if u:
                     remaining.append([u, int(d)])
@@ -2624,7 +2095,6 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             diag["counts"]["frontier_saved"] += len(remaining)
     except Exception:
         pass
-
     frontier_len = 0
     retry_len = 0
     try:
@@ -2637,7 +2107,6 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             retry_len = len(state.gmina_retry.get(gkey, []) or [])
     except Exception:
         pass
-
     return found, {
         "status": "OK",
         "pages_ok": pages_ok,
@@ -2645,9 +2114,6 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
         "frontier_len": frontier_len,
         "retry_len": retry_len,
     }
-
-
-
 
 # ===================== DIAG SAVE + SUMMARY =====================
 def save_diag(diag_rows, diag_errors):
@@ -2673,7 +2139,6 @@ def save_diag(diag_rows, diag_errors):
                         " | ".join(r.get("notes", []) or [])[:900],
                         json.dumps(r.get("counts", {}), ensure_ascii=False)[:5000],
                     ])
-
             new_file2 = not DIAG_ERRORS_CSV.exists()
             with open(DIAG_ERRORS_CSV, "a", encoding="utf-8", newline="") as f:
                 w = csv.writer(f)
@@ -2689,27 +2154,21 @@ def save_diag(diag_rows, diag_errors):
                         (e.get("url") or "")[:400],
                         (e.get("err") or "")[:300],
                     ])
-
         retry_io(_do, tries=6, base_sleep=0.7)
-
     except Exception as ex:
         print(f"⚠️ save_diag failed: {ex}")
-
-
 
 def write_summary(diag_rows, new_items_for_mail):
     try:
         total = len(diag_rows or [])
         ok = sum(1 for r in (diag_rows or []) if r.get("status") == "OK")
         start_fail = sum(1 for r in (diag_rows or []) if r.get("status") == "START_FAIL")
-
         hits_new = 0
         hits_change = 0
         for r in (diag_rows or []):
             c = r.get("counts", {}) or {}
             hits_new += int(c.get("hit_new", 0) or 0)
             hits_change += int(c.get("hit_change", 0) or 0)
-
         lines = []
         lines.append(f"BIP WATCHER SUMMARY @ {now_iso()}")
         lines.append(f"gminy_total={total} ok={ok} start_fail={start_fail}")
@@ -2719,19 +2178,14 @@ def write_summary(diag_rows, new_items_for_mail):
         lines.append("TOP 50 mail items:")
         for x in (new_items_for_mail or [])[:500]:
             lines.append("- " + re.sub(r"\s+", " ", x).strip())
-
         def _do():
             with open(SUMMARY_FILE, "w", encoding="utf-8") as f:
                 f.write("\n".join(lines))
-
         retry_io(_do, tries=6, base_sleep=0.7)
-
         print(f"🧾 Summary saved: {SUMMARY_FILE}")
     except Exception as ex:
         print(f"⚠️ write_summary failed: {ex}")
 
-
-# ===================== WORKER =====================
 # ===================== WORKER =====================
 async def worker(name: str,
                  queue: asyncio.Queue,
@@ -2741,37 +2195,24 @@ async def worker(name: str,
                  urls_seen: set,
                  content_seen: dict,
                  checkpoint_counter: dict):
-
     while True:
         got_item = False
         gmina = start_url = None
         diag = diag_new()
-
         try:
-            # czekamy na zadanie
             gmina, start_url = await queue.get()
             got_item = True
-
-            # soft deadline całego runa
             if RUN_DEADLINE_MIN > 0 and (time.time() - GLOBAL_T0) > (RUN_DEADLINE_MIN * 60):
                 state.request_shutdown()
-
-            # Jeżeli mamy shutdown (deadline/cancel/CTRL+C), NIE „zjadaj” zadań.
-            # Odkładamy element z powrotem i kończymy worker.
             if state.shutdown_requested:
                 try:
                     await queue.put((gmina, start_url))
                 except Exception:
                     pass
                 return
-
-            # jeśli filtrujesz jedną gminę, resztę pomijamy (ale NIE odkładamy z powrotem,
-            # bo to świadomy filtr)
             if ONLY_GMINA and ONLY_GMINA.strip().lower() != (gmina or "").strip().lower():
                 return
-
             print(f"\n🔎 [{name}] START: {gmina} -> {start_url}", flush=True)
-
             seed_urls, p1meta = await phase1_discover(
                 gmina=gmina,
                 start_url=start_url,
@@ -2781,10 +2222,8 @@ async def worker(name: str,
                 urls_seen=urls_seen,
                 diag=diag
             )
-
             if (p1meta or {}).get("status") != "OK":
                 print_start_fail_report(diag, gmina, start_url)
-
                 state.diag_rows.append({
                     "datetime": now_iso(),
                     "gmina": gmina,
@@ -2797,10 +2236,8 @@ async def worker(name: str,
                 })
                 for e in diag.get("errors", []):
                     state.diag_errors.append(e)
-
                 print(f"✅ [{name}] DONE: {gmina} (found 0)", flush=True)
                 continue
-
             allowed_host = (p1meta or {}).get("allowed_host", "")
             found, p2meta = await phase2_focus(
                 gmina=gmina,
@@ -2811,15 +2248,12 @@ async def worker(name: str,
                 content_seen=content_seen,
                 diag=diag
             )
-
             stop_reason = ((p2meta or {}).get("stop_reason") or "")
             frontier_len = int((p2meta or {}).get("frontier_len", 0) or 0)
             retry_len = int((p2meta or {}).get("retry_len", 0) or 0)
-
             status = "OK"
             if stop_reason and stop_reason != "QUEUE_EMPTY":
                 status = "INCOMPLETE"
-
             state.diag_rows.append({
                 "datetime": now_iso(),
                 "gmina": gmina,
@@ -2836,28 +2270,20 @@ async def worker(name: str,
             })
             for e in diag.get("errors", []):
                 state.diag_errors.append(e)
-
             checkpoint_counter["done"] = int(checkpoint_counter.get("done", 0) or 0) + 1
-            
-            # checkpoint co N gmin
             if USE_CACHE and (checkpoint_counter["done"] % CACHE_CHECKPOINT_EVERY_N_GMINY == 0):
                 try:
                     if os.getenv("GITHUB_ACTIONS") and get_shard_index() >= 0:
                         await save_shard_cache_and_commit(asyncio.get_event_loop())
                     else:
                         save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints)
-                        purge_old_cache(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints)
+                        purge_old_cache(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints, state.dead_urls)
                 except Exception as ex:
                     print(f"⚠️ checkpoint save failed: {ex}", flush=True)
-
             print(f"✅ [{name}] DONE: {gmina} (found {len(found)})", flush=True)
-
         except asyncio.CancelledError:
-            # Cancel z Actions / końcówka runu: nie rób hałasu, po prostu wyjdź.
             return
-
         except Exception as e:
-            # Nie gubimy gminy: jak coś wywali worker, odkładamy zadanie do retry kolejki
             print(f"❌ [{name}] ERROR: {gmina} -> {e}", flush=True)
             try:
                 diag_add_error(diag, gmina or "", start_url or "", "worker", "exc", None, str(e))
@@ -2865,7 +2291,6 @@ async def worker(name: str,
                     state.diag_errors.append(er)
             except Exception:
                 pass
-
             try:
                 state.diag_rows.append({
                     "datetime": now_iso(),
@@ -2879,52 +2304,40 @@ async def worker(name: str,
                 })
             except Exception:
                 pass
-
-            # jeśli mieliśmy item, to odkładamy na koniec kolejki, żeby nie zniknął
             if gmina and start_url:
                 try:
                     await queue.put((gmina, start_url))
                 except Exception:
                     pass
-
         finally:
             if got_item:
                 if USE_CACHE and os.getenv("GITHUB_ACTIONS") and get_shard_index() >= 0:
                     await save_shard_cache_and_commit(asyncio.get_event_loop())
                 queue.task_done()
 
-
-
 # ===================== MAIN =====================
 async def main():
-    # cache load
-    state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints, state.gmina_frontiers, state.gmina_retry = load_cache_v2()
+    # cache load – teraz zwraca 8 wartości (dodane dead_urls)
+    state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints, state.gmina_frontiers, state.gmina_retry, state.dead_urls = load_cache_v2()
     migrate_content_seen_to_url_dedup(state.content_seen)
-    purge_old_cache(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints)
-
+    purge_old_cache(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints, state.dead_urls)
 
     if not CSV_FILE.exists():
         print(f"❌ Brak pliku CSV: {CSV_FILE}")
         return
-
     rows = read_bipy_csv(CSV_FILE)
     if not rows:
         print("❌ CSV pusty / brak poprawnych rekordów.")
         return
-
     shard_total = int(os.getenv("SHARD_TOTAL", "1"))
     shard_index = int(os.getenv("SHARD_INDEX", "0"))
-
     rows_all = rows
     rows = pick_rows_for_shard(rows_all, shard_index, shard_total)
-
     print(f"🧩 SHARD {shard_index}/{shard_total} -> {len(rows)}/{len(rows_all)} gmin", flush=True)
-
     if not rows:
         print("ℹ️ Brak gmin w tym shardzie.")
         return
-    
-    # aiohttp connectors
+
     conn_default = aiohttp.TCPConnector(
         limit=CONCURRENT_REQUESTS,
         limit_per_host=LIMIT_PER_HOST,
@@ -2932,8 +2345,6 @@ async def main():
         enable_cleanup_closed=True,
         ssl=False
     )
-
-    # IPv4 connector
     conn_ipv4 = aiohttp.TCPConnector(
         family=socket.AF_INET,
         limit=CONCURRENT_REQUESTS,
@@ -2942,8 +2353,6 @@ async def main():
         enable_cleanup_closed=True,
         ssl=False
     )
-
-    # crawl connector
     conn_crawl = aiohttp.TCPConnector(
         limit=CONCURRENT_REQUESTS,
         limit_per_host=LIMIT_PER_HOST,
@@ -2951,7 +2360,6 @@ async def main():
         enable_cleanup_closed=True,
         ssl=False
     )
-
     timeout_quick = aiohttp.ClientTimeout(total=None, sock_connect=12, sock_read=35)
 
     async with aiohttp.ClientSession(connector=conn_default, timeout=timeout_quick) as s_default, \
@@ -2959,13 +2367,11 @@ async def main():
                aiohttp.ClientSession(connector=conn_crawl, timeout=timeout_quick) as s_crawl:
 
         queue: asyncio.Queue = asyncio.Queue()
-
         for gmina, start_url in rows:
             await queue.put((gmina, start_url))
-
         checkpoint_counter = {"done": 0}
 
-        # ========== DEFINICJA FUNKCJI OKRESOWEJ (PRZED UŻYCIEM) ==========
+        # ========== DEFINICJA FUNKCJI OKRESOWEJ ==========
         async def periodic_checkpoint():
             every = env_int("CHECKPOINT_EVERY_SEC", 60)
             while True:
@@ -2976,12 +2382,10 @@ async def main():
                             await save_shard_cache_and_commit(asyncio.get_event_loop())
                         else:
                             save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints)
-                    # diag też warto flushować
                     save_diag(state.diag_rows, state.diag_errors)
                 except Exception as ex:
                     print(f"⚠️ periodic checkpoint failed: {ex}", flush=True)
 
-        # ========== TWORZENIE WORKERÓW ==========
         workers = [
             asyncio.create_task(
                 worker(
@@ -2997,8 +2401,6 @@ async def main():
             )
             for i in range(CONCURRENT_GMINY)
         ]
-
-        # ========== URUCHOMIENIE ZADANIA OKRESOWEGO ==========
         checkpoint_task = asyncio.create_task(periodic_checkpoint())
 
         try:
@@ -3008,7 +2410,6 @@ async def main():
         finally:
             checkpoint_task.cancel()
             await asyncio.gather(checkpoint_task, return_exceptions=True)
-
             for t in workers:
                 t.cancel()
             await asyncio.gather(*workers, return_exceptions=True)
@@ -3020,7 +2421,6 @@ async def main():
                 await save_shard_cache_and_commit(asyncio.get_event_loop())
             else:
                 save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints)
-    
         save_diag(state.diag_rows, state.diag_errors)
         write_summary(state.diag_rows, state.new_items_for_mail)
         export_summary_to_onedrive()
@@ -3043,40 +2443,17 @@ async def main():
 
     print("✅ SKAN ZAKOŃCZONY")
 
-
 # ===================== RUNNER (VS CODE / CELL) =====================
 def run_main_vscode_style():
-    """
-    Runner "jak w starej wersji" pod VS Code:
-    - działa przy uruchomieniu pliku: python bip_watcher.py
-    - działa też w Interactive Window (bez await na końcu pliku)
-    """
     try:
         loop = asyncio.get_event_loop()
     except RuntimeError:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-
     if loop.is_running():
-        # Interactive Window/Jupyter już ma pętlę – w takim trybie uruchamiaj:  await main()
         print("ℹ️ Wykryto działający event loop. W komórce użyj:  await main()")
         return
-
     loop.run_until_complete(main())
-
-
 
 if __name__ == "__main__":
     run_main_vscode_style()
-
-
-
-
-
-
-
-
-
-
-
-
