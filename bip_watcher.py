@@ -684,7 +684,7 @@ def safe_soup(html: str):
     if not html:
         return None
     try:
-        return BeautifulSoup(html, "html.parser")
+        return BeautifulSoup(html, "lxml")   # zamiast "html.parser"
     except Exception:
         return None
 
@@ -3068,6 +3068,7 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
 
