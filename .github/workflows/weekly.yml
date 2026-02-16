@@ -17,17 +17,14 @@ jobs:
   scan:
     name: Scan shard ${{ matrix.shard }}
     runs-on: ubuntu-latest
-
-    # ✅ klucz: shard może się wywalić/cancelować, a i tak lecimy dalej i merge działa
     continue-on-error: true
-
     timeout-minutes: 355
 
     strategy:
       fail-fast: false
+      max-parallel: 8   # ✅ mniej kolejkowania / stabilniej (zmień na 6-10 wg limitów)
       matrix:
-        shard: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
-   # 24 shardów
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]  # ✅ 20 shardów
 
     steps:
       - name: Checkout repo
@@ -59,49 +56,36 @@ jobs:
 
       # ===================== RUN =====================
       - name: Run watcher (sharded)
-        # ✅ krok może się wysypać, ale artifacty i tak pójdą
         continue-on-error: true
         env:
           PYTHONUNBUFFERED: "1"
 
-          SHARD_TOTAL: "24"
+          # 🔥 SHARDING
+          SHARD_TOTAL: "20"
           SHARD_INDEX: "${{ matrix.shard }}"
 
           # soft stop BEFORE github hard kill
           RUN_DEADLINE_MIN: "345"
 
+          # wydajność
           CONCURRENT_GMINY: "8"
           CONCURRENT_REQUESTS: "28"
           LIMIT_PER_HOST: "4"
           RATE_MIN_DELAY: "0.3"
 
-          # ✅ najważniejsze: mniej I/O, mniej cancel przez mulenie
+          # ✅ mniej I/O
           CHECKPOINT_EVERY_SEC: "900"
         run: |
           python bip_watcher.py
 
-      # ===================== SAFETY CACHE =====================
+      # ===================== SAFETY CACHE (NO HEREDOC) =====================
       - name: Ensure cache.json exists
         if: always()
         run: |
           mkdir -p data
           if [ ! -f data/cache.json ]; then
             echo "cache.json missing - creating placeholder"
-            python - <<'PY'
-            import json, os
-            os.makedirs('data', exist_ok=True)
-            cache = {
-              "schema": 10,
-              "urls_seen": {},
-              "content_seen": {},
-              "gmina_seeds": {},
-              "page_fprints": {},
-              "gmina_frontiers": {},
-              "gmina_retry": {}
-            }
-            with open('data/cache.json','w',encoding='utf-8') as f:
-              json.dump(cache,f,ensure_ascii=False,indent=2)
-            PY
+            python -c "import json,os; os.makedirs('data',exist_ok=True); cache={'schema':10,'urls_seen':{},'content_seen':{},'gmina_seeds':{},'page_fprints':{},'gmina_frontiers':{},'gmina_retry':{}}; open('data/cache.json','w',encoding='utf-8').write(json.dumps(cache,ensure_ascii=False,indent=2))"
           fi
 
       - name: Pack shard cache
@@ -127,7 +111,6 @@ jobs:
             data/diag_gminy.csv
             data/diag_errors.csv
 
-  # ===================== MERGE =====================
   merge:
     name: Merge caches + publish report
     runs-on: ubuntu-latest
@@ -198,14 +181,12 @@ jobs:
                       used = 1
                       continue
 
-                  # urls_seen: max timestamp per key
                   ua = merged.get("urls_seen", {}) or {}
                   ub = c.get("urls_seen", {}) or {}
                   for k, v in ub.items():
                       ua[k] = iso_max(ua.get(k, ""), v)
                   merged["urls_seen"] = ua
 
-                  # pozostałe: „last write wins” (wystarczy do cache)
                   merged["content_seen"] = {**(merged.get("content_seen", {}) or {}), **(c.get("content_seen", {}) or {})}
                   merged["gmina_seeds"] = {**(merged.get("gmina_seeds", {}) or {}), **(c.get("gmina_seeds", {}) or {})}
                   merged["page_fprints"] = {**(merged.get("page_fprints", {}) or {}), **(c.get("page_fprints", {}) or {})}
