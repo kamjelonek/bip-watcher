@@ -2965,6 +2965,23 @@ async def main():
 
         checkpoint_counter = {"done": 0}
 
+        # ========== DEFINICJA FUNKCJI OKRESOWEJ (PRZED UŻYCIEM) ==========
+        async def periodic_checkpoint():
+            every = env_int("CHECKPOINT_EVERY_SEC", 60)
+            while True:
+                await asyncio.sleep(every)
+                try:
+                    if USE_CACHE:
+                        if os.getenv("GITHUB_ACTIONS") and get_shard_index() >= 0:
+                            await save_shard_cache_and_commit(asyncio.get_event_loop())
+                        else:
+                            save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints)
+                    # diag też warto flushować
+                    save_diag(state.diag_rows, state.diag_errors)
+                except Exception as ex:
+                    print(f"⚠️ periodic checkpoint failed: {ex}", flush=True)
+
+        # ========== TWORZENIE WORKERÓW ==========
         workers = [
             asyncio.create_task(
                 worker(
@@ -2981,28 +2998,14 @@ async def main():
             for i in range(CONCURRENT_GMINY)
         ]
 
-        async def periodic_checkpoint():
-            every = env_int("CHECKPOINT_EVERY_SEC", 60)
-            while True:
-                await asyncio.sleep(every)
-                try:
-                    if USE_CACHE:
-                        if os.getenv("GITHUB_ACTIONS") and get_shard_index() >= 0:
-                            await save_shard_cache_and_commit(asyncio.get_event_loop())
-                        else:
-                            save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints)
-                    # diag też warto flushować
-                    save_diag(state.diag_rows, state.diag_errors)
-                except Exception as ex:
-                    print(f"⚠️ periodic checkpoint failed: {ex}", flush=True)
+        # ========== URUCHOMIENIE ZADANIA OKRESOWEGO ==========
+        checkpoint_task = asyncio.create_task(periodic_checkpoint())
 
-                   
         try:
             await queue.join()
         except KeyboardInterrupt:
             state.request_shutdown()
         finally:
-            # zatrzymaj checkpoint
             checkpoint_task.cancel()
             await asyncio.gather(checkpoint_task, return_exceptions=True)
 
@@ -3065,6 +3068,7 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
 
