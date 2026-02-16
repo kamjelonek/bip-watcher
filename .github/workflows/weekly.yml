@@ -40,11 +40,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Ensure zip/unzip (optional)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y zip unzip
-
       # ===================== RUN =====================
       - name: Run watcher (sharded)
         continue-on-error: true
@@ -61,25 +56,8 @@ jobs:
         run: |
           python bip_watcher.py
 
-      # ===================== BACKUP ARTIFACTS (optional) =====================
-      - name: Ensure cache.json exists (fallback)
-        if: always()
-        run: |
-          mkdir -p data
-          if [ ! -f data/cache.json ]; then
-            echo "cache.json missing - creating placeholder"
-            python -c "import json,os; os.makedirs('data',exist_ok=True); cache={'schema':10,'urls_seen':{},'content_seen':{},'gmina_seeds':{},'page_fprints':{},'gmina_frontiers':{},'gmina_retry':{}}; open('data/cache.json','w',encoding='utf-8').write(json.dumps(cache,ensure_ascii=False,indent=2))"
-          fi
-
-      - name: Pack shard cache (backup)
-        if: always()
-        run: |
-          rm -f "data/cache_shard_${{ matrix.shard }}.zip"
-          cd data
-          zip -9 "cache_shard_${{ matrix.shard }}.zip" cache.json
-          cd ..
-
-      - name: Upload shard outputs (artifacts)
+      # ===================== BACKUP ARTEFAKTÓW (opcjonalnie) =====================
+      - name: Upload logs and reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -87,8 +65,6 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
           path: |
-            data/cache_shard_${{ matrix.shard }}.zip
-            data/cache.json
             data/summary_report.txt
             data/log.csv
             data/diag_gminy.csv
@@ -110,10 +86,10 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Merge shard caches from repository
+      - name: Merge shard caches
         run: |
           python - <<'PY'
-          import os, json, glob, sys
+          import os, json, glob
 
           def iso_max(a, b):
               return a if (a or "") >= (b or "") else b
@@ -128,7 +104,6 @@ jobs:
               "gmina_retry": {}
           }
 
-          # wczytaj istniejący cache.json (jeśli istnieje)
           if os.path.exists("data/cache.json"):
               with open("data/cache.json", "r") as f:
                   try:
@@ -138,17 +113,16 @@ jobs:
 
           shard_files = glob.glob("data/cache_shard_*.json")
           if not shard_files:
-              print("No shard cache files found", file=sys.stderr)
+              print("No shard cache files found")
           else:
               for f in shard_files:
                   try:
                       with open(f, "r") as fp:
                           data = json.load(fp)
                   except Exception as e:
-                      print(f"Error reading {f}: {e}", file=sys.stderr)
+                      print(f"Error reading {f}: {e}")
                       continue
 
-                  # scalanie pól
                   for k in merged:
                       if k == "schema":
                           continue
@@ -166,35 +140,26 @@ jobs:
 
               print(f"Merged {len(shard_files)} shard files")
 
-          # zapisz do cache.json
           os.makedirs("data", exist_ok=True)
           with open("data/cache.json", "w") as f:
               json.dump(merged, f, indent=2)
 
-          # opcjonalnie usuń pliki shardowe
           for f in shard_files:
               os.remove(f)
 
-          # utwórz cache.zip (opcjonalnie)
-          import zipfile
-          with zipfile.ZipFile("data/cache.zip", "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
-              z.write("data/cache.json", arcname="cache.json")
-
-          print("OK: data/cache.json and data/cache.zip updated")
+          print("OK: data/cache.json updated")
           PY
 
-      - name: Commit merged cache back to repo
+      - name: Commit merged cache
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git pull --rebase || true
-          git add data/cache.json data/cache.zip
-          # Usuń pliki shardowe z repo (jeśli istnieją)
-          git rm --ignore-unmatch data/cache_shard_*.json
+          git add data/cache.json
           git commit -m "Merge shard caches [skip ci]" || echo "Nothing to commit"
           git push || true
 
-      - name: Upload merged artifact (optional)
+      - name: Upload merged report (optional)
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -203,4 +168,5 @@ jobs:
           if-no-files-found: warn
           path: |
             data/cache.json
-            data/cache.zip
+            data/summary_report.txt
+            data/log.csv
