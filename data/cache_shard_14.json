@@ -12901,7 +12901,9 @@
   "gmina_frontiers": {},
   "gmina_retry": {
     "5d4393ed4d7c990dffaacae6f2146089343f0cee": [
-      "https://bip.gminaketrzyn.pl/lokalizacje/113/"
+      "https://bip.gminaketrzyn.pl/lokalizacje/113/",
+      "https://konsultacje.gminaketrzyn.pl/pl/ekonsultacje/szczegoly/YToyOntzOjI6ImlkIjtzOjE6IjYiO3M6NDoidHlwZSI7czoxOiIwIjt9",
+      "https://konsultacje.gminaketrzyn.pl/pl/ekonsultacje/konsultacje/0"
     ]
   }
 }
