@@ -9761,6 +9761,496 @@
       ],
       "att_sig": "",
       "status": "NOWE"
+    },
+    "c104ba718bb80741ba7160577d7f3b4b13a1a3a2": {
+      "found_at": "2026-02-16T20:52:09",
+      "last_checked": "2026-02-16T20:52:09",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Aktualności, Ogłoszenia i Informacje, rejestr 4717, menu 248 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&rejid=4717",
+      "keywords": [
+        "decyzja środowiskowa"
+      ],
+      "att_sig": "7133f4ffe0fe468ca6b6022777e63c6c20d03c87",
+      "status": "NOWE"
+    },
+    "f39f848f1cde0429d3a1f8ae5e81bbe4730b26cb": {
+      "found_at": "2026-02-16T20:52:12",
+      "last_checked": "2026-02-16T20:52:12",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Aktualności, Ogłoszenia i Informacje, rejestr 4401, menu 248 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&rejid=4401",
+      "keywords": [
+        "decyzja środowiskowa"
+      ],
+      "att_sig": "43ba01e09cd4d928e74618f9c464aec8fd92539d",
+      "status": "NOWE"
+    },
+    "4eb7d199f6b659f1608263b77c83b811fff3295e": {
+      "found_at": "2026-02-16T20:52:13",
+      "last_checked": "2026-02-16T20:52:13",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Aktualności, Ogłoszenia i Informacje, rejestr 4200, menu 248 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&rejid=4200",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "135fb89ed280fef9520431dc6c1d554f2d5cfaf8",
+      "status": "NOWE"
+    },
+    "4516a02cf3cc992ecda1633d47e2f03ad09e6aae": {
+      "found_at": "2026-02-16T20:52:14",
+      "last_checked": "2026-02-16T20:52:14",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Aktualności, Ogłoszenia i Informacje, rejestr 4170, menu 248 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&rejid=4170",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "473e0012dc6b44e2e6eedd306e09a97521dda29d",
+      "status": "NOWE"
+    },
+    "95db91169b01d592160f0cabd33ff10856b344b4": {
+      "found_at": "2026-02-16T20:52:14",
+      "last_checked": "2026-02-16T20:52:14",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Aktualności, Ogłoszenia i Informacje, rejestr BIPA5D06F268F42D3Z, menu 248 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&code=BIPA5D06F268F42D3Z&rpg=0",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "e75b95c34505797f1c5f4cc15cd9a363a0e0199b": {
+      "found_at": "2026-02-16T20:52:15",
+      "last_checked": "2026-02-16T20:52:15",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Aktualności, Ogłoszenia i Informacje, rejestr BIPA5B61B94B22047Z, menu 248 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&code=BIPA5B61B94B22047Z&rpg=0",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "82eb98a4a1179fee8b63b51c6730212be92808d9": {
+      "found_at": "2026-02-16T20:52:15",
+      "last_checked": "2026-02-16T20:52:15",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Aktualności, Ogłoszenia i Informacje, rejestr BIPA5B09937C526F7Z, menu 248 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&code=BIPA5B09937C526F7Z&rpg=0",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "2bc700e04fbfd344ef960eae0d88d8cdd8d15a4a": {
+      "found_at": "2026-02-16T20:52:16",
+      "last_checked": "2026-02-16T20:52:16",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Aktualności, Ogłoszenia i Informacje, rejestr BIPA5A7CD87B27022Z, menu 248 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&code=BIPA5A7CD87B27022Z&rpg=0",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "7eb1452501bb6a62740d905f402f96160f1443e6": {
+      "found_at": "2026-02-16T20:52:17",
+      "last_checked": "2026-02-16T20:52:17",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Aktualności, Ogłoszenia i Informacje, rejestr BIPA599E07437A3CAZ, menu 248 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&code=BIPA599E07437A3CAZ&rpg=0",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "89ae129861eed8c2f179e65fa1d92c1910745ad5": {
+      "found_at": "2026-02-16T20:52:17",
+      "last_checked": "2026-02-16T20:52:17",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Aktualności, Ogłoszenia i Informacje, rejestr BIPA595A685CE8CDFZ, menu 248 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&code=BIPA595A685CE8CDFZ&rpg=0",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "1c90c55ccf722862dc03022b5a7854b926816eee": {
+      "found_at": "2026-02-16T20:52:17",
+      "last_checked": "2026-02-16T20:52:17",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Aktualności, Ogłoszenia i Informacje, rejestr BIPA5885E4A160555Z, menu 248 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&code=BIPA5885E4A160555Z&rpg=0",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "1db84d58e64ec36433eb17f1a8eeb84afe7f2797": {
+      "found_at": "2026-02-16T20:52:18",
+      "last_checked": "2026-02-16T20:52:18",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Aktualności, Ogłoszenia i Informacje, rejestr BIPA57A188AC02C4DZ, menu 248 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&code=BIPA57A188AC02C4DZ&rpg=0",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "2f139554f9518a71556e6bd2dc3cba69fe7083df": {
+      "found_at": "2026-02-16T20:52:18",
+      "last_checked": "2026-02-16T20:52:18",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Aktualności, Ogłoszenia i Informacje, rejestr BIPA56D5FD2E35631Z, menu 248 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&code=BIPA56D5FD2E35631Z&rpg=0",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "54118c3d550ea8f4e366fa80d247a4d6494a4394": {
+      "found_at": "2026-02-16T20:54:06",
+      "last_checked": "2026-02-16T20:54:06",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Rejestr zmian, rejestr 3606, menu 9 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&rejid=3606",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "d0dfb8766edd218603fc92691afdc5be49fb1d13",
+      "status": "NOWE"
+    },
+    "a8bcfc343a1cb6f1af7d214b0fd07fd59089ebf5": {
+      "found_at": "2026-02-16T20:54:06",
+      "last_checked": "2026-02-16T20:54:06",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Rejestr zmian, rejestr 3605, menu 9 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&rejid=3605",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "d0dfb8766edd218603fc92691afdc5be49fb1d13",
+      "status": "NOWE"
+    },
+    "e8ffc4de1469e2cfdcfb9952e308ef7e77fb2e7d": {
+      "found_at": "2026-02-16T20:54:07",
+      "last_checked": "2026-02-16T20:54:07",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Rejestr zmian, rejestr 2287, menu 9 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&rejid=2287",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "882c429f8e6ed8551ac8ea4604181ca44c6932e6",
+      "status": "NOWE"
+    },
+    "0a4313d73cb1e20906845e8213152d48837ddef0": {
+      "found_at": "2026-02-16T20:54:07",
+      "last_checked": "2026-02-16T20:54:07",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Rejestr zmian, rejestr 2175, menu 9 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&rejid=2175",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "723b6ed0b1c68aef27882184f7be7b4e7b0b04da",
+      "status": "NOWE"
+    },
+    "043b5cff1a63477dd4ae7915ad3b87fa031b2fe2": {
+      "found_at": "2026-02-16T20:54:08",
+      "last_checked": "2026-02-16T20:54:08",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Rejestr zmian, rejestr 2080, menu 9 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&rejid=2080",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "7d95d6f3809cbc5e367c4d5b8b9127bc7c7475f9",
+      "status": "NOWE"
+    },
+    "129c853db925dfd9dd23abc9fe75940d7e38e914": {
+      "found_at": "2026-02-16T20:54:08",
+      "last_checked": "2026-02-16T20:54:08",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Rejestr zmian, rejestr 2079, menu 9 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&rejid=2079",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "f2baf7e0d73daf3976abdd8066aaddbc4873005b",
+      "status": "NOWE"
+    },
+    "7f6362ddb0c0aabbb76c31f2046d67887bbd48ea": {
+      "found_at": "2026-02-16T20:54:09",
+      "last_checked": "2026-02-16T20:54:09",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Rejestr zmian, rejestr 2078, menu 9 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&rejid=2078",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "0add24cfeb217c8a22ae8ef6dfc0b44beb230fe3",
+      "status": "NOWE"
+    },
+    "d889e19d192d2f9b100cf0f0ddfd2f0584b03275": {
+      "found_at": "2026-02-16T20:54:09",
+      "last_checked": "2026-02-16T20:54:09",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Rejestr zmian, rejestr 2061, menu 9 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&rejid=2061",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "f37ab7b6fcbe7764f208d093638f5cb3161fb969",
+      "status": "NOWE"
+    },
+    "2040a721a34091c1562fe734d82009be05752187": {
+      "found_at": "2026-02-16T20:54:10",
+      "last_checked": "2026-02-16T20:54:10",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Rejestr zmian, rejestr 1927, menu 9 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&rejid=1927",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "ccb88969259b9fb91e6a2441889fd8523e209d03",
+      "status": "NOWE"
+    },
+    "c8c370d087c35830b5b74516781ece711eaa8d9d": {
+      "found_at": "2026-02-16T20:54:11",
+      "last_checked": "2026-02-16T20:54:11",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Rejestr zmian, rejestr 1888, menu 9 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&rejid=1888",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "f298a1142a1f75c658ae37ea592809efb8af249d",
+      "status": "NOWE"
+    },
+    "3560a8564aef2721462c0be2d8678d9d8ba26524": {
+      "found_at": "2026-02-16T20:54:11",
+      "last_checked": "2026-02-16T20:54:11",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Rejestr zmian, rejestr 1640, menu 9 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&rejid=1640",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "9e11cd46457b2b2180b049534ab3320b42a508c0",
+      "status": "NOWE"
+    },
+    "ee1008ffb56d43375add9814425b1a3335cd168b": {
+      "found_at": "2026-02-16T20:54:12",
+      "last_checked": "2026-02-16T20:54:12",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Rejestr zmian, rejestr 1639, menu 9 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&rejid=1639",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "9e11cd46457b2b2180b049534ab3320b42a508c0",
+      "status": "NOWE"
+    },
+    "1945d12d6c464ee33ebddb800ae490eab54bd7a3": {
+      "found_at": "2026-02-16T20:54:12",
+      "last_checked": "2026-02-16T20:54:12",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Rejestr zmian, rejestr 1471, menu 9 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&rejid=1471",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "924da25bc18d92c8aa185e7b57aac5072c60b807",
+      "status": "NOWE"
+    },
+    "6283b004ae9a4419068d73a11600dede9785f5a3": {
+      "found_at": "2026-02-16T20:54:12",
+      "last_checked": "2026-02-16T20:54:12",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Rejestr zmian, rejestr 1373, menu 9 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?bip=3&rejid=1373",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "79326630714654aaff1f2abb1dd1ef2846fa4f7a",
+      "status": "NOWE"
+    },
+    "7829dd6a463bd53bd6e29e7475abcf54cb390b3d": {
+      "found_at": "2026-02-16T20:54:27",
+      "last_checked": "2026-02-16T20:54:27",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Start - Uchwała Nr XIII/36/2003 - w sprawie przystąpienia do sporządzenia miejscowego planu zagospodarowania przestrzennego dla miejscowości Prusy, Gmina Kondratowice. - Rejestr zmian, rejestr 128, menu 9, artykuł 128 - BIP - Gmina Kondrato",
+      "url": "https://kondratowice.biuletyn.net/?id=128&rejz=2",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "13e0428fb09e95fd8fa04fd49b91938806417377",
+      "status": "NOWE"
+    },
+    "5cf77722b4e57c30355c748440b2efafd7d6a58d": {
+      "found_at": "2026-02-16T20:54:27",
+      "last_checked": "2026-02-16T20:54:27",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Start - Uchwała Nr XIII/35/2003 - w sprawie przystąpienia do sporządzenia miejscowego planu zagospodarowania przestrzennego dla miejscowości Kondratowice, Gmina Kondratowice. - Rejestr zmian, rejestr 127, menu 9, artykuł 127 - BIP - Gmina K",
+      "url": "https://kondratowice.biuletyn.net/?id=127&rejz=2",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "bfbd16cf1d0dd7543a42be4b02a9ed2a8012bc09",
+      "status": "NOWE"
+    },
+    "7e1191e8c52f2b6ab868aa7603408e2dd05b4fe4": {
+      "found_at": "2026-02-16T20:54:44",
+      "last_checked": "2026-02-16T20:54:44",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Start - Studium uwarunkowań i kierunków zagospodarowania przestrzennego gminy - Rejestr zmian, rejestr 130, menu 9, artykuł 130 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?id=130&rejz=2",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "0578d152c61c579eda6f62ec4d4074e6d178b175",
+      "status": "NOWE"
+    },
+    "4c28a5a3ce54a4cf2077c1e04f0be6cd865d1bc7": {
+      "found_at": "2026-02-16T20:54:44",
+      "last_checked": "2026-02-16T20:54:44",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Start - Uchwała Nr XIII/37/2003 - w sprawie przystąpienia do sporządzenia miejscowego planu zagospodarowania przestrzennego dla miejscowości Górka Sobocka, Gmina Kondratowice. - Rejestr zmian, rejestr 129, menu 9, artykuł 129 - BIP - Gmina ",
+      "url": "https://kondratowice.biuletyn.net/?id=129&rejz=2",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "13e0428fb09e95fd8fa04fd49b91938806417377",
+      "status": "NOWE"
+    },
+    "eb1e0d915687dd6cb0f218576584bb251c5217f1": {
+      "found_at": "2026-02-16T20:55:46",
+      "last_checked": "2026-02-16T20:55:46",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Start - Zawiadomienie o wyborze najkorzystniejszej oferty â Remont kanalizacji sanitarnej w miejscowości Kondratowice - Rejestr zmian, rejestr 189, menu 9, artykuł 189 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?id=189&rejz=2",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "678d26b7ef17a46a880901c9e902ad363adb8dda": {
+      "found_at": "2026-02-16T20:55:52",
+      "last_checked": "2026-02-16T20:55:52",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Start - Rejestr zmian, menu 9, strona 530 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?pg=529&rejz=1",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "8b841904041e497f5f319fbb539ddd0a2e179005": {
+      "found_at": "2026-02-16T20:55:55",
+      "last_checked": "2026-02-16T20:55:55",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Start -  \t OGŁOSZENIE O PONOWNYM WYŁOŻENIU DO PUBLICZNEGO WGLĄDU PROJEKTU MIEJSCOWEGO PLANU ZAGOSPODAROWANIA PRZESTRZENNEGO MIEJSCOWOŚCI PRUSY - Rejestr zmian, rejestr 214, menu 9, artykuł 214 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?id=214&rejz=2",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "7295fa0d81e3419e40b241583a5ddcf791c0e26f",
+      "status": "NOWE"
+    },
+    "36ecc66d31aa1e5fb229021e6e6345232eaa50aa": {
+      "found_at": "2026-02-16T20:55:56",
+      "last_checked": "2026-02-16T20:55:56",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Kondratowice",
+      "title": "Start -  \t OGŁOSZENIE O PONOWNYM WYŁOŻENIU DO PUBLICZNEGO WGLĄDU PROJEKTU MIEJSCOWEGO PLANU ZAGOSPODAROWANIA PRZESTRZENNEGO MIEJSCOWOŚCI KONDRATOWICE - Rejestr zmian, rejestr 213, menu 9, artykuł 213 - BIP - Gmina Kondratowice",
+      "url": "https://kondratowice.biuletyn.net/?id=213&rejz=2",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "3c43e126dce8cfc94eb4be5a447b62f02260efd6",
+      "status": "NOWE"
     }
   },
   "gmina_seeds": {
@@ -16554,7 +17044,9 @@
     }
   },
   "page_fprints": {},
-  "gmina_frontiers": {},
+  "gmina_frontiers": {
+    "4c0692aac118d724869778af37d11b99598778bd": []
+  },
   "gmina_retry": {
     "4c0692aac118d724869778af37d11b99598778bd": []
   }
