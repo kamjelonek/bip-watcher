@@ -2,7 +2,7 @@ name: BIP Watcher Weekly
 
 on:
   schedule:
-    - cron: "0 5 * * 1"   # poniedziałek 05:00 UTC
+    - cron: "0 5 * * 1"
   workflow_dispatch: {}
 
 concurrency:
@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11]   # 🔥 12 shardów
 
     steps:
       - name: Checkout repo
@@ -52,50 +52,37 @@ jobs:
             echo "No cache.zip found (first run)."
           fi
 
+      # ===================== RUN =====================
       - name: Run watcher (sharded)
         continue-on-error: true
         env:
           PYTHONUNBUFFERED: "1"
 
-          # --- SHARDING ---
-          SHARD_TOTAL: "8"
+          # 🔥 SHARDING
+          SHARD_TOTAL: "12"
           SHARD_INDEX: "${{ matrix.shard }}"
 
-          # --- RUN TIME BUDGET (miękki deadline w kodzie) ---
+          # soft stop BEFORE github hard kill
           RUN_DEADLINE_MIN: "345"
 
-          # --- THROTTLING PER JOB (ważne przy 8 jobach naraz) ---
-          CONCURRENT_GMINY: "6"
+          # Twoje szybkie wartości
+          CONCURRENT_GMINY: "8"
           CONCURRENT_REQUESTS: "28"
-          LIMIT_PER_HOST: "3"
+          LIMIT_PER_HOST: "4"
           RATE_MIN_DELAY: "0.3"
 
-          # checkpoint częściej, żeby nie tracić postępu przy timeoutach
-          CHECKPOINT_EVERY_SEC: "30"
+          CHECKPOINT_EVERY_SEC: "60"
         run: |
           python bip_watcher.py
 
+      # ===================== SAFETY CACHE =====================
       - name: Ensure cache.json exists
         if: always()
         run: |
           mkdir -p data
           if [ ! -f data/cache.json ]; then
-            echo "cache.json missing - creating minimal placeholder to allow merge."
-            python - << 'PY'
-            import json, os
-            os.makedirs("data", exist_ok=True)
-            cache = {
-              "schema": 10,
-              "urls_seen": {},
-              "content_seen": {},
-              "gmina_seeds": {},
-              "page_fprints": {},
-              "gmina_frontiers": {},
-              "gmina_retry": {},
-            }
-            with open("data/cache.json", "w", encoding="utf-8") as f:
-              json.dump(cache, f, ensure_ascii=False, indent=2)
-            PY
+            echo "cache.json missing - creating placeholder"
+            python -c "import json,os; os.makedirs('data',exist_ok=True); cache={'schema':10,'urls_seen':{},'content_seen':{},'gmina_seeds':{},'page_fprints':{},'gmina_frontiers':{},'gmina_retry':{}}; open('data/cache.json','w',encoding='utf-8').write(json.dumps(cache,ensure_ascii=False,indent=2))"
           fi
 
       - name: Pack shard cache
@@ -106,34 +93,13 @@ jobs:
           zip -9 "cache_shard_${{ matrix.shard }}.zip" cache.json
           cd ..
 
-      - name: Shard summary to Step Summary
-        if: always()
-        run: |
-          echo "## Shard ${{ matrix.shard }}" >> $GITHUB_STEP_SUMMARY
-          if [ -f data/summary_report.txt ]; then
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -n 80 data/summary_report.txt >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-          else
-            echo "- No summary_report.txt" >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "" >> $GITHUB_STEP_SUMMARY
-          for f in data/diag_gminy.csv data/diag_errors.csv data/log.csv; do
-            if [ -f "$f" ]; then
-              echo "- ✅ $(basename "$f") exists ($(wc -l < "$f") lines)" >> $GITHUB_STEP_SUMMARY
-            else
-              echo "- ❌ $(basename "$f") missing" >> $GITHUB_STEP_SUMMARY
-            fi
-          done
-
       - name: Upload shard outputs (artifacts)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: bip-output-shard-${{ matrix.shard }}
-          if-no-files-found: warn
           retention-days: 30
+          if-no-files-found: warn
           path: |
             data/cache_shard_${{ matrix.shard }}.zip
             data/cache.json
@@ -142,6 +108,7 @@ jobs:
             data/diag_gminy.csv
             data/diag_errors.csv
 
+  # ===================== MERGE =====================
   merge:
     name: Merge caches + publish report
     runs-on: ubuntu-latest
@@ -158,222 +125,62 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Download all shard artifacts
+      - name: Download shard artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      - name: Merge cache.json from shards into main data/cache.zip
+      - name: Merge caches
         run: |
-          python - << 'PY'
+          python - <<'PY'
           import os, json, zipfile
 
-          def load_cache_from_zip(zpath):
-            with zipfile.ZipFile(zpath, "r") as z:
-              with z.open("cache.json") as f:
-                return json.load(f)
+          def load(zp):
+              with zipfile.ZipFile(zp,"r") as z:
+                  with z.open("cache.json") as f:
+                      return json.load(f)
 
-          def iso_max(a, b):
-            if not a: return b
-            if not b: return a
-            return a if a >= b else b
+          def iso_max(a,b):
+              return a if (a or "") >= (b or "") else b
 
-          def merge_content_seen(a, b):
-            out = dict(a or {})
-            for k, vb in (b or {}).items():
-              va = out.get(k)
-              if not isinstance(vb, dict):
-                continue
-              if not isinstance(va, dict):
-                out[k] = vb
-                continue
+          zips=[]
+          for r,_,fs in os.walk("artifacts"):
+              for f in fs:
+                  if f.startswith("cache_shard_") and f.endswith(".zip"):
+                      zips.append(os.path.join(r,f))
+          zips.sort()
 
-              outv = dict(va)
-              outv["found_at"] = iso_max(va.get("found_at",""), vb.get("found_at",""))
-              outv["last_checked"] = iso_max(va.get("last_checked",""), vb.get("last_checked",""))
+          if not zips:
+              raise SystemExit("No shard caches found")
 
-              if (vb.get("last_checked","") or "") >= (va.get("last_checked","") or ""):
-                for fld in ("url","title","gmina","etag","last_modified","att_sig"):
-                  if vb.get(fld):
-                    outv[fld] = vb.get(fld)
+          merged=load(zips[0])
 
-              kwa = set(va.get("keywords") or [])
-              kwb = set(vb.get("keywords") or [])
-              outv["keywords"] = sorted(kwa | kwb)
+          for zp in zips[1:]:
+              c=load(zp)
 
-              pri = {"ZMIANA": 4, "NOWE": 3, "HIT": 2, "NO_MATCH": 1, "ALIAS": 0}
-              sa = va.get("status") or ""
-              sb = vb.get("status") or ""
-              outv["status"] = sa if pri.get(sa, 0) >= pri.get(sb, 0) else sb
+              ua=merged.get("urls_seen",{})
+              ub=c.get("urls_seen",{})
+              for k,v in ub.items():
+                  ua[k]=iso_max(ua.get(k,""),v)
+              merged["urls_seen"]=ua
 
-              out[k] = outv
-            return out
+              merged["content_seen"]={**merged.get("content_seen",{}), **c.get("content_seen",{})}
+              merged["gmina_seeds"]={**merged.get("gmina_seeds",{}), **c.get("gmina_seeds",{})}
+              merged["page_fprints"]={**merged.get("page_fprints",{}), **c.get("page_fprints",{})}
+              merged["gmina_frontiers"]={**merged.get("gmina_frontiers",{}), **c.get("gmina_frontiers",{})}
+              merged["gmina_retry"]={**merged.get("gmina_retry",{}), **c.get("gmina_retry",{})}
 
-          def merge_dict_latest_ts(a, b, ts_field="ts"):
-            out = dict(a or {})
-            for k, vb in (b or {}).items():
-              va = out.get(k)
-              if not isinstance(vb, dict):
-                continue
-              if not isinstance(va, dict):
-                out[k] = vb
-                continue
-              tsa = va.get(ts_field, "") or ""
-              tsb = vb.get(ts_field, "") or ""
-              out[k] = va if tsa >= tsb else vb
-            return out
+          os.makedirs("data",exist_ok=True)
+          with open("data/cache.json","w",encoding="utf-8") as f:
+              json.dump(merged,f,ensure_ascii=False)
 
-          shard_zips = []
-          for root, _, files in os.walk("artifacts"):
-            for fn in files:
-              if fn.startswith("cache_shard_") and fn.endswith(".zip"):
-                shard_zips.append(os.path.join(root, fn))
-          shard_zips.sort()
+          with zipfile.ZipFile("data/cache.zip","w",compression=zipfile.ZIP_DEFLATED,compresslevel=9) as z:
+              z.write("data/cache.json",arcname="cache.json")
 
-          if not shard_zips:
-            raise SystemExit("No shard cache zips found in artifacts/")
-
-          caches = [load_cache_from_zip(p) for p in shard_zips]
-          merged = caches[0]
-
-          for c in caches[1:]:
-            merged["schema"] = max(int(merged.get("schema", 0) or 0), int(c.get("schema", 0) or 0))
-
-            ua = merged.get("urls_seen") or {}
-            ub = c.get("urls_seen") or {}
-            out_urls = dict(ua)
-            for k, ts in ub.items():
-              out_urls[k] = iso_max(out_urls.get(k, ""), ts)
-            merged["urls_seen"] = out_urls
-
-            merged["content_seen"] = merge_content_seen(merged.get("content_seen") or {}, c.get("content_seen") or {})
-
-            merged["gmina_seeds"] = merge_dict_latest_ts(merged.get("gmina_seeds") or {}, c.get("gmina_seeds") or {}, ts_field="ts")
-            merged["page_fprints"] = merge_dict_latest_ts(merged.get("page_fprints") or {}, c.get("page_fprints") or {}, ts_field="ts")
-
-            ga = merged.get("gmina_frontiers") or {}
-            gb = c.get("gmina_frontiers") or {}
-            out_gf = dict(ga)
-            for k, vb in gb.items():
-              va = out_gf.get(k)
-              if not isinstance(vb, list):
-                continue
-              if not isinstance(va, list) or len(vb) > len(va):
-                out_gf[k] = vb
-            merged["gmina_frontiers"] = out_gf
-
-            ra = merged.get("gmina_retry") or {}
-            rb = c.get("gmina_retry") or {}
-            out_gr = dict(ra)
-            for k, vb in rb.items():
-              va = out_gr.get(k)
-              if not isinstance(vb, list):
-                continue
-              if not isinstance(va, list):
-                out_gr[k] = vb
-              else:
-                s = set(va)
-                for u in vb:
-                  if u not in s:
-                    va.append(u)
-                    s.add(u)
-                  if len(va) >= 60000:
-                    break
-                out_gr[k] = va
-            merged["gmina_retry"] = out_gr
-
-          os.makedirs("data", exist_ok=True)
-          with open("data/cache.json", "w", encoding="utf-8") as f:
-            json.dump(merged, f, ensure_ascii=False, indent=2)
-
-          zpath = "data/cache.zip"
-          if os.path.exists(zpath):
-            os.remove(zpath)
-          with zipfile.ZipFile(zpath, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
-            z.write("data/cache.json", arcname="cache.json")
-
-          print(f"Merged {len(shard_zips)} shard caches -> {zpath}")
+          print("Merged",len(zips),"shards")
           PY
 
-      - name: Merge CSVs (diag/log) + summary into data/merged_*
-        if: always()
-        run: |
-          python - << 'PY'
-          import os, glob, csv, shutil
-
-          os.makedirs("data", exist_ok=True)
-
-          def merge_csv(pattern, out_path):
-            files = sorted(glob.glob(pattern, recursive=True))
-            if not files:
-              return 0, []
-            header = None
-            rows = 0
-            used = []
-            with open(out_path, "w", encoding="utf-8", newline="") as fout:
-              w = None
-              for fp in files:
-                try:
-                  with open(fp, "r", encoding="utf-8", newline="") as fin:
-                    r = csv.reader(fin)
-                    h = next(r, None)
-                    if not h:
-                      continue
-                    if header is None:
-                      header = h
-                      w = csv.writer(fout)
-                      w.writerow(header)
-                    # jeśli header inny, próbujemy dalej, ale pomijamy
-                    if h != header:
-                      continue
-                    for row in r:
-                      w.writerow(row)
-                      rows += 1
-                    used.append(fp)
-                except Exception:
-                  continue
-            return rows, used
-
-          # diag_gminy.csv, diag_errors.csv, log.csv
-          rows1, used1 = merge_csv("artifacts/**/diag_gminy.csv", "data/merged_diag_gminy.csv")
-          rows2, used2 = merge_csv("artifacts/**/diag_errors.csv", "data/merged_diag_errors.csv")
-          rows3, used3 = merge_csv("artifacts/**/log.csv", "data/merged_log.csv")
-
-          # summary_report.txt: zbieramy w jeden plik (doklejamy shardami)
-          sum_files = sorted(glob.glob("artifacts/**/summary_report.txt", recursive=True))
-          merged_sum = "data/merged_summary_report.txt"
-          if sum_files:
-            with open(merged_sum, "w", encoding="utf-8") as out:
-              for fp in sum_files:
-                out.write("\n" + ("="*80) + "\n")
-                out.write(f"FILE: {fp}\n")
-                out.write(("="*80) + "\n")
-                try:
-                  with open(fp, "r", encoding="utf-8", errors="ignore") as fin:
-                    out.write(fin.read())
-                except Exception as e:
-                  out.write(f"[read error] {e}\n")
-
-          print("merged_diag_gminy_rows:", rows1)
-          print("merged_diag_errors_rows:", rows2)
-          print("merged_log_rows:", rows3)
-          print("merged_summary_files:", len(sum_files))
-          PY
-
-      - name: Merge summary to Step Summary
-        if: always()
-        run: |
-          echo "## Merge results" >> $GITHUB_STEP_SUMMARY
-          for f in data/cache.zip data/cache.json data/merged_diag_gminy.csv data/merged_diag_errors.csv data/merged_log.csv data/merged_summary_report.txt; do
-            if [ -f "$f" ]; then
-              echo "- ✅ $(basename "$f") exists ($(wc -l < "$f" 2>/dev/null || echo "?") lines)" >> $GITHUB_STEP_SUMMARY
-            else
-              echo "- ❌ $(basename "$f") missing" >> $GITHUB_STEP_SUMMARY
-            fi
-          done
-
-      - name: Upload merged report artifact (one-click download)
-        if: always()
+      - name: Upload merged artifact
         uses: actions/upload-artifact@v4
         with:
           name: bip-merged-report
@@ -382,20 +189,13 @@ jobs:
           path: |
             data/cache.zip
             data/cache.json
-            data/merged_diag_gminy.csv
-            data/merged_diag_errors.csv
-            data/merged_log.csv
-            data/merged_summary_report.txt
 
-      - name: Commit merged cache.zip back to repo
+      - name: Commit merged cache back to repo
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           git pull --rebase || true
-
           git add data/cache.zip data/cache.json || true
-          git status --porcelain
-
           git commit -m "Merge shard caches [skip ci]" || echo "Nothing to commit"
           git push || true
