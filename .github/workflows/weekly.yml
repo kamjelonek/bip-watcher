@@ -52,10 +52,10 @@ jobs:
           SHARD_TOTAL: "58"
           SHARD_INDEX: "${{ matrix.shard }}"
           RUN_DEADLINE_MIN: "345"
-          CONCURRENT_GMINY: "8"
-          CONCURRENT_REQUESTS: "28"
-          LIMIT_PER_HOST: "4"
-          RATE_MIN_DELAY: "0.3"
+          CONCURRENT_GMINY: "20"
+          CONCURRENT_REQUESTS: "80"
+          LIMIT_PER_HOST: "8"
+          RATE_MIN_DELAY: "0.1"
           CHECKPOINT_EVERY_SEC: "900"
         run: |
           python bip_watcher.py
