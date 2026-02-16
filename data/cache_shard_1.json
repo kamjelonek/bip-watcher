@@ -19,7 +19,7 @@
   "content_seen": {
     "4ff20a84a71c0cb4d58fdfe7a665ea54c2dda45b": {
       "found_at": "2026-02-16T19:56:49",
-      "last_checked": "2026-02-16T19:56:49",
+      "last_checked": "2026-02-16T20:00:48",
       "etag": "",
       "last_modified": "",
       "gmina": "Bojanowo",
@@ -33,7 +33,7 @@
     },
     "a72f069a542dc0751ae99a7f5e615db2b9c40fe8": {
       "found_at": "2026-02-16T19:56:50",
-      "last_checked": "2026-02-16T19:56:50",
+      "last_checked": "2026-02-16T20:00:49",
       "etag": "",
       "last_modified": "",
       "gmina": "Bojanowo",
@@ -47,7 +47,7 @@
     },
     "9d0a3a03268867624d832efaebca6bfe549d889d": {
       "found_at": "2026-02-16T19:56:50",
-      "last_checked": "2026-02-16T19:56:50",
+      "last_checked": "2026-02-16T20:00:49",
       "etag": "",
       "last_modified": "",
       "gmina": "Bojanowo",
@@ -61,7 +61,7 @@
     },
     "f2e2df71da935dabd6a12860d734fd9e074bf8b4": {
       "found_at": "2026-02-16T19:56:51",
-      "last_checked": "2026-02-16T19:56:51",
+      "last_checked": "2026-02-16T20:00:50",
       "etag": "",
       "last_modified": "",
       "gmina": "Bojanowo",
@@ -75,7 +75,7 @@
     },
     "bef8a3badfbbd7299a4c15c1efcf4de89c9f8822": {
       "found_at": "2026-02-16T19:56:52",
-      "last_checked": "2026-02-16T19:56:52",
+      "last_checked": "2026-02-16T20:00:50",
       "etag": "",
       "last_modified": "",
       "gmina": "Bojanowo",
@@ -89,7 +89,7 @@
     },
     "fa108398cedbf5c8a6155083b9b07d446f202fd9": {
       "found_at": "2026-02-16T19:56:53",
-      "last_checked": "2026-02-16T19:56:53",
+      "last_checked": "2026-02-16T20:00:52",
       "etag": "",
       "last_modified": "",
       "gmina": "Bojanowo",
@@ -103,7 +103,7 @@
     },
     "3542757bf2507a67dc65295a7896901b97d16e01": {
       "found_at": "2026-02-16T19:56:54",
-      "last_checked": "2026-02-16T19:56:54",
+      "last_checked": "2026-02-16T20:00:52",
       "etag": "",
       "last_modified": "",
       "gmina": "Bojanowo",
@@ -117,7 +117,7 @@
     },
     "ce548b984e08f60163fd383dafa8dd0d27729410": {
       "found_at": "2026-02-16T19:56:54",
-      "last_checked": "2026-02-16T19:56:54",
+      "last_checked": "2026-02-16T20:00:53",
       "etag": "",
       "last_modified": "",
       "gmina": "Bojanowo",
@@ -131,7 +131,7 @@
     },
     "7ae7944d49965ad00779e41a84856db53c50ad79": {
       "found_at": "2026-02-16T19:56:55",
-      "last_checked": "2026-02-16T19:56:55",
+      "last_checked": "2026-02-16T20:00:54",
       "etag": "",
       "last_modified": "",
       "gmina": "Bojanowo",
@@ -145,7 +145,7 @@
     },
     "8708696b62e893283afe718cfdd6e607c56adee2": {
       "found_at": "2026-02-16T19:56:56",
-      "last_checked": "2026-02-16T19:56:56",
+      "last_checked": "2026-02-16T20:00:54",
       "etag": "",
       "last_modified": "",
       "gmina": "Bojanowo",
@@ -159,7 +159,7 @@
     },
     "28828f23c52f06d07626d512ad353225dc1f64e9": {
       "found_at": "2026-02-16T19:56:56",
-      "last_checked": "2026-02-16T19:56:56",
+      "last_checked": "2026-02-16T20:00:55",
       "etag": "",
       "last_modified": "",
       "gmina": "Bojanowo",
@@ -173,7 +173,7 @@
     },
     "65a1d8588e4e2e8768a53b9ea4aafd6f386860b5": {
       "found_at": "2026-02-16T19:56:57",
-      "last_checked": "2026-02-16T19:56:57",
+      "last_checked": "2026-02-16T20:00:55",
       "etag": "",
       "last_modified": "",
       "gmina": "Bojanowo",
@@ -183,6 +183,720 @@
         "studium uwarunkowań"
       ],
       "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "2b99c3454ab8daea8d272ac298553b6f5e0578ef": {
+      "found_at": "2026-02-16T20:08:45",
+      "last_checked": "2026-02-16T20:08:45",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "UCHWAŁA Nr VI/40/07 Rady Miejskiej w Bojanowie z dnia 28 lutego 2007 w sprawie oceny aktualności Studium uwarunkowań i kierunków zagospodarowania przestrzennego gminy Bojanowo - Rok 2007, menu 1033, artykuł 1631 - BIP - Urząd Miejski w Boja",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1033&id=1631",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "7c0abbc18360cb0061a9c46c4d0b5dd7369d6ccd",
+      "status": "NOWE"
+    },
+    "ece0127b54124ff82b3ec5596bf4afd5b51bf69a": {
+      "found_at": "2026-02-16T20:09:31",
+      "last_checked": "2026-02-16T20:09:31",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Plan ogólny Gminy Bojanowo, menu 1481 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=1&cid=1481",
+      "keywords": [
+        "plan ogólny"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "d42d50e7c8dc2cae174244340a596edde13690e3": {
+      "found_at": "2026-02-16T20:09:32",
+      "last_checked": "2026-02-16T20:09:32",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Studium Uwarunkowań i Kierunków Zagospodarowania Przestrzennego Gminy Bojanowo, menu 1270 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=1&cid=1270",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "6257fe466326e249181fa80e905d7ab68cac3ea0": {
+      "found_at": "2026-02-16T20:09:32",
+      "last_checked": "2026-02-16T20:09:32",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Uchwała o przystąpieniu do sporządzania planu ogólnego gminy, menu 1519 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=1&cid=1519",
+      "keywords": [
+        "planu ogólnego"
+      ],
+      "att_sig": "ed48b44ea18bc6788b8d041dbcd1b4a6242457f2",
+      "status": "NOWE"
+    },
+    "d73b70fba80b832e11db40860f0040f68fa4587b": {
+      "found_at": "2026-02-16T20:09:33",
+      "last_checked": "2026-02-16T20:09:33",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Ogłoszenie o przystąpieniu do sporządzania planu ogólnego gminy, menu 1520 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=1&cid=1520",
+      "keywords": [
+        "planu ogólnego"
+      ],
+      "att_sig": "c24e7235d9f4f915b0b5bc7ace37c163e9db0a26",
+      "status": "NOWE"
+    },
+    "a61b2c40a6682a7cffb8b56c55342064fa57bd57": {
+      "found_at": "2026-02-16T20:09:34",
+      "last_checked": "2026-02-16T20:09:34",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Sporządzenie projektu planu ogólnego wraz z uzasadnieniem oraz prognozą oddziaływania na środowisko - przekazanego do uzgodnienia oraz zaopiniowania, menu 1522 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=1&cid=1522",
+      "keywords": [
+        "planu ogólnego"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "49051a85f96d11750356af426cfbb3bac2277729": {
+      "found_at": "2026-02-16T20:09:34",
+      "last_checked": "2026-02-16T20:09:34",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Projekt planu ogólnego gminy wraz z uzasadnieniem, prognozą oddziaływania na środowisko i wykazem wniosków - po dokonaniu uzgodnień oraz uzyskaniu opinii, menu 1523 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=1&cid=1523",
+      "keywords": [
+        "planu ogólnego"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "8869b544baa89db33e53fdc9aa85e4bf5631e05a": {
+      "found_at": "2026-02-16T20:09:36",
+      "last_checked": "2026-02-16T20:09:36",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Projekt planu ogólnego gminy wraz z uzasadnieniem, prognozą oddziaływania na środowisko i raportem podsumowującym przebieg konsultacji społecznych - po przeprowadzeniu konsultacji społecznych, menu 1526 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=1&cid=1526",
+      "keywords": [
+        "planu ogólnego"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "1d9e0fff5cd8775d37f45a4bf78fae7b4650a202": {
+      "found_at": "2026-02-16T20:09:36",
+      "last_checked": "2026-02-16T20:09:36",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Projekt planu ogólnego gminy wraz z raportem podsumowującym przebieg konsultacji społecznych - do przedstawienia Radzie Miejskiej, menu 1527 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=1&cid=1527",
+      "keywords": [
+        "planu ogólnego"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "e5ee09eaf3df2fb4131dd3e1a0e6808fd30cf483": {
+      "found_at": "2026-02-16T20:09:37",
+      "last_checked": "2026-02-16T20:09:37",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Uchwalony plan ogólny gminy przed publikacją w Dzienniku Urzędowym Województwa Wielkopolskiego, menu 1528 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=1&cid=1528",
+      "keywords": [
+        "plan ogólny"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "a12f38c50ac2070f86d9443d6e462f457402f3ff": {
+      "found_at": "2026-02-16T20:09:37",
+      "last_checked": "2026-02-16T20:09:37",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Formularz wniosku dot. aktu planowania przestrzennego - Plan ogólny Gminy Bojanowo, menu 1481, artykuł 9474 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1481&id=9474",
+      "keywords": [
+        "plan ogólny"
+      ],
+      "att_sig": "232e6f7b00f05b4e8c4e99637e436a5054b91691",
+      "status": "NOWE"
+    },
+    "f651ff77d3608023f53e1cbd298dd354863a62f8": {
+      "found_at": "2026-02-16T20:09:37",
+      "last_checked": "2026-02-16T20:09:37",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Plan ogólny Gminy Bojanowo, rejestr BIPA644A32BEE7646Z, menu 1481 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=3&code=BIPA644A32BEE7646Z&rpg=0",
+      "keywords": [
+        "plan ogólny"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "21027eb48f5974d8fa01b9a00117e4446c3ae68d": {
+      "found_at": "2026-02-16T20:09:38",
+      "last_checked": "2026-02-16T20:09:38",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Plan ogólny Gminy Bojanowo, rejestr BIPA644A334A6B371Z, menu 1481 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=3&code=BIPA644A334A6B371Z&rpg=0",
+      "keywords": [
+        "plan ogólny"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "15280d8ea0835b68a392b10d23b939b39945ca77": {
+      "found_at": "2026-02-16T20:09:38",
+      "last_checked": "2026-02-16T20:09:38",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Uchwały, menu 1485 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=1&cid=1485",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "fc46ec94745e3c3d9f43b10a72d1e92dc29543be": {
+      "found_at": "2026-02-16T20:09:39",
+      "last_checked": "2026-02-16T20:09:39",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Obwieszczenia, menu 1486 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=1&cid=1486",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "a2b325b8901e79c16efe622f065a789dddbb40ac": {
+      "found_at": "2026-02-16T20:09:39",
+      "last_checked": "2026-02-16T20:09:39",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Projekty, menu 1487 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=1&cid=1487",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "6c9dd0697955402a0697947333501002de704c9b": {
+      "found_at": "2026-02-16T20:09:40",
+      "last_checked": "2026-02-16T20:09:40",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "UCHWAŁA XVIII/105/25 RADY MIEJSKIEJ W BOJANOWIE z dnia 28 sierpnia 2025 r. w sprawie uchwalenia miejscowego planu zagospodarowania przestrzennego terenu położonego w Bojanowie ograniczonego ulicami: Kolejową, Dworcową, Kopernika, drogą gmin",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1485&id=10125",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "efba95effa67b0eff52569c33f37b060e6795487",
+      "status": "NOWE"
+    },
+    "59dfcc03b91ab501a3b5a47050bf2a7b5e7ddd6f": {
+      "found_at": "2026-02-16T20:09:40",
+      "last_checked": "2026-02-16T20:09:40",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Uchwała nr XLIII/236/98 Rady Miejskiej Bojanowa z dnia 29 maja 1998 r. w sprawie zatwierdzenia zmiany miejscowego planu zagospodarowania przestrzennego zespołu Bojanowo-Gołaszyn terenów oznaczonych na rysunku planu symbolami: 16a UH, 16b MP",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1485&id=7455",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "4dc3db73ec4e0049525ce39c2987114fc0d0da76",
+      "status": "NOWE"
+    },
+    "992390ca456df7070793e25f1d076ba8a2bf4a2a": {
+      "found_at": "2026-02-16T20:09:41",
+      "last_checked": "2026-02-16T20:09:41",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Uchwała nr XLIII/237/98 Rady Miejskiej Bojanowa z dnia 29 maja 1998 r. w sprawie zatwierdzenia zmiany miejscowego planu zagospodarowania przestrzennego zespołu Bojanowo-Gołaszyn terenów oznaczonych na rysunku planu symbolami: 37a U, 37b M/U",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1485&id=7456",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "c9efd0ec10a15bc1f4a84d751c049aec3a726a56",
+      "status": "NOWE"
+    },
+    "9b29131e294618bc81aa431b87b949a78672fc98": {
+      "found_at": "2026-02-16T20:09:41",
+      "last_checked": "2026-02-16T20:09:41",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Uchwała nr XLIII/238/98 Rady Miejskiej Bojanowa z dnia 29 maja 1998 r. w sprawie zatwierdzenia zmiany miejscowego planu zagospodarowania przestrzennego Gminy Bojanowo - Uchwały, menu 1485, artykuł 7457 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1485&id=7457",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "35975bbb50e49f651aa1ecead9ae1b9aa032fa11",
+      "status": "NOWE"
+    },
+    "5003f7b583a6e75eeef5721eb606af6d4b5d9428": {
+      "found_at": "2026-02-16T20:09:42",
+      "last_checked": "2026-02-16T20:09:42",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Uchwała nr XLIII/239/98 Rady Miejskiej Bojanowa z dnia 29 maja 1998 r. w sprawie zatwierdzenia miejscowego planu zagospodarowania przestrzennego terenu zabudowy mieszkaniowej położonego w Gołaszynie - Uchwały, menu 1485, artykuł 7458 - BIP ",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1485&id=7458",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "aa28060d25d6e9fd899ec724693aeedf02a44059",
+      "status": "NOWE"
+    },
+    "1743b4e2e4e21c6d14f1a51ac8e2b4ea7e85412a": {
+      "found_at": "2026-02-16T20:09:42",
+      "last_checked": "2026-02-16T20:09:42",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "UCHWAŁA NR XXXII/219/17 RADY MIEJSKIEJ W BOJANOWIE Z DNIA 30 CZERWCA 2017 R. w sprawie miejscowego planu zagospodarowania przestrzennego dla wyznaczenia korytarza technologicznego napowietrznej linii elektroenergetycznej WN 110kV relacji GP",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1485&id=8034",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "58379d12547087c14cfb33328b2e959eeaff7057",
+      "status": "NOWE"
+    },
+    "f54e6ff1c4f1422a36a10246c191782d82816dd7": {
+      "found_at": "2026-02-16T20:09:43",
+      "last_checked": "2026-02-16T20:09:43",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "UCHWAŁA NR XXXII/227/21 RADY MIEJSKIEJ W BOJANOWIE z dnia 28 maja 2021 r. w sprawie uchwalenia miejscowego planu zagospodarowania przestrzennego wschodniej części wsi Golina Wielka, Gmina Bojanowo - Uchwały, menu 1485, artykuł 8035 - BIP - ",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1485&id=8035",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "079c72b5fd6579f9826d49c05efcee32ee029af9",
+      "status": "NOWE"
+    },
+    "3db5ef66bac42844898d156c8c179bf2234cb2db": {
+      "found_at": "2026-02-16T20:09:43",
+      "last_checked": "2026-02-16T20:09:43",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "UCHWAŁA NR XLVI/324/22 RADY MIEJSKIEJ W BOJANOWIE z dnia 20 maja 2022 r. w sprawie uchwalenia miejscowego planu zagospodarowania przestrzennego wschodniej części wsi Wydartowo Pierwsze, Gmina Bojanowo - Uchwały, menu 1485, artykuł 8161 - BI",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1485&id=8161",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "a94728b6e8358cb893d9c8d98adf863fa8aa12aa",
+      "status": "NOWE"
+    },
+    "3a7db3288a55b0cdc5b47d3297774ebd8c00127d": {
+      "found_at": "2026-02-16T20:09:44",
+      "last_checked": "2026-02-16T20:09:44",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "UCHWAŁA NR XLVII/330/22 RADY MIEJSKIEJ W BOJANOWIE z dnia 30 czerwca 2022 r. w sprawie uchwalenia miejscowego planu zagospodarowania przestrzennego wsi Golinka, gmina Bojanowo - Uchwały, menu 1485, artykuł 8272 - BIP - Urząd Miejski w Bojan",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1485&id=8272",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "82fe1a7aa2cf54e53efeda9918bb594fe9f7551e",
+      "status": "NOWE"
+    },
+    "7579c8786b75baaca5f97f47b845d296950fce18": {
+      "found_at": "2026-02-16T20:09:44",
+      "last_checked": "2026-02-16T20:09:44",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "UCHWAŁA NR LIX/406/23 RADY MIEJSKIEJ W BOJANOWIE z dnia 27 kwietnia 2023 r. w sprawie uchwalenia miejscowego planu zagospodarowania przestrzennego terenu położonego w Bojanowie w kwartale ulic: 17 Stycznia, ks. Pilawskiego, Piaskowa, Gołasz",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1485&id=8651",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "2d9de8fe7399ec7c0d77eebee30d4bf67590c8ec",
+      "status": "NOWE"
+    },
+    "ae1c7c5a7c9458ce676be2113ecb85b50eda1e80": {
+      "found_at": "2026-02-16T20:09:45",
+      "last_checked": "2026-02-16T20:09:45",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "OBWIESZCZENIE BURMISTRZA BOJANOWA o wyłożeniu do publicznego wglądu miejscowego planu zagospodarowania przestrzennego terenu położonego w Bojanowie ograniczonego ulicami: Kolejową, Dworcową, Kopernika, drogą gminną nr 816009P i linią kolejo",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1486&id=9562",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "c04ad4c094384f388a55403c6674acefa59d7004",
+      "status": "NOWE"
+    },
+    "03a9d07f534830ddfd43927ee9b326ae2e249f9c": {
+      "found_at": "2026-02-16T20:09:45",
+      "last_checked": "2026-02-16T20:09:45",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Projekt miejscowego planu zagospodarowania przestrzennego terenu położonego w Bojanowie ograniczonego ulicami: Kolejową, Dworcową, Kopernika, drogą gminną nr 816009P i linią kolejową E-59 - Projekty, menu 1487, artykuł 9594 - BIP - Urząd Mi",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1487&id=9594",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "50a179f06f63d7fab9ac1cd271acca6c738c8526",
+      "status": "NOWE"
+    },
+    "43277440d994d0662f96ed50796fbef8c3f3244d": {
+      "found_at": "2026-02-16T20:09:46",
+      "last_checked": "2026-02-16T20:09:46",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "UCHWAŁA NR XLII/295/22 RADY MIEJSKIEJ W BOJANOWIE z dnia 25 lutego 2022 r. w sprawie uchwalenia zmiany studium uwarunkowań i kierunków zagospodarowania przestrzennego gminy Bojanowo - Studium Uwarunkowań i Kierunków Zagospodarowania Przestr",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1270&id=8004",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "795cd31b3cae93805043e0575ddd4dd941689565",
+      "status": "NOWE"
+    },
+    "21cc71f7449bef1fd55ddd1f0f16826afc3e31e2": {
+      "found_at": "2026-02-16T20:09:47",
+      "last_checked": "2026-02-16T20:09:47",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "UCHWAŁA NR XIX/133/16 RADY MIEJSKIEJ W BOJANOWIE z dnia 20 maja 2016 r. w sprawie uchwalenia zmiany Studium Uwarunkowań i Kierunków Zagospodarowania Przestrzennego Gminy Bojanowo - Studium Uwarunkowań i Kierunków Zagospodarowania Przestrzen",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1270&id=5128",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "f5b68008b2e79981ad8bf3128ded7ff88179909a",
+      "status": "NOWE"
+    },
+    "625450b3688c76ab40f347b7cf8599b23066fe75": {
+      "found_at": "2026-02-16T20:09:47",
+      "last_checked": "2026-02-16T20:09:47",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Uchwała Nr XXXII/173/01 Rady Miejskiej w Bojanowie z dnia 29 czerwca w sprawie przyjęcia Studium uwarunkowań i kierunków zagospodarowania przestrzennego gminy Bojanowo - Studium Uwarunkowań i Kierunków Zagospodarowania Przestrzennego Gminy ",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1270&id=5118",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "22c0b9b1970258b721aaa9e05c553ae3ce4aa996",
+      "status": "NOWE"
+    },
+    "cb09034b3dc2a85af753e3480e9aba9920d40a00": {
+      "found_at": "2026-02-16T20:09:48",
+      "last_checked": "2026-02-16T20:09:48",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "UCHWAŁA Nr VI/40/07 Rady Miejskiej w Bojanowie z dnia 28 lutego 2007 w sprawie oceny aktualności Studium uwarunkowań i kierunków zagospodarowania przestrzennego gminy Bojanowo - Studium Uwarunkowań i Kierunków Zagospodarowania Przestrzenneg",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1270&id=5119",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "7c0abbc18360cb0061a9c46c4d0b5dd7369d6ccd",
+      "status": "NOWE"
+    },
+    "dc00e7e0e09e98d137631a300c9acf2133f38f35": {
+      "found_at": "2026-02-16T20:09:48",
+      "last_checked": "2026-02-16T20:09:48",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "UCHWAŁA Nr IX/80/07 Rady Miejskiej w Bojanowie z dnia 28 maja 2007 roku w sprawie przystąpienia do zmiany istniejącego Studium Uwarunkowań i Kierunków Zagospodarowania Przestrzennego Gminy Bojanowo - Studium Uwarunkowań i Kierunków Zagospod",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1270&id=5120",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "2ab204229955c196acc0dea6e5f5351ac173f51c",
+      "status": "NOWE"
+    },
+    "6c529c944e633d8410cbcd60694cc57d802cd527": {
+      "found_at": "2026-02-16T20:09:49",
+      "last_checked": "2026-02-16T20:09:49",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "UCHWAŁA Nr X/84/07 Rady Miejskiej w Bojanowie z dnia 28 czerwca 2007 r. w sprawie przystąpienia do sporządzenia zmiany Studium Uwarunkowań i Kierunków Zagospodarowania Przestrzennego Gminy Bojanowo - Studium Uwarunkowań i Kierunków Zagospod",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1270&id=5121",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "12ebb815a7742487938eb1ce2080b81a28b93d1b",
+      "status": "NOWE"
+    },
+    "f6421e2efd9afe99f16b263cd24b4c58e21abe6a": {
+      "found_at": "2026-02-16T20:09:49",
+      "last_checked": "2026-02-16T20:09:49",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "UCHWAŁA NR XL/314/10 RADY MIEJSKIEJ W BOJANOWIE z dnia 29 marca 2010 roku w sprawie uchwalenia zmiany Studium Uwarunkowań i Kierunków Zagospodarowania Przestrzennego Gminy Bojanowo - Studium Uwarunkowań i Kierunków Zagospodarowania Przestrz",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1270&id=5122",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "5c9c0235ab9b8c664999ae237f57cb0db0630658",
+      "status": "NOWE"
+    },
+    "6c73c97fdae36ef15c06f14823e7667ebf452ee6": {
+      "found_at": "2026-02-16T20:09:50",
+      "last_checked": "2026-02-16T20:09:50",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "UCHWAŁA NR XLVI/379/10 RADY MIEJSKIEJ W BOJANOWIE z dnia 5 listopada 2010 roku w sprawie przystąpienia do sporządzenia zmiany Studium Uwarunkowań i Kierunków Zagospodarowania Przestrzennego Gminy Bojanowo - Studium Uwarunkowań i Kierunków Z",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1270&id=5123",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "e438049c8a5ff4d93e3d678f6227888ccd6e43bb",
+      "status": "NOWE"
+    },
+    "eb84de294b98718d08af21de8f3a606617f20738": {
+      "found_at": "2026-02-16T20:09:50",
+      "last_checked": "2026-02-16T20:09:50",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Obwieszczenie o przystąpieniu do sporządzenia zmiany w Studium Uwarunkowań i Kierunków Zagospodarowania Przestrzennego Gminy Bojanowo - Studium Uwarunkowań i Kierunków Zagospodarowania Przestrzennego Gminy Bojanowo, menu 1270, artykuł 5124 ",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1270&id=5124",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "8ec0afd58b67b4ec8c82a644d8afa9bf65d59769",
+      "status": "NOWE"
+    },
+    "60d9a9ea6a3110c02a93bee0debaa05bceb34821": {
+      "found_at": "2026-02-16T20:09:51",
+      "last_checked": "2026-02-16T20:09:51",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "UCHWAŁA NR III/7/10 RADY MIEJSKIEJ W BOJANOWIE z dnia 21 grudnia 2010 roku w sprawie zmiany uchwały nr XLVI/379/10 z dnia 5 listopada 2010 roku w sprawie przystąpienia do sporządzenia zmiany Studium Uwarunkowań i Kierunk - Studium Uwarunkow",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1270&id=5125",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "469bd2bd79bf2ed7e845afb2f5fd3373207f7737",
+      "status": "NOWE"
+    },
+    "a74a19d0aae7aaf275e8d3cfc6dbc96ba022e0bb": {
+      "found_at": "2026-02-16T20:10:26",
+      "last_checked": "2026-02-16T20:10:26",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Rok 2025, archiwum, menu 1488 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=1&bsc=T&cid=1488",
+      "keywords": [
+        "decyzja o środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "b923ab7eaf0f59be3bee407f94339bc9787027f4": {
+      "found_at": "2026-02-16T20:10:30",
+      "last_checked": "2026-02-16T20:10:30",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "OBWIESZCZENIE o wystąpieniu w dniu 30.12.2024 r. do Wojewódzkiego Urzędu Ochrony Zabytków w Poznaniu oraz Państwowego Powiatowego Inspektora Sanitarnego w Rawiczu o uzgodnienie projektu decyzji ustalającej warunki zabudowy dla inwestycji pn",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1451&id=9631",
+      "keywords": [
+        "warunki zabudowy"
+      ],
+      "att_sig": "2e57c95b608cc4e68f8331a5712bbc1a29ef97f0",
+      "status": "NOWE"
+    },
+    "0f1f8376bcb6c0bc859d0b7dc95d1f2ddcba07cb": {
+      "found_at": "2026-02-16T20:10:34",
+      "last_checked": "2026-02-16T20:10:34",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Obwieszczenie o wydaniu decyzji o środowiskowych uwarunkowaniach realizacji inwestycji IR.6220.14.2023.EZ - Rok 2023, menu 1427, artykuł 8955 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1427&id=8955",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "1e0e861c2f846c45c89889e6bc8eba40d4000f16",
+      "status": "NOWE"
+    },
+    "7ae4a25812c940d735307825d2643e4c07f1d44c": {
+      "found_at": "2026-02-16T20:10:35",
+      "last_checked": "2026-02-16T20:10:35",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Obwieszczenie o wydaniu decyzji o przeniesieniu decyzji o środowiskowych uwarunkowaniach IR.6220.13.2023.EZ - Rok 2023, menu 1427, artykuł 8954 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1427&id=8954",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "dbdfb4c0a41faaaaf810bb703feaae4df22f5bae",
+      "status": "NOWE"
+    },
+    "5b0f1da234c57a7d6cad10e5ba93a4b1d4fee395": {
+      "found_at": "2026-02-16T20:10:38",
+      "last_checked": "2026-02-16T20:10:38",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Rok 2023, menu 1427, strona 5 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1427&pg=4",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "7e8934209ac774aa5e458ec4dc08e722f4314d33": {
+      "found_at": "2026-02-16T20:10:39",
+      "last_checked": "2026-02-16T20:10:39",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Rok 2023, archiwum, menu 1427 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=1&bsc=T&cid=1427",
+      "keywords": [
+        "decyzja o środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "1a61cfa8d0acc6feba93626f5f17dc8d508c6fd7": {
+      "found_at": "2026-02-16T20:10:45",
+      "last_checked": "2026-02-16T20:10:45",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Rok 2022, archiwum, menu 1404 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=1&bsc=T&cid=1404",
+      "keywords": [
+        "decyzja o środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "3c7835f2b8b46c7e66134d83250ab657286377c4": {
+      "found_at": "2026-02-16T20:10:59",
+      "last_checked": "2026-02-16T20:10:59",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Rok 2014, archiwum, menu 1227 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=1&bsc=T&cid=1227",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "17b2e080d1037dfd966d6cc08d28f2bc71c50d9d": {
+      "found_at": "2026-02-16T20:11:04",
+      "last_checked": "2026-02-16T20:11:04",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Obwieszczenie - środowiskowa zgoda dla realizacji inwestycji pn na \"Budowie dwóch elektrowni wiatrowych typu Gexl 2,5 MW/100 wraz z niezbędną infrastrukturą techniczną w Golince\". - Rok 2008, menu 1102, artykuł 2338 - BIP - Urząd Miejski w ",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1102&id=2338",
+      "keywords": [
+        "wiatr"
+      ],
+      "att_sig": "eb31b1c5a4864ee2080108a370657987065af66e",
+      "status": "NOWE"
+    },
+    "ef63864025b7b37f900ccee7b172e0f677ddbe36": {
+      "found_at": "2026-02-16T20:11:04",
+      "last_checked": "2026-02-16T20:11:04",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Postanowienie o braku potrzeby sporządzenia raportu oceny oddziaływania na środowisko dla przedsięwzięcia polegającego na \"Budowie dwóch elektrowni wiatrowych typu Gexl 2,5 MW/100 wraz z niezbędną infrastrukturą techniczną w Golince˝. - Rok",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1102&id=2264",
+      "keywords": [
+        "wiatr"
+      ],
+      "att_sig": "68f2822dad99be71408a799e8aa8bc6ec16b3432",
+      "status": "NOWE"
+    },
+    "f422fd25c21caf5a35582fea1064288fdccbd347": {
+      "found_at": "2026-02-16T20:11:06",
+      "last_checked": "2026-02-16T20:11:06",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Rok 2008, archiwum, menu 1102 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=1&bsc=T&cid=1102",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "ac9baa8cce9de648b1e2da3c4e82ec8008ad7ced": {
+      "found_at": "2026-02-16T20:11:21",
+      "last_checked": "2026-02-16T20:11:21",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "Rok 2010, archiwum, menu 1150 - BIP - Urząd Miejski w Bojanowie",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=1&bsc=T&cid=1150",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "040776b07c54a0fdc1c3cf79e53e6a17e4901af1",
+      "status": "NOWE"
+    },
+    "6359ae359a021dc74ea064c6c980ff92f329339e": {
+      "found_at": "2026-02-16T20:14:34",
+      "last_checked": "2026-02-16T20:14:34",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Bojanowo",
+      "title": "ZARZĄDZENIE NR 44/24 BURMISTRZA BOJANOWA z dnia 22 lipca 2024 r. w sprawie powołania Komisji Przetargowej do przeprowadzania postępowania o udzielenie zamówienia publicznego pn. \"Opracowanie planu ogólnego dla Gminy Bojanowo\" - Rok 2024, me",
+      "url": "https://gminabojanowo.biuletyn.net/?bip=2&cid=1449&id=9609",
+      "keywords": [
+        "planu ogólnego"
+      ],
+      "att_sig": "5205d7bb98c4935b63d17bebdb79fb343042d64a",
       "status": "NOWE"
     }
   },
