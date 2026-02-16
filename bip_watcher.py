@@ -23,6 +23,7 @@ from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from urllib.parse import urljoin, urlparse, urlunparse, parse_qsl, urlencode
 from pathlib import Path
+import subprocess
 
 import aiohttp
 import requests
@@ -43,6 +44,55 @@ def env_float(name, default):
         return float(os.getenv(name, str(default)))
     except Exception:
         return default
+
+def get_shard_index():
+    try:
+        return int(os.getenv("SHARD_INDEX", "-1"))
+    except:
+        return -1
+
+def _git_commit_file(filepath, message):
+    """Git add, commit, push a single file (synchronous)."""
+    try:
+        subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=False, capture_output=True)
+        subprocess.run(["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"], check=False, capture_output=True)
+        subprocess.run(["git", "pull", "--rebase"], check=False, capture_output=True)
+        subprocess.run(["git", "add", str(filepath)], check=False, capture_output=True)
+        subprocess.run(["git", "commit", "-m", message], check=False, capture_output=True)
+        subprocess.run(["git", "push"], check=False, capture_output=True)
+    except Exception as e:
+        print(f"⚠️ git error: {e}")
+
+async def save_shard_cache_and_commit(loop=None):
+    """Zapisuje stan do pliku cache_shard_X.json i wykonuje git commit/push."""
+    shard = get_shard_index()
+    if shard < 0:
+        return
+    if not os.getenv("GITHUB_ACTIONS"):
+        return
+
+    out = {"schema": CACHE_SCHEMA}
+    out["urls_seen"] = {}
+    old_urls = (state.raw_cache or {}).get("urls_seen", {}) if isinstance(state.raw_cache, dict) else {}
+    for h in state.urls_seen:
+        out["urls_seen"][h] = old_urls.get(h, now_iso())
+    out["content_seen"] = state.content_seen or {}
+    out["gmina_seeds"] = state.gmina_seeds or {}
+    out["page_fprints"] = state.page_fprints or {}
+    out["gmina_frontiers"] = state.gmina_frontiers or {}
+    out["gmina_retry"] = state.gmina_retry or {}
+
+    filename = BASE_DIR / f"cache_shard_{shard}.json"
+    try:
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump(out, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"⚠️ Failed to write shard cache: {e}")
+        return
+
+    if loop is None:
+        loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, _git_commit_file, filename, f"Auto-update cache shard {shard} [skip ci]")
 
 # ===================== PATHS (VS CODE / WINDOWS) =====================
 BASE_DIR = Path(__file__).resolve().parent / "data"
@@ -2788,12 +2838,15 @@ async def worker(name: str,
                 state.diag_errors.append(e)
 
             checkpoint_counter["done"] = int(checkpoint_counter.get("done", 0) or 0) + 1
-
+            
             # checkpoint co N gmin
             if USE_CACHE and (checkpoint_counter["done"] % CACHE_CHECKPOINT_EVERY_N_GMINY == 0):
                 try:
-                    save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints)
-                    purge_old_cache(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints)
+                    if os.getenv("GITHUB_ACTIONS") and get_shard_index() >= 0:
+                        await save_shard_cache_and_commit(asyncio.get_event_loop())
+                    else:
+                        save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints)
+                        purge_old_cache(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints)
                 except Exception as ex:
                     print(f"⚠️ checkpoint save failed: {ex}", flush=True)
 
@@ -2836,6 +2889,8 @@ async def worker(name: str,
 
         finally:
             if got_item:
+                if USE_CACHE and os.getenv("GITHUB_ACTIONS") and get_shard_index() >= 0:
+                    await save_shard_cache_and_commit(asyncio.get_event_loop())
                 queue.task_done()
 
 
@@ -2932,13 +2987,14 @@ async def main():
                 await asyncio.sleep(every)
                 try:
                     if USE_CACHE:
-                        save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints)
+                        if os.getenv("GITHUB_ACTIONS") and get_shard_index() >= 0:
+                            await save_shard_cache_and_commit(asyncio.get_event_loop())
+                        else:
+                            save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints)
                     # diag też warto flushować
                     save_diag(state.diag_rows, state.diag_errors)
                 except Exception as ex:
                     print(f"⚠️ periodic checkpoint failed: {ex}", flush=True)
-
-        checkpoint_task = asyncio.create_task(periodic_checkpoint())
 
                    
         try:
@@ -2957,8 +3013,11 @@ async def main():
     # ===================== FINAL SAVE =====================
     try:
         if USE_CACHE:
-            save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints)
-
+            if os.getenv("GITHUB_ACTIONS") and get_shard_index() >= 0:
+                await save_shard_cache_and_commit(asyncio.get_event_loop())
+            else:
+                save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints)
+    
         save_diag(state.diag_rows, state.diag_errors)
         write_summary(state.diag_rows, state.new_items_for_mail)
         export_summary_to_onedrive()
@@ -3006,6 +3065,7 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
 
