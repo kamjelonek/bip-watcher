@@ -1,0 +1,73 @@
+{
+  "schema": 10,
+  "urls_seen": {
+    "920ba3df0f467a950e0a74680115ef3bc0001eb6": "2026-02-16T22:05:47",
+    "d32fdd53dd1639c576f87c2ad6cd003218da3c15": "2026-02-16T22:05:46",
+    "ca982d28ec33be1f073d13c20e20695d6757499d": "2026-02-16T22:05:44",
+    "51520fe414f3ae3d76ed50279e3a8ebdc70cdc26": "2026-02-16T22:05:47"
+  },
+  "content_seen": {
+    "d32fdd53dd1639c576f87c2ad6cd003218da3c15": {
+      "found_at": "2026-02-16T22:05:46",
+      "last_checked": "2026-02-16T22:05:46",
+      "etag": "\"ffc-6497fc441c48d-gzip\"",
+      "last_modified": "Thu, 29 Jan 2026 05:02:42 GMT",
+      "gmina": "Oława",
+      "title": "Biuletyn Informacji Publicznej",
+      "url": "https://bip.gminaolawa.pl/wp-json",
+      "keywords": [],
+      "att_sig": "",
+      "status": "NO_MATCH"
+    },
+    "920ba3df0f467a950e0a74680115ef3bc0001eb6": {
+      "found_at": "2026-02-16T22:05:47",
+      "last_checked": "2026-02-16T22:05:47",
+      "etag": "\"ffc-6497fc441c48d-gzip\"",
+      "last_modified": "Thu, 29 Jan 2026 05:02:42 GMT",
+      "gmina": "Oława",
+      "title": "Biuletyn Informacji Publicznej",
+      "url": "https://bip.gminaolawa.pl/wp-json/wp/v2/posts",
+      "keywords": [],
+      "att_sig": "",
+      "status": "NO_MATCH"
+    },
+    "51520fe414f3ae3d76ed50279e3a8ebdc70cdc26": {
+      "found_at": "2026-02-16T22:05:47",
+      "last_checked": "2026-02-16T22:05:47",
+      "etag": "\"ffc-6497fc441c48d-gzip\"",
+      "last_modified": "Thu, 29 Jan 2026 05:02:42 GMT",
+      "gmina": "Oława",
+      "title": "Biuletyn Informacji Publicznej",
+      "url": "https://bip.gminaolawa.pl/api",
+      "keywords": [],
+      "att_sig": "",
+      "status": "NO_MATCH"
+    }
+  },
+  "gmina_seeds": {
+    "76d63f1c2b187d7e0416885134e0f79b6b856826": {
+      "allowed_host": "bip.gminaolawa.pl",
+      "start_final": "https://bip.gminaolawa.pl/",
+      "seeds": [
+        "https://bip.gminaolawa.pl/rss",
+        "https://bip.gminaolawa.pl/feed",
+        "https://bip.gminaolawa.pl/rss.xml",
+        "https://bip.gminaolawa.pl/feed.xml",
+        "https://bip.gminaolawa.pl/wp-json",
+        "https://bip.gminaolawa.pl/wp-json/wp/v2/posts",
+        "https://bip.gminaolawa.pl/api",
+        "https://bip.gminaolawa.pl/api/ogloszenia",
+        "https://bip.gminaolawa.pl/api/announcements",
+        "https://bip.gminaolawa.pl/e,kalkulator.html"
+      ],
+      "ts": "2026-02-16T22:05:44"
+    }
+  },
+  "page_fprints": {},
+  "gmina_frontiers": {
+    "76d63f1c2b187d7e0416885134e0f79b6b856826": []
+  },
+  "gmina_retry": {
+    "76d63f1c2b187d7e0416885134e0f79b6b856826": []
+  }
+}
