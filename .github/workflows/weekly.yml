@@ -41,90 +41,14 @@ jobs:
           pip install -r requirements.txt
 
       # ===================== PRZYGOTOWANIE CACHE =====================
-      - name: Prepare cache (merge shards if any)
+      - name: Unpack cache.zip if exists
         run: |
           mkdir -p data
-          # Sprawdź, czy istnieją pliki shardowe
-          shard_files=$(ls data/cache_shard_*.json 2>/dev/null || true)
-          if [ -n "$shard_files" ]; then
-            echo "Znaleziono pliki shardowe – scalanie..."
-            python - <<'PY'
-          import os, json, glob
-
-          def iso_max(a, b):
-              return a if (a or "") >= (b or "") else b
-
-          merged = {
-              "schema": 10,
-              "urls_seen": {},
-              "content_seen": {},
-              "gmina_seeds": {},
-              "page_fprints": {},
-              "gmina_frontiers": {},
-              "gmina_retry": {},
-              "dead_urls": {}
-          }
-
-          # Wczytaj istniejący cache.json jeśli istnieje
-          if os.path.exists("data/cache.json"):
-              with open("data/cache.json", "r") as f:
-                  try:
-                      merged = json.load(f)
-                  except:
-                      pass
-              # Upewnij się, że wszystkie klucze są
-              for k in merged:
-                  if k not in merged:
-                      merged[k] = {}
-
-          # Znajdź wszystkie pliki shardowe
-          shard_files = glob.glob("data/cache_shard_*.json")
-          for f in shard_files:
-              with open(f, "r") as fp:
-                  data = json.load(fp)
-              for k in merged:
-                  if k == "schema": continue
-                  if k not in data: continue
-                  if isinstance(merged[k], dict) and isinstance(data[k], dict):
-                      if k == "urls_seen":
-                          for url, ts in data[k].items():
-                              if url not in merged[k] or iso_max(merged[k].get(url, ""), ts) == ts:
-                                  merged[k][url] = ts
-                      elif k == "dead_urls":
-                          for gkey, urls in data[k].items():
-                              if gkey not in merged[k]:
-                                  merged[k][gkey] = []
-                              existing = set(merged[k][gkey])
-                              for u in urls:
-                                  if u not in existing:
-                                      merged[k][gkey].append(u)
-                      else:
-                          merged[k].update(data[k])
-                  else:
-                      merged[k] = data[k]
-
-          # Zapisz scalony cache.json
-          with open("data/cache.json", "w") as f:
-              json.dump(merged, f, indent=2)
-
-          # Spakuj do cache.zip
-          import zipfile
-          with zipfile.ZipFile("data/cache.zip", "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
-              z.write("data/cache.json", arcname="cache.json")
-
-          # Usuń pliki shardowe
-          for f in shard_files:
-              os.remove(f)
-          print("✅ Scalono i spakowano cache, usunięto pliki shardowe")
-          PY
+          if [ -f data/cache.zip ]; then
+            unzip -o data/cache.zip -d data
+            echo "✅ cache.zip unpacked to data/cache.json"
           else
-            echo "Brak plików shardowych – rozpakowuję cache.zip jeśli istnieje"
-            if [ -f data/cache.zip ]; then
-              unzip -o data/cache.zip -d data
-              echo "✅ cache.zip unpacked to data/cache.json"
-            else
-              echo "ℹ️ No cache.zip found – starting fresh"
-            fi
+            echo "ℹ️ No cache.zip found – starting fresh"
           fi
 
       # ===================== RUN =====================
@@ -143,15 +67,16 @@ jobs:
         run: |
           python bip_watcher.py
 
-      # ===================== BACKUP LOGÓW =====================
-      - name: Upload logs and reports
+      # ===================== ZAPIS SHARDOWEGO CACHE JAKO ARTEFAKT =====================
+      - name: Upload shard cache and logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: bip-output-shard-${{ matrix.shard }}
+          name: bip-shard-${{ matrix.shard }}
           retention-days: 30
           if-no-files-found: warn
           path: |
+            data/cache_shard_${{ matrix.shard }}.json
             data/summary_report.txt
             data/log.csv
             data/diag_gminy.csv
@@ -173,10 +98,15 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Download all shard artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
       - name: Merge shard caches
         run: |
           python - <<'PY'
-          import os, json, glob, zipfile
+          import os, json, glob, zipfile, shutil
 
           def iso_max(a, b):
               return a if (a or "") >= (b or "") else b
@@ -192,6 +122,7 @@ jobs:
               "dead_urls": {}
           }
 
+          # Wczytaj istniejący cache.json (z poprzedniego merge)
           if os.path.exists("data/cache.json"):
               with open("data/cache.json", "r") as f:
                   try:
@@ -202,7 +133,8 @@ jobs:
                   if k not in merged:
                       merged[k] = {}
 
-          shard_files = glob.glob("data/cache_shard_*.json")
+          # Znajdź wszystkie pliki shardowe w pobranych artefaktach
+          shard_files = glob.glob("artifacts/**/cache_shard_*.json", recursive=True)
           if not shard_files:
               print("No shard cache files found")
           else:
@@ -237,13 +169,12 @@ jobs:
 
               print(f"Merged {len(shard_files)} shard files")
 
+          # Zapisz scalony cache.json
           os.makedirs("data", exist_ok=True)
           with open("data/cache.json", "w") as f:
               json.dump(merged, f, indent=2)
 
-          for f in shard_files:
-              os.remove(f)
-
+          # Spakuj do cache.zip
           with zipfile.ZipFile("data/cache.zip", "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
               z.write("data/cache.json", arcname="cache.json")
 
