@@ -228,6 +228,636 @@
       ],
       "att_sig": "",
       "status": "NOWE"
+    },
+    "02ec7115a1b9414628a9f18618ec4da97bc6d83e": {
+      "found_at": "2026-02-17T09:43:16",
+      "last_checked": "2026-02-17T09:43:16",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Decyzje środowiskowe, menu 127 - BIP - Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/?bip=1&cid=127",
+      "keywords": [
+        "decyzje środowiskowe"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "1bb92702ef86b0e3569e8b2d3bd65da56ae14229": {
+      "found_at": "2026-02-17T09:43:19",
+      "last_checked": "2026-02-17T09:43:19",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Wznowienie wydobywania kopaliny ze złoża magnezytu przez Kopalnię Wiry z siedzibą w Wirkach gm. Marcinowice - Decyzje środowiskowe, menu 127, artykuł 157 - BIP - Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/?bip=2&cid=127&id=157",
+      "keywords": [
+        "decyzje środowiskowe"
+      ],
+      "att_sig": "e00348f18a9903a7ee8c6b4f8e8076c1d5031346",
+      "status": "NOWE"
+    },
+    "a0fc4671977f93d9b442966ae9a236ed0073e0ce": {
+      "found_at": "2026-02-17T09:43:19",
+      "last_checked": "2026-02-17T09:43:19",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Obwieszczenie o podjęciu postępowania w sprawie wydania decyzji o środowiskowych uwarunkowaniach",
+      "url": "https://marcinowice.biuletyn.net/fls/bip_pliki/2025_10/BIPF6410440A7C32EZ/Obwieszczenie_o_podjeciu_postepowania_w_sprawie_wydania_decyzji_o_srodowiskowych_uwarunkowaniach.pdf",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "2c1e86256d6284fa519a8be8c757dc78fadd3223": {
+      "found_at": "2026-02-17T09:43:19",
+      "last_checked": "2026-02-17T09:43:19",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Obwieszczenie o zawieszeniu postępowania w sprawie wydania decyzji o środowiskowych uwarunkowaniach",
+      "url": "https://marcinowice.biuletyn.net/fls/bip_pliki/2025_01/BIPF62B1DCADF0437Z/Obwieszczenie_o_zawieszeniu_postepowania_w_sprawie_wydania_decyzji_o_srodowiskowych_uwarunkowaniach.pdf",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "50b1833201e48aa31fb9b854dc8604f3425f2470": {
+      "found_at": "2026-02-17T09:43:19",
+      "last_checked": "2026-02-17T09:43:19",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Obwieszczenie o wydaniu postanowienia nakładającego obowiązek przeprowadzenia oceny oddziaływania na środowisko oraz sporządzenia raportu ooś",
+      "url": "https://marcinowice.biuletyn.net/fls/bip_pliki/2025_01/BIPF62B1DCAD9E16CZ/Obwieszczenie_o_wydaniu_postanowienia_nakladajacego_obowiazek_przeprowadzenia_oceny_oddzialywania_na_srodowisko_oraz_sporzadzenia_raportu_oos.pdf",
+      "keywords": [
+        "ooś"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "c3c14e8f14147ea039b085c93584bab663fd6997": {
+      "found_at": "2026-02-17T09:43:19",
+      "last_checked": "2026-02-17T09:43:19",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Przebudowa drogi powiatowej nr 1990D na odcinku Wiry-Tąpadła - Decyzje środowiskowe, menu 127, artykuł 362 - BIP - Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/?bip=2&cid=127&id=362",
+      "keywords": [
+        "decyzje środowiskowe"
+      ],
+      "att_sig": "107f6cc5b22aa0badc84273485cf0eb5397cac63",
+      "status": "NOWE"
+    },
+    "b6d0b7d99608feb078bf2440b97c448d0de64c15": {
+      "found_at": "2026-02-17T09:43:19",
+      "last_checked": "2026-02-17T09:43:19",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Decyzja nr 3.2025 znak RG.6220.4.5.2025 z dnia 17.04.2025 r. o środowiskowych uwarunkowaniach",
+      "url": "https://marcinowice.biuletyn.net/fls/bip_pliki/2025_04/BIPF633D0B0D0154Z/Decyzja_nr_3.2025_znak_RG.6220.4.5.2025_z_dnia_17.04.2025_r._o_srodowiskowych_uwarunkowaniach.pdf",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "413bbfc76f0cc0d1f0fdb7567f6bfbbc96b7042d": {
+      "found_at": "2026-02-17T09:43:19",
+      "last_checked": "2026-02-17T09:43:19",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Obwieszczenie o wydaniu decyzji o środowiskowych uwarunkowaniach",
+      "url": "https://marcinowice.biuletyn.net/fls/bip_pliki/2025_04/BIPF633D0B0136B4EZ/Obwieszczenie_o_wydaniu_decyzji_o_srodowiskowych_uwarunkowaniach_17.04.2025.pdf",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "469f9aeab352075d9a6fa39e5a147bd83758cfd7": {
+      "found_at": "2026-02-17T09:43:19",
+      "last_checked": "2026-02-17T09:43:19",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Obwieszczenie o wydaniu decyzji o środowiskowych uwarunkowaniach.pdf",
+      "url": "https://marcinowice.biuletyn.net/fls/bip_pliki/2025_04/BIPF6338281E0886FZ/Obwieszczenie_o_wydaniu_decyzji_o_srodowiskowych_uwarunkowaniach.pdf",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "8eacd179a1b69f24117538ef1bd981a835e1f201": {
+      "found_at": "2026-02-17T09:43:19",
+      "last_checked": "2026-02-17T09:43:19",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Decyzja nr 3.2025 znak RG.6220.4.5.2025 z dnia 17.04.2025 r. o środowiskowych uwarunkowaniach.pdf",
+      "url": "https://marcinowice.biuletyn.net/fls/bip_pliki/2025_04/BIPF6338281DB004FZ/Decyzja_nr_3.2025_znak_RG.6220.4.5.2025_z_dnia_17.04.2025_r._o_srodowiskowych_uwarunkowaniach.pdf",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "86c53337349689204aa23610ef5ce8791299d3a3": {
+      "found_at": "2026-02-17T09:43:20",
+      "last_checked": "2026-02-17T09:43:20",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Przebudowa drogi powiatowej nr 1994D na odcinku Zebrzydów-Biała, Biała-Chwałków  - Decyzje środowiskowe, menu 127, artykuł 348 - BIP - Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/?bip=2&cid=127&id=348",
+      "keywords": [
+        "decyzje środowiskowe"
+      ],
+      "att_sig": "3a48ae3bf747c50f2488cb3dcbad0f67d7b44d65",
+      "status": "NOWE"
+    },
+    "a128458d44cd41aeb19ce54b6e1097d004e9cd13": {
+      "found_at": "2026-02-17T09:43:20",
+      "last_checked": "2026-02-17T09:43:20",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Decyzja nr 4.2025 znak RG.6220.3.5.2025 z dnia 24.04.2025 r. o środowiskowych uwarunkowaniach.pdf",
+      "url": "https://marcinowice.biuletyn.net/fls/bip_pliki/2025_04/BIPF6338298AFA782Z/Decyzja_nr_4.2025_znak_RG.6220.3.5.2025_z_dnia_24.04.2025_r._o_srodowiskowych_uwarunkowaniach.pdf",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "bb45cdc2d4753b84ac50ff7f29c9e55fad92f328": {
+      "found_at": "2026-02-17T09:43:20",
+      "last_checked": "2026-02-17T09:43:20",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Obwieszczenie o wydaniu decyzji o środowiskowych uwarunkowaniach.pdf",
+      "url": "https://marcinowice.biuletyn.net/fls/bip_pliki/2025_04/BIPF6338298B68431Z/Obwieszczenie_o_wydaniu_decyzji_o_srodowiskowych_uwarunkowaniach.pdf",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "b4518eef3f007c66b907f605aaecc93bb1dc5c7e": {
+      "found_at": "2026-02-17T09:43:20",
+      "last_checked": "2026-02-17T09:43:20",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Przebudowa drogi powiatowej nr 2900D na odcinku Sady-Mysłaków wraz z budową chodnika w miejscowości Sady - Decyzje środowiskowe, menu 127, artykuł 367 - BIP - Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/?bip=2&cid=127&id=367",
+      "keywords": [
+        "decyzje środowiskowe"
+      ],
+      "att_sig": "54793bd026b814b903268e8ef1fa4e592fb519a1",
+      "status": "NOWE"
+    },
+    "53a10a2cd374e8045b4821f8efa11868c5a5aba6": {
+      "found_at": "2026-02-17T09:43:20",
+      "last_checked": "2026-02-17T09:43:20",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Decyzja nr 2.2025 znak RG.6220.5.6.2025 z dnia 08.04.2025 r. o środowiskowych uwarunkowaniach",
+      "url": "https://marcinowice.biuletyn.net/fls/bip_pliki/2025_04/BIPF63252B140417EZ/Decyzja_nr_2.2025_znak_RG.6220.5.6.2025_z_dnia_08.04.2025_r._o_srodowiskowych_uwarunkowaniach.pdf",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "99223031699058d4e7c6fe6a20b6d9215b13c3b5": {
+      "found_at": "2026-02-17T09:43:20",
+      "last_checked": "2026-02-17T09:43:20",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Obwieszczenie o wydaniu decyzji o środowiskowych uwarunkowaniach",
+      "url": "https://marcinowice.biuletyn.net/fls/bip_pliki/2025_04/BIPF63252B1457691Z/Obwieszczenie_o_wydaniu_decyzji_o_srodowiskowych_uwarunkowaniach0408.pdf",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "f14ecb9ff09892096e3a138ddb60acc8b5062732": {
+      "found_at": "2026-02-17T09:43:21",
+      "last_checked": "2026-02-17T09:43:21",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Budowa sieci kanalizacji sanitarnej w miejscowości Śmiałowice, gmina Marcinowice - Decyzje środowiskowe, menu 127, artykuł 347 - BIP - Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/?bip=2&cid=127&id=347",
+      "keywords": [
+        "decyzje środowiskowe"
+      ],
+      "att_sig": "5fa1eb2718affd668a44524bc941892e69f77c69",
+      "status": "NOWE"
+    },
+    "5aca4431f0fd174baba09ab44a89d9f6fb6144a6": {
+      "found_at": "2026-02-17T09:43:21",
+      "last_checked": "2026-02-17T09:43:21",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Decyzja nr 1.2025 znak RG.6220.2.4.2025 z dnia 03.04.2025 r. o środowiskowych uwarunkowaniach",
+      "url": "https://marcinowice.biuletyn.net/fls/bip_pliki/2025_04/BIPF631E373A7D3DBZ/Decyzja_nr_1.2025_znak_RG.6220.2.4.2025_z_dnia_03.04.2025_r._o_srodowiskowych_uwarunkowaniach.pdf",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "77f43eff6470d0ea765faefcadc7abb8ff86fb1d": {
+      "found_at": "2026-02-17T09:43:21",
+      "last_checked": "2026-02-17T09:43:21",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Obwieszczenie o wydaniu decyzji o środowiskowych uwarunkowaniach",
+      "url": "https://marcinowice.biuletyn.net/fls/bip_pliki/2025_04/BIPF631E373B1C68BZ/Obwieszczenie_o_wydaniu_decyzji_o_srodowiskowych_uwarunkowaniach03.04.pdf",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "9e5a65d5857684ba95be24a4bbebefa602b7bd17": {
+      "found_at": "2026-02-17T09:44:05",
+      "last_checked": "2026-02-17T09:44:05",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Ogłoszenie o wydłużeniu terminu składania wniosków do planu ogólnego gminy Marcinowice - 2024, menu 156, artykuł 263 - BIP - Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/?bip=2&cid=156&id=263",
+      "keywords": [
+        "planu ogólnego"
+      ],
+      "att_sig": "38edc73835b647cb4aba72c0646237761ca62386",
+      "status": "NOWE"
+    },
+    "2f53dbeadd0d92fb5f08ad3bdb8b89e122f3fc14": {
+      "found_at": "2026-02-17T09:45:21",
+      "last_checked": "2026-02-17T09:45:21",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Obwieszczenie o wszczęciu postępowania administracyjnego w sprawie wydania decyzji o środowiskowych uwarunkowaniach dla planowanego : wydobywaniu kopaliny: granitu ze złoża \"Pagórki Zachodnie\" metodą (104.69 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1504/Obwieszczenie_o_wszczeciu_postepowania_administracyjnego__11_12-02-2021_10-48-48.pdf",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "b847842b94d2524cd2dc1aa4773a306e24a4ea2a": {
+      "found_at": "2026-02-17T09:46:27",
+      "last_checked": "2026-02-17T09:46:27",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "zm.uchw.mpzp -Śmiałowice.z załącznikami.pdf (173.53 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1743/zm_14-07-2023_07-48-12.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "76c4c88d4ddcadc330fe0591e498b3993088f59b": {
+      "found_at": "2026-02-17T09:46:59",
+      "last_checked": "2026-02-17T09:46:59",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "uchw. w spr. mpzp Marcinowice.pdf (135.65 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1735/uchw_23-05-2023_14-20-08.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "9d8ea3f4545d73b84a11734c1109ef2557284058": {
+      "found_at": "2026-02-17T09:46:59",
+      "last_checked": "2026-02-17T09:46:59",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "mpzp Marcinowice zał.graf.pdf (673.52 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1735/mpzp_Marcinowice_zal_23-05-2023_14-20-32.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "573a496ab13de4d1eea373410e901069e82a5657": {
+      "found_at": "2026-02-17T09:46:59",
+      "last_checked": "2026-02-17T09:46:59",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "uchw. w spr. mpzp Wirki.pdf (101.70 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1735/uchw_23-05-2023_14-21-05.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "797d4ead7d832177456efd7b488e79657c283f3f": {
+      "found_at": "2026-02-17T09:46:59",
+      "last_checked": "2026-02-17T09:46:59",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "mpzp Wirki - analiza.pdf (314.43 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1735/mpzp_Wirki_-_analiza_23-05-2023_14-21-30.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "763777a5ada286cc92435711fda1425eb81d0706": {
+      "found_at": "2026-02-17T09:46:59",
+      "last_checked": "2026-02-17T09:46:59",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "mpzp Wirki zał.graf.pdf (2.62 MB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1735/mpzp_Wirki_zal_23-05-2023_14-21-54.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "94e96d545d3665c8c85af7c21e103eee44dde9bc": {
+      "found_at": "2026-02-17T09:46:59",
+      "last_checked": "2026-02-17T09:46:59",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "mpzp m-ce uzasad..pdf (95.84 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1735/mpzp_m-ce_uzasad_23-05-2023_14-31-50.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "5c6d3ffcd8c8bdf7155f7de1125d22c1f28b2506": {
+      "found_at": "2026-02-17T09:47:38",
+      "last_checked": "2026-02-17T09:47:38",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "1. uchw. w spr. mpzp Sady.pdf (100.11 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1732/1_21-03-2023_11-49-11.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "979cbd725a2e3dea44a38c09ee3d375feda6fc59": {
+      "found_at": "2026-02-17T09:47:38",
+      "last_checked": "2026-02-17T09:47:38",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "2. Sady mpzp analiza.pdf (323.56 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1732/2_21-03-2023_11-50-14.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "0dfc7b8e67ef2881a537391c777d47faf8b69248": {
+      "found_at": "2026-02-17T09:47:38",
+      "last_checked": "2026-02-17T09:47:38",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "3. Sady mpzp zał.pdf (1.47 MB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1732/3_21-03-2023_11-50-34.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "e9630cd198066cf91db5d56284ccfbb4f0abf1e1": {
+      "found_at": "2026-02-17T09:48:28",
+      "last_checked": "2026-02-17T09:48:28",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "projekt mpzp Marcinowice (1.05 MB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1725/projekt_mpzp_Marcinowice_30-01-2023_07-56-44.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "aa8258fa6242e0bb62effe55951963425a7883f0": {
+      "found_at": "2026-02-17T09:48:29",
+      "last_checked": "2026-02-17T09:48:29",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "projekt mpzp Marcinowice.pdf (977.34 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1725/projekt_mpzp_Marcinowice_24-01-2023_11-08-08.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "6d0e82ac7735728ddcb9a52623340d263f1290b9": {
+      "found_at": "2026-02-17T09:48:46",
+      "last_checked": "2026-02-17T09:48:46",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "uchwała w spr.mpzp Chwałków (93.06 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1717/uchwala_w_spr_24-11-2022_07-11-17.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "571ddf25c5bf9f535c4be01153380bc4d9976d70": {
+      "found_at": "2026-02-17T09:48:46",
+      "last_checked": "2026-02-17T09:48:46",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "mpzp Chwałków_rysunek (10.15 MB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1717/mpzp_Chwalkow_rysunek_24-11-2022_07-12-39.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "7780722d042276aa0163e5d14efb4077a6dcdc4b": {
+      "found_at": "2026-02-17T09:49:43",
+      "last_checked": "2026-02-17T09:49:43",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "uchw. w spr.  mpzp Tworzyjanów (99.77 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1694/uchw_20-04-2022_12-06-48.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "fc80a50739da754fc130056928fca4b1ef78f41e": {
+      "found_at": "2026-02-17T09:49:43",
+      "last_checked": "2026-02-17T09:49:43",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "uchw. w spr.  mpzp Tworzyjanów - analiza (66.08 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1694/uchw_20-04-2022_12-07-10.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "f275bffcb58599a130bbc6eb3850a43803c3e800": {
+      "found_at": "2026-02-17T09:49:43",
+      "last_checked": "2026-02-17T09:49:43",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "uchw. w spr.  mpzp Tworzyjanów mapka (265.63 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1694/uchw_20-04-2022_12-07-30.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "4bc0db52e920fc4957d1aecf1b36bc2d4f5d68c7": {
+      "found_at": "2026-02-17T09:50:31",
+      "last_checked": "2026-02-17T09:50:31",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "uchwała w spr. mpzp Chwałków (101.22 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1679/uchwala_w_spr_19-11-2021_09-32-19.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "502396b2b9fb113c203970d0e1c81efeaeb04cbe": {
+      "found_at": "2026-02-17T09:50:31",
+      "last_checked": "2026-02-17T09:50:31",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "zał. do uchwały w spr. mpzp Chwałków (790.18 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1679/zal_19-11-2021_09-32-37.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "111fa13faf1103e92de2b3df7b7b5783efb98fc2": {
+      "found_at": "2026-02-17T09:50:31",
+      "last_checked": "2026-02-17T09:50:31",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "zał. do uchwały w spr. mpzp Chwałków-1 (434.58 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1679/zal_19-11-2021_09-32-51.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "4cd14479c57d17d8db1f112e53261bbf6dea35a3": {
+      "found_at": "2026-02-17T09:52:39",
+      "last_checked": "2026-02-17T09:52:39",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Uchwała w spr. mpzp Tworzyjanów (83.29 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1649/uchwala_w_spr_23-12-2020_12-12-31.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "1d2c4d77af18d39cab3445c86190cf4c15035fbd": {
+      "found_at": "2026-02-17T09:53:19",
+      "last_checked": "2026-02-17T09:53:19",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "mpzp Biala (889.38 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1639/mpzp_Biala_06-10-2020_07-27-01.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "139dbf6e8ab4a2143c954da375f042b2598c715f": {
+      "found_at": "2026-02-17T09:55:21",
+      "last_checked": "2026-02-17T09:55:21",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "projekt mpzp Tworzyjanow (225.72 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1621/projekt_mpzp_Tworzyjanow_13-05-2020_09-03-47.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "9aceba9f8fd7ee6a9e9b9179df62d94babfae67a": {
+      "found_at": "2026-02-17T09:55:21",
+      "last_checked": "2026-02-17T09:55:21",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "mpzp chwalkow (205.83 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1621/mpzp_chwalkow_13-05-2020_09-04-06.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
     }
   },
   "gmina_seeds": {
