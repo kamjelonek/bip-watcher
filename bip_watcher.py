@@ -40,8 +40,14 @@ def get_shard_index():
 
 def _git_commit_file(filepath, message):
     """Git add, commit, push a single file (synchronous)."""
+    # Sprawdź, czy jesteśmy w GitHub Actions
+    if os.getenv("GITHUB_ACTIONS"):
+        # W GitHub Actions NIE wykonujemy commitów – tylko informujemy
+        print(f"📁 Plik zapisany lokalnie (bez commita): {filepath}")
+        return
+        
+    # Poniższy kod wykonuje się TYLKO poza GitHub Actions (np. lokalnie)
     try:
-        # Dodane print aby widzieć w logach co się dzieje
         print(f"📤 Git commit: {filepath} with message: {message}")
         subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=False)
         subprocess.run(["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"], check=False)
@@ -2453,4 +2459,5 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
