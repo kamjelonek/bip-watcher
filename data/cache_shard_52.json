@@ -1592,6 +1592,34 @@
       ],
       "att_sig": "",
       "status": "NOWE"
+    },
+    "c3b8375d820be74c33aacc14f443bb749b275787": {
+      "found_at": "2026-02-17T13:18:31",
+      "last_checked": "2026-02-17T13:18:31",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Start - UCHWAŁA NR LXX/421/24 RADY GMINY MARCINOWICE z dnia 30 stycznia 2024 r. w sprawie uchwalenia miejscowego planu zagospodarowania przestrzennego wsi Tworzyjanów, w rejonie drogi powiatowej - Rejestr zmian, rejestr 92, menu 9, artykuł ",
+      "url": "https://marcinowice.biuletyn.net/?id=92&rejz=2",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "58a77a97c1358c1a4781cd2135bc3b71a48bf304",
+      "status": "NOWE"
+    },
+    "b7fa8c2d2b637ee19cc909efb31f06b434702daa": {
+      "found_at": "2026-02-17T13:20:42",
+      "last_checked": "2026-02-17T13:20:42",
+      "etag": "",
+      "last_modified": "Thu, 04 Jan 2024 17:52:30 GMT",
+      "gmina": "Marcinowice",
+      "title": "Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/0e57-3.html?id=611",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
     }
   },
   "gmina_seeds": {
