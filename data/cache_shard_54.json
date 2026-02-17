@@ -4175,7 +4175,20 @@
     "9cd4e70bf19d16d76e3db86ab63b0b4b177cb477": "2026-02-17T09:50:35",
     "b1705788d4a5e8a3817c736ae9ff8ecfa350377d": "2026-02-17T10:25:41"
   },
-  "content_seen": {},
+  "content_seen": {
+    "19b2da133871c6ed744db11dea2a3a5a6d906f62": {
+      "found_at": "2026-02-17T10:55:28",
+      "last_checked": "2026-02-17T10:55:28",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Mściwojów",
+      "title": "",
+      "url": "https://www.msciwojow.pl",
+      "keywords": [],
+      "att_sig": "",
+      "status": "ALIAS"
+    }
+  },
   "gmina_seeds": {
     "3847045b3e0d2a54b7793fed30020d9bfca45e00": {
       "allowed_host": "bip.msciwojow.pl",
@@ -11350,6 +11363,12 @@
   "page_fprints": {},
   "gmina_frontiers": {},
   "gmina_retry": {
-    "3847045b3e0d2a54b7793fed30020d9bfca45e00": []
+    "3847045b3e0d2a54b7793fed30020d9bfca45e00": [
+      "http://www.bip.msciwojow.pl/?a=9714",
+      "http://www.bip.msciwojow.pl",
+      "http://partner.msciwojow.pl",
+      "http://portal.msciwojow.pl",
+      "http://portal.msciwojow.pl/"
+    ]
   }
 }
