@@ -59,11 +59,9 @@ def _git_commit_file(filepath, message):
         print(f"⚠️ git error: {e}")
 
 async def save_shard_cache_and_commit(loop=None):
-    """Zapisuje stan do pliku cache_shard_X.json i wykonuje git commit/push."""
+    """Zapisuje stan do pliku cache_shard_X.json, a jeśli nie jesteśmy w GHA, wykonuje git commit/push."""
     shard = get_shard_index()
     if shard < 0:
-        return
-    if not os.getenv("GITHUB_ACTIONS"):
         return
 
     out = {"schema": CACHE_SCHEMA}
@@ -76,20 +74,24 @@ async def save_shard_cache_and_commit(loop=None):
     out["page_fprints"] = state.page_fprints or {}
     out["gmina_frontiers"] = state.gmina_frontiers or {}
     out["gmina_retry"] = state.gmina_retry or {}
-    # Dodane przechowywanie martwych stron
     out["dead_urls"] = getattr(state, 'dead_urls', {})
 
     filename = BASE_DIR / f"cache_shard_{shard}.json"
     try:
         with open(filename, "w", encoding="utf-8") as f:
             json.dump(out, f, indent=2, ensure_ascii=False)
+        print(f"📁 Plik shardowy zapisany: {filename}")
     except Exception as e:
         print(f"⚠️ Failed to write shard cache: {e}")
         return
 
-    if loop is None:
-        loop = asyncio.get_event_loop()
-    await loop.run_in_executor(None, _git_commit_file, filename, f"Auto-update cache shard {shard} [skip ci]")
+    # Jeśli nie jesteśmy w GitHub Actions, wykonaj commit (np. lokalnie)
+    if not os.getenv("GITHUB_ACTIONS"):
+        if loop is None:
+            loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, _git_commit_file, filename, f"Auto-update cache shard {shard} [skip ci]")
+    else:
+        print("📌 W GHA – plik zapisany lokalnie, commit pominięty")
 
 # ===================== PATHS (VS CODE / WINDOWS) =====================
 BASE_DIR = Path(__file__).resolve().parent / "data"
@@ -2459,5 +2461,6 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
