@@ -130,7 +130,7 @@ KEYWORDS = [
     "warunki zabudowy", "decyzja o warunkach zabudowy", "decyzje o warunkach zabudowy",
     "decyzja środowiskowa", "decyzje środowiskowe",
     "decyzja o środowiskowych uwarunkowaniach", "środowiskowych uwarunkowaniach",
-    "ooś", "oos", "kip", "raport o oddziaływaniu na środowisko",
+    "raport o oddziaływaniu na środowisko",
     # OZE: wiatr / PV
     "oze",
     "elektrownia wiatrowa", "farma wiatrowa", "wiatr", "wiatrow", "turbina",
@@ -2466,6 +2466,7 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
 
