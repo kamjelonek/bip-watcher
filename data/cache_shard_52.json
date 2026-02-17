@@ -1522,6 +1522,76 @@
       ],
       "att_sig": "",
       "status": "NOWE"
+    },
+    "d1eecaa9ec0ed7a7e1f88fccc31775512ee3fbe2": {
+      "found_at": "2026-02-17T13:10:57",
+      "last_checked": "2026-02-17T13:10:57",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "DECYZJA NR 11.2010 o środowiskowych uwarunkowaniach zgody na realizację przedsięwzięcia- OOŚ - SKSM Pagórki Zachodnie (83.60 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki_obwieszczenia/45/DECYZJA_NR_11.2010_o_srodowiskowych_uwarunkowaniach_zgody_na_realizacje_przedsiewziecia-_OOS_-_SKSM_Pagorki_Zachodnie.pdf",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "536b4c0d07ecc8d96a432f513a476232561ad511": {
+      "found_at": "2026-02-17T13:11:22",
+      "last_checked": "2026-02-17T13:11:22",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Obwieszczenie o wydaniu decyzji odmawiającej wydania decyzji o  środowiskowych uwarunkowaniach dla przedsięwzięcia polegającego na:  Budowie małej elektrowni wodnej w Śmiałowicach (364.17 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki_obwieszczenia/136/obwieszczenie_decyzja_odmowna-24042014090124.pdf",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "0dde82d9a20de7c954f858354b09bcb09f548342": {
+      "found_at": "2026-02-17T13:11:40",
+      "last_checked": "2026-02-17T13:11:40",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "mpzp Chwałków_prognoza środowiskowa (364.14 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki_obwieszczenia/194/mpzp_Chwalkow_prognoza_srodowiskowa.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "410fd3a73855fd8f7f7ebda7bf7bac4e6434189b": {
+      "found_at": "2026-02-17T13:11:40",
+      "last_checked": "2026-02-17T13:11:40",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "mpzp Chwałków_projekt do wyłożenia (10.34 MB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki_obwieszczenia/194/mpzp_Chwalkow_projekt_do_wylozenia.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "5769867ce0cec0257126d004a4775da4947ef53b": {
+      "found_at": "2026-02-17T13:11:40",
+      "last_checked": "2026-02-17T13:11:40",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "mpzp Chwałków_uchwała_projek do wyłożenia (203.65 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki_obwieszczenia/194/mpzp_Chwalkow_uchwala_projek_do_wylozenia.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
     }
   },
   "gmina_seeds": {
