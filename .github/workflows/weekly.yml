@@ -40,9 +40,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # ===================== PRZYGOTOWANIE CACHE =====================
-      # Jeśli istnieje cache.json z poprzedniego merge, zostanie użyty
-      # (program sam go wczyta). Nie potrzebujemy rozpakowywać zipa.
+      # ===================== ROZPAKOWANIE GŁÓWNEGO CACHE =====================
+      - name: Unpack cache.zip if exists
+        run: |
+          mkdir -p data
+          if [ -f data/cache.zip ]; then
+            unzip -o data/cache.zip -d data
+            echo "✅ cache.zip unpacked to data/cache.json"
+          else
+            echo "ℹ️ No cache.zip found – starting fresh"
+          fi
 
       # ===================== RUN =====================
       - name: Run watcher (sharded)
@@ -93,11 +100,12 @@ jobs:
       - name: Merge shard caches
         run: |
           python - <<'PY'
-          import os, json, glob
+          import os, json, glob, zipfile
 
           def iso_max(a, b):
               return a if (a or "") >= (b or "") else b
 
+          # Inicjalizacja scalonego cache z uwzględnieniem dead_urls
           merged = {
               "schema": 10,
               "urls_seen": {},
@@ -105,16 +113,23 @@ jobs:
               "gmina_seeds": {},
               "page_fprints": {},
               "gmina_frontiers": {},
-              "gmina_retry": {}
+              "gmina_retry": {},
+              "dead_urls": {}
           }
 
+          # Wczytaj istniejący cache.json (jeśli istnieje)
           if os.path.exists("data/cache.json"):
               with open("data/cache.json", "r") as f:
                   try:
                       merged = json.load(f)
                   except:
                       pass
+              # Upewnij się, że wszystkie klucze istnieją
+              for k in ["urls_seen", "content_seen", "gmina_seeds", "page_fprints", "gmina_frontiers", "gmina_retry", "dead_urls"]:
+                  if k not in merged:
+                      merged[k] = {}
 
+          # Znajdź wszystkie pliki shardowe
           shard_files = glob.glob("data/cache_shard_*.json")
           if not shard_files:
               print("No shard cache files found")
@@ -127,6 +142,7 @@ jobs:
                       print(f"Error reading {f}: {e}")
                       continue
 
+                  # Scalanie pól
                   for k in merged:
                       if k == "schema":
                           continue
@@ -134,16 +150,28 @@ jobs:
                           continue
                       if isinstance(merged[k], dict) and isinstance(data[k], dict):
                           if k == "urls_seen":
+                              # Dla urls_seen wybieramy nowszy timestamp
                               for url, ts in data[k].items():
                                   if url not in merged[k] or iso_max(merged[k].get(url, ""), ts) == ts:
                                       merged[k][url] = ts
+                          elif k == "dead_urls":
+                              # Dla dead_urls łączymy listy bez duplikatów
+                              for gkey, urls in data[k].items():
+                                  if gkey not in merged[k]:
+                                      merged[k][gkey] = []
+                                  existing = set(merged[k][gkey])
+                                  for u in urls:
+                                      if u not in existing:
+                                          merged[k][gkey].append(u)
                           else:
+                              # Dla pozostałych słowników zwykłe update
                               merged[k].update(data[k])
                       else:
                           merged[k] = data[k]
 
               print(f"Merged {len(shard_files)} shard files")
 
+          # Zapisz scalony cache.json
           os.makedirs("data", exist_ok=True)
           with open("data/cache.json", "w") as f:
               json.dump(merged, f, indent=2)
@@ -152,8 +180,7 @@ jobs:
           for f in shard_files:
               os.remove(f)
 
-          # Spakuj cache.json do cache.zip (jeśli chcesz zachować zip)
-          import zipfile
+          # Spakuj cache.json do cache.zip
           with zipfile.ZipFile("data/cache.zip", "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
               z.write("data/cache.json", arcname="cache.json")
 
