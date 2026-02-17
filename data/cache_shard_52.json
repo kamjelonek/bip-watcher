@@ -858,6 +858,76 @@
       ],
       "att_sig": "",
       "status": "NOWE"
+    },
+    "1c5b3703ed7086487bacf5c1ff656e5819ef146f": {
+      "found_at": "2026-02-17T10:02:47",
+      "last_checked": "2026-02-17T10:02:47",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "zmiana mpzp Zebrzydów dz. 224.2 uchwała (105.05 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/716/zmiana_mpzp_Zebrzydow_dz_20-04-2018_12-17-45.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "b305b726eaa5f393bc3dcd3a915e85ed1c2f6c3b": {
+      "found_at": "2026-02-17T10:03:47",
+      "last_checked": "2026-02-17T10:03:47",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "WSA wyrok mpzp M-ce (obszary część) (3.17 MB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/715/WSA_wyrok_mpzp_M-ce_(obszary_czesc)_28-09-2016_13-38-12.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "cd5b9b396f5f30cfc6161441a085c7176fd75fb5": {
+      "found_at": "2026-02-17T10:05:04",
+      "last_checked": "2026-02-17T10:05:04",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Zawiadomienie o wszczęciu postępowania postępowania administracyjnego w sprawie wydania decyzji  o środowiskowych uwarunkowaniach zgody na realizację przedsięwzięcia polegającego na: „Przebudowa drogi (880.43 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1489/decyzja_srodowiskowa_24-07-2017_08-34-18.pdf",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "6612d8440cab4a1ab1cc1c5539458bf57dae2629": {
+      "found_at": "2026-02-17T10:07:04",
+      "last_checked": "2026-02-17T10:07:04",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "RG.6220.02.2016 przesłanie KIP (137.41 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1446/RG_07-10-2016_12-10-58.pdf",
+      "keywords": [
+        "kip"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "60c72038cfb44c1736dbfa89e8aba39e01ac22ba": {
+      "found_at": "2026-02-17T10:10:31",
+      "last_checked": "2026-02-17T10:10:31",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Tekst Jednolity - STUDIUM UWARUNKOWAŃ I KIERUNKÓW ZAGOSPODAROWANIA  PRZESTRZENNEGO GMINY MARCINOWICE",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/146/Tekst_Jednolty_-_Studium_warunkowan_i_kierunkow_zagospodarowania_Gminy_Marcinowice_-_zal._nr_1.pdf",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
     }
   },
   "gmina_seeds": {
