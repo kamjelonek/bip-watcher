@@ -1316,6 +1316,86 @@
       ],
       "att_sig": "",
       "status": "NOWE"
+    },
+    "789166e12f91cb7c2d3f20a08581bc934f1943e6": {
+      "found_at": "2026-02-17T11:30:35",
+      "last_checked": "2026-02-17T11:30:35",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Uchwała Nr IX/54/03 w sprawie miejscowego planu zagospodarowania przestrzennego części wsi Biała (48.50 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/141/Uchwala_nr_IX-54-03_zagospprzestrzenner..doc",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "52a6745e3aa78e91f5797d9dcdfc6099d6c882c2": {
+      "found_at": "2026-02-17T11:32:50",
+      "last_checked": "2026-02-17T11:32:50",
+      "etag": "",
+      "last_modified": "Thu, 04 Jan 2024 16:33:41 GMT",
+      "gmina": "Marcinowice",
+      "title": "Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/index4a10.html?id=612",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "8cb81c32a5ec94297b6a9a8ec16891b7ce2c02d8": {
+      "found_at": "2026-02-17T11:35:37",
+      "last_checked": "2026-02-17T11:35:37",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki_przetargi/401/8_pr.wod-kan,_co,_went.rzut_parteru,_instal.wodociagowa,_sanitarna,_ogrzewanie_i_chlodzenie,_profile_wod-kan,_podl_hydrantu,_zestaw_wodomierzowy,_wentyl.rz",
+      "keywords": [],
+      "att_sig": "",
+      "status": "ALIAS"
+    },
+    "ad29704eb76f0c91aac851cdba6e4f814bb41dca": {
+      "found_at": "2026-02-17T11:35:39",
+      "last_checked": "2026-02-17T11:35:39",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki_przetargi/401/9_inst.elektr._rzut_parteru-oswiatlenie,_ins.elektr.rzut_wiezby_dach._pdf",
+      "keywords": [],
+      "att_sig": "",
+      "status": "ALIAS"
+    },
+    "92de484f830621b55e32b95419395c1c578f952b": {
+      "found_at": "2026-02-17T11:36:36",
+      "last_checked": "2026-02-17T11:36:36",
+      "etag": "",
+      "last_modified": "Thu, 04 Jan 2024 16:43:51 GMT",
+      "gmina": "Marcinowice",
+      "title": "Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/index3887.html?id=372",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "c540dca9a72c23eaf5df496f4d4263130d5f216b": {
+      "found_at": "2026-02-17T11:39:37",
+      "last_checked": "2026-02-17T11:39:37",
+      "etag": "",
+      "last_modified": "Thu, 04 Jan 2024 16:49:12 GMT",
+      "gmina": "Marcinowice",
+      "title": "Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/index5b0f.html?id=373",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
     }
   },
   "gmina_seeds": {
