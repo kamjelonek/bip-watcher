@@ -1452,6 +1452,34 @@
       ],
       "att_sig": "",
       "status": "NOWE"
+    },
+    "a17ad7619a2349f660dba3155cea4fa55ac3981c": {
+      "found_at": "2026-02-17T12:35:52",
+      "last_checked": "2026-02-17T12:35:52",
+      "etag": "",
+      "last_modified": "Thu, 04 Jan 2024 17:18:01 GMT",
+      "gmina": "Marcinowice",
+      "title": "Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/index0e57-3.html?id=611",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "7c5e07f03af1aecafdd0d67acf1f46d322215a46": {
+      "found_at": "2026-02-17T12:36:26",
+      "last_checked": "2026-02-17T12:36:26",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "załącznik zmiany mpzp Wirki (120.51 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki_obwieszczenia/208/zalacznik_zmiany_mpzp_Wirki.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
     }
   },
   "gmina_seeds": {
