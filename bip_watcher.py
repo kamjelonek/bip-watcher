@@ -2284,7 +2284,12 @@ async def worker(name: str,
                         purge_old_cache(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints, state.dead_urls)
                 except Exception as ex:
                     print(f"⚠️ checkpoint save failed: {ex}", flush=True)
-            print(f"✅ [{name}] DONE: {gmina} (found {len(found)})", flush=True)
+            frontier_len = p2meta.get('frontier_len', '?')
+            retry_len = p2meta.get('retry_len', '?')
+            print(f"✅ [{name}] DONE: {gmina} (found {len(found)}, frontier={frontier_len}, retry={retry_len})", flush=True)
+           if frontier_len == 0 and retry_len == 0:
+                    print(f"   ✅ Gmina {gmina} – pełne przeskanowanie (frontier i retry puste)")
+
         except asyncio.CancelledError:
             return
         except Exception as e:
@@ -2461,6 +2466,7 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
 
