@@ -1704,6 +1704,48 @@
       ],
       "att_sig": "",
       "status": "NOWE"
+    },
+    "a83dbccf7f8d74af2ace8618d9128436286e56b7": {
+      "found_at": "2026-02-17T14:32:54",
+      "last_checked": "2026-02-17T14:32:54",
+      "etag": "",
+      "last_modified": "Thu, 04 Jan 2024 18:40:51 GMT",
+      "gmina": "Marcinowice",
+      "title": "Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/index2203.html?id=373",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "f89ce50b2eda26e6a4e1edab69d786849153e4ca": {
+      "found_at": "2026-02-17T14:32:54",
+      "last_checked": "2026-02-17T14:32:54",
+      "etag": "",
+      "last_modified": "Thu, 04 Jan 2024 18:40:51 GMT",
+      "gmina": "Marcinowice",
+      "title": "Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/indexa4df.html?id=373&idr=323&rejestr=1",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "96e391bac0eba83ab1a24ecf1b5ca7d475c7d8cc": {
+      "found_at": "2026-02-17T14:32:55",
+      "last_checked": "2026-02-17T14:32:55",
+      "etag": "",
+      "last_modified": "Thu, 04 Jan 2024 18:40:52 GMT",
+      "gmina": "Marcinowice",
+      "title": "Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/indexb638-2.html?id=373&idr=323",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
     }
   },
   "gmina_seeds": {
