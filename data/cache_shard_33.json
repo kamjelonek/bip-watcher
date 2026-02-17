@@ -4862,6 +4862,34 @@
       "keywords": [],
       "att_sig": "",
       "status": "ALIAS"
+    },
+    "60ac31562a935b8810fec2815ec9161e1f78eee0": {
+      "found_at": "2026-02-17T01:54:41",
+      "last_checked": "2026-02-17T01:54:41",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Żagań",
+      "title": "Uchwały o aktulaności Planu ogólnego, MPZP - Gmina Wiejska Żagań",
+      "url": "https://bip.gminazagan.pl/207/1/archiwum/Uchwaly_o_aktulanosci_Planu_ogolnego_2C_MPZP/",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "f4005ce41741c9bd03a4deea260702281cd163e2",
+      "status": "NOWE"
+    },
+    "d5363bc9f64a9b22a71a47b91b8ffd2ea92a575c": {
+      "found_at": "2026-02-17T02:01:01",
+      "last_checked": "2026-02-17T02:01:01",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Żagań",
+      "title": "UCHWAŁA NR X/49/15 RADY GMINY ŻAGAŃ z dnia 18 września 2015 r. w sprawie uchwalenia zmiany Studium uwarunkowań i kierunków zagospodarowania przestrzennego gminy Żagań",
+      "url": "http://www.bip.gminazagan.pl/system/obj/1188_Uchwala.X.49.15.2015-09-18.pdf",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
     }
   },
   "gmina_seeds": {
@@ -11348,7 +11376,8 @@
   "gmina_frontiers": {},
   "gmina_retry": {
     "599fd55dbe092a2ebb014d77b735ee6fe8a52995": [
-      "http://www.bip.gbp.gminazagan.pl"
+      "http://www.bip.gbp.gminazagan.pl",
+      "https://bip.gops.gminazagan.pl/strona_glowna/37/1/archiwum/Strona_glowna/"
     ]
   }
 }
