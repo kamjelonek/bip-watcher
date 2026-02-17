@@ -970,6 +970,324 @@
       ],
       "att_sig": "",
       "status": "NOWE"
+    },
+    "6209128625d42fb15fa307b14ecc931b50ec49e5": {
+      "found_at": "2026-02-17T10:29:05",
+      "last_checked": "2026-02-17T10:29:05",
+      "etag": "",
+      "last_modified": "Thu, 04 Jan 2024 15:52:20 GMT",
+      "gmina": "Marcinowice",
+      "title": "Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/indexe76a.html?id=372&idr=324&rejestr=1",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "b8efe8e6ae42211016e43d4bbc46fe91bdefdc20": {
+      "found_at": "2026-02-17T10:29:06",
+      "last_checked": "2026-02-17T10:29:06",
+      "etag": "",
+      "last_modified": "Thu, 04 Jan 2024 15:52:21 GMT",
+      "gmina": "Marcinowice",
+      "title": "Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/indexf1ec.html?id=373&idr=323&rejestr=1",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "b930675e171c0d29bbf6a7cd472434d630b46aea": {
+      "found_at": "2026-02-17T10:31:48",
+      "last_checked": "2026-02-17T10:31:48",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "uchwała w spr. mpzp M-ce (347.44 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1672/uchwala_w_spr_13-08-2021_11-35-02.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "f57bb9d804cb74341d954107cb6b10a8f04f3ee1": {
+      "found_at": "2026-02-17T10:32:08",
+      "last_checked": "2026-02-17T10:32:08",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Decyzja Nr 1/2021 o środowiskowych uwarunkowaniach (1.28 MB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1644/Decyzja_nr_1)2021_19-08-2021_06-37-30.pdf",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "504496133d003f150aab1d45377fedb1da014a1e": {
+      "found_at": "2026-02-17T10:32:08",
+      "last_checked": "2026-02-17T10:32:08",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Decyzja Nr 1.2022 o środowiskowych uwarunkowaniach dla przedsięwzięcia (1.38 MB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/1708/Decyzja_Nr_1_22-08-2022_13-54-57.pdf",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "52b6c15cf528b8ad0acdbcc76c1a47a9f4926e03": {
+      "found_at": "2026-02-17T10:32:15",
+      "last_checked": "2026-02-17T10:32:15",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "zmiana mpzp Marcinowice dom seniora uchwała (111.91 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/715/zmiana_mpzp_Marcinowice_dom_seniora_uchwala_20-04-2018_12-19-55.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "022d74bcecd7358178dfeb317a965d46ac92c44f": {
+      "found_at": "2026-02-17T10:32:15",
+      "last_checked": "2026-02-17T10:32:15",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "zmiana mpzp Marcinowice dom seniora zał.graf (4.01 MB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/715/zmiana_mpzp_Marcinowice_dom_seniora_zal_20-04-2018_12-20-19.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "d29e6f2562fabebcdf1d115ff80ae3164bac6fd0": {
+      "found_at": "2026-02-17T10:32:15",
+      "last_checked": "2026-02-17T10:32:15",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "zmiana mpzp Marcinowice przedszkole uchwała (104.24 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/715/zmiana_mpzp_Marcinowice_przedszkole_uchwala_20-04-2018_12-20-53.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "fd65b3820e47961e20cf096e98d174e4c23e6a0e": {
+      "found_at": "2026-02-17T10:32:15",
+      "last_checked": "2026-02-17T10:32:15",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "zmiana mpzp Marcinowice przedszkole zał.graf. (3.80 MB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/715/zmiana_mpzp_Marcinowice_przedszkole_zal_20-04-2018_12-21-12.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "71fdf28bdccb14b20b89c0826cf570e85c37357b": {
+      "found_at": "2026-02-17T10:32:16",
+      "last_checked": "2026-02-17T10:32:16",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "zmiana mpzp części wsi Zebrzydów obszar - sygnalizacja Wojewody (221.86 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/716/zmiana_mpzp_czesci_wsi_Zebrzydow_obszar_-_sygnalizacja_Wojewody_07-08-2018_13-41-16.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "fdbe9650d06f591be9b70a1fdf0e54863b7e8759": {
+      "found_at": "2026-02-17T10:32:18",
+      "last_checked": "2026-02-17T10:32:18",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "WSA wyrok mpzp Szczepanów (obszary część) (3.59 MB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/720/WSA_wyrok_mpzp_Szczepanow_(obszary_czesc)_28-09-2016_13-37-08.pdf",
+      "keywords": [
+        "mpzp"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "2aaf241d97b4836c2267e4eb67a66fb4902b4ad0": {
+      "found_at": "2026-02-17T10:33:41",
+      "last_checked": "2026-02-17T10:33:41",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "",
+      "url": "https://marcinowice.biuletyn.net/archiwum/archiwum.marcinowice.pl/Strona/Dokumenty/Wybory2018/10.Informacja_o_uplywie_terminow_zwiazanych_z_uprawnieniami_wyborcow_niepe%C5%82nosprawnych.html",
+      "keywords": [],
+      "att_sig": "",
+      "status": "ALIAS"
+    },
+    "8e68d7ab93c2ddd263558c92451ce1246e0ca68d": {
+      "found_at": "2026-02-17T10:33:51",
+      "last_checked": "2026-02-17T10:33:51",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "",
+      "url": "https://marcinowice.biuletyn.net/archiwum/archiwum.marcinowice.pl/Strona/Dokumenty/Wybory2018/ZPOW-571-19-17-pelnomocnik,os.upowazniona_w_skladach_komisji.html",
+      "keywords": [],
+      "att_sig": "",
+      "status": "ALIAS"
+    },
+    "557d87dcaa3209fef4cc5a3dc5af8ca85b76db1f": {
+      "found_at": "2026-02-17T10:39:26",
+      "last_checked": "2026-02-17T10:39:26",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "2023/2024, rejestr 1278, menu 64 - BIP - Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/?bip=3&rejid=1278",
+      "keywords": [
+        "plan ogólny"
+      ],
+      "att_sig": "75ebc90b0137219b3979d755b1abf669f8f316fb",
+      "status": "NOWE"
+    },
+    "eb1465502dedff179fcd9bbbee8f07cfcb4b197d": {
+      "found_at": "2026-02-17T10:39:27",
+      "last_checked": "2026-02-17T10:39:27",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "2023/2024, rejestr 1277, menu 64 - BIP - Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/?bip=3&rejid=1277",
+      "keywords": [
+        "plan ogólny"
+      ],
+      "att_sig": "cffcf8bcc3a02325931e3e50ff0d64e2142b5e75",
+      "status": "NOWE"
+    },
+    "2b20efca79b8f33a1544a4879ab9819961fa3c32": {
+      "found_at": "2026-02-17T10:39:27",
+      "last_checked": "2026-02-17T10:39:27",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "2023/2024, rejestr 983, menu 64 - BIP - Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/?bip=3&rejid=983",
+      "keywords": [
+        "plan ogólny"
+      ],
+      "att_sig": "cffcf8bcc3a02325931e3e50ff0d64e2142b5e75",
+      "status": "NOWE"
+    },
+    "6b322c534abd72403b0fb5332bf63c65cf6a21fc": {
+      "found_at": "2026-02-17T10:39:28",
+      "last_checked": "2026-02-17T10:39:28",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "2023/2024, rejestr 975, menu 64 - BIP - Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/?bip=3&rejid=975",
+      "keywords": [
+        "plan ogólny"
+      ],
+      "att_sig": "fb82e98f56fb5da1fd12aae6f6f6760887b9da57",
+      "status": "NOWE"
+    },
+    "b4211daa65746427a007212026026b78e7cb5e79": {
+      "found_at": "2026-02-17T10:39:28",
+      "last_checked": "2026-02-17T10:39:28",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "2023/2024, rejestr 942, menu 64 - BIP - Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/?bip=3&rejid=942",
+      "keywords": [
+        "plan ogólny"
+      ],
+      "att_sig": "3186fa7ac36ec2ae3ec41a3930f15572cec34e58",
+      "status": "NOWE"
+    },
+    "5390c1716ba0c2cd6aa499caf7fc31430e1dbbc1": {
+      "found_at": "2026-02-17T10:39:28",
+      "last_checked": "2026-02-17T10:39:28",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "2023/2024, rejestr 941, menu 64 - BIP - Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/?bip=3&rejid=941",
+      "keywords": [
+        "plan ogólny"
+      ],
+      "att_sig": "f6fc61d4bba45e218b7d417f02cd24283e3b3cad",
+      "status": "NOWE"
+    },
+    "b6f50225f6828a71664671b11b00bb80dfab7faf": {
+      "found_at": "2026-02-17T10:39:29",
+      "last_checked": "2026-02-17T10:39:29",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "2023/2024, rejestr 940, menu 64 - BIP - Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/?bip=3&rejid=940",
+      "keywords": [
+        "plan ogólny"
+      ],
+      "att_sig": "ecd3d76bade481dd02f0a432576ba481c4737f38",
+      "status": "NOWE"
+    },
+    "7b5c3ba12ab4a3bcd7cb91ac36a9f988c9d1a028": {
+      "found_at": "2026-02-17T10:39:29",
+      "last_checked": "2026-02-17T10:39:29",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "2023/2024, rejestr 932, menu 64 - BIP - Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/?bip=3&rejid=932",
+      "keywords": [
+        "plan ogólny"
+      ],
+      "att_sig": "43d07eeb4ed83cf39f3ccdbfeb31e9e07715f3b4",
+      "status": "NOWE"
+    },
+    "54b5a6c71f9082f3c98b71d8f5468811d4b06985": {
+      "found_at": "2026-02-17T10:39:30",
+      "last_checked": "2026-02-17T10:39:30",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "2023/2024, rejestr 919, menu 64 - BIP - Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/?bip=3&rejid=919",
+      "keywords": [
+        "plan ogólny"
+      ],
+      "att_sig": "ecd3d76bade481dd02f0a432576ba481c4737f38",
+      "status": "NOWE"
+    },
+    "3de6e8f0c2fdab6df1e50c129bdcdd32357059a2": {
+      "found_at": "2026-02-17T10:40:56",
+      "last_checked": "2026-02-17T10:40:56",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "2023/2024, rejestr BIPA6227804A69C98Z, menu 64 - BIP - Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/?bip=3&code=BIPA6227804A69C98Z&rpg=0",
+      "keywords": [
+        "planu ogólnego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
     }
   },
   "gmina_seeds": {
