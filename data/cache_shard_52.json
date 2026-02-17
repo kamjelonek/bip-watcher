@@ -928,6 +928,48 @@
       ],
       "att_sig": "",
       "status": "NOWE"
+    },
+    "69d5defb35d024b0271bd57934f10767fcdb6574": {
+      "found_at": "2026-02-17T10:14:59",
+      "last_checked": "2026-02-17T10:14:59",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "STUDIUM UWARUNKOWAŃ I KIERUNKÓW ZAGOSPODAROWANIA  PRZESTRZENNEGO GMINY MARCINOWICE",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/146/STUDIUM_UWARUNKOWAN_I_KIERUNKOW_ZAGOSPODAROWANIA_PRZESTRZENNEGO_GMINY_MARCINOWICE.pdf",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "f4460c4bb1cb2f31b91a0d01c88ffae0b767d1b9": {
+      "found_at": "2026-02-17T10:16:30",
+      "last_checked": "2026-02-17T10:16:30",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "w sprawie miejscowego planu zagospodarowania przestrzennego części wsi ŚMIAŁOWICE (79.50 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/359/Uch_SMialowice.doc",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "d194f0002705a29cc24ef798bc36dd923d979c25": {
+      "found_at": "2026-02-17T10:20:33",
+      "last_checked": "2026-02-17T10:20:33",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "STUDIUM UWARUNKOWAŃ I KIERUNKÓW ZAGOSPODAROWANIA PRZESTRZENNEGO GMINY MARCINOWICE - Projekt (454.59 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki/147/STUDIUM_UWARUNKOWAN.pdf",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
     }
   },
   "gmina_seeds": {
