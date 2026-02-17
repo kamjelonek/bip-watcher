@@ -1480,6 +1480,48 @@
       ],
       "att_sig": "",
       "status": "NOWE"
+    },
+    "d7796067bde311e4690d68f318c316ae26c9a3d8": {
+      "found_at": "2026-02-17T12:45:35",
+      "last_checked": "2026-02-17T12:45:35",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Druga częściowa zmiana studium uwarunkowań i kierunków zagospodarowania przestrzennego  Gminy Marcinowice.pdf (4.12 MB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki_uchwaly/562/Druga_czesciowa_zmiana_studium_uwarunkowan_i_kierunkow_zagospodarowania_przestrzennego__Gminy_Marcinowice.pdf",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "05649bf430adf44dbc2711e50510b5a72eb45dcc": {
+      "found_at": "2026-02-17T12:48:05",
+      "last_checked": "2026-02-17T12:48:05",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Obwieszczenie Regionalnego Dyrektora Ochrony Środowiska dot. opinii w sprawie OOŚ (296.70 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki_obwieszczenia/63/Obwieszczenie_Regionalnego_Dyrektora_Ochrony_Srodowiska_dot._opinii_w_sprawie_OOS_.pdf",
+      "keywords": [
+        "ooś"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "a2fbcd8bc6155222813c9db02588b4aef36f8954": {
+      "found_at": "2026-02-17T12:48:35",
+      "last_checked": "2026-02-17T12:48:35",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Decyzja środowiskowa (246.50 kB)",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/zalaczniki_obwieszczenia/48/Decyzja_srodowiskowa.pdf",
+      "keywords": [
+        "decyzja środowiskowa"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
     }
   },
   "gmina_seeds": {
