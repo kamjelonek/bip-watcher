@@ -1098,11 +1098,11 @@ def _empty_cache():
 def load_cache_v2():
     if not USE_CACHE:
         c = _empty_cache()
-        return c, set(), {}, {}, {}, {}, {}
+        return c, set(), {}, {}, {}, {}, {}, {}
 
     if not CACHE_FILE.exists():
         c = _empty_cache()
-        return c, set(), {}, {}, {}, {}, {}
+        return c, set(), {}, {}, {}, {}, {}, {}
 
     try:
         with open(CACHE_FILE, "r", encoding="utf-8") as f:
@@ -1124,7 +1124,7 @@ def load_cache_v2():
             c.setdefault("page_fprints", {})
             c.setdefault("gmina_frontiers", {})
             c.setdefault("gmina_retry", {})
-            c.setdefault("dead_urls", {})   # DODANE
+            c.setdefault("dead_urls", {})
 
         urls = c.get("urls_seen", {})
         if not isinstance(urls, dict):
@@ -1162,16 +1162,12 @@ def load_cache_v2():
             c["dead_urls"] = dead
 
         print(f"📦 Cache loaded: {len(urls)} URLs, {len(content)} content, {len(gseeds)} gmina seeds, {len(pf)} page_fprints, {len(dead)} dead entries")
-        return c, set(urls.keys()), content, gseeds, pf, gf, gr, dead  # DODANE dead
+        return c, set(urls.keys()), content, gseeds, pf, gf, gr, dead
 
     except Exception as e:
         print(f"⚠️  Cache load error: {e}")
         c = _empty_cache()
-        return c, set(), {}, {}, {}, {}, {}, {}   # DODANE dead
-
-def save_cache_v2(raw_cache: dict, urls_seen_set: set, content_seen: dict, gmina_seeds: dict, page_fprints: dict):
-    if not USE_CACHE:
-        return
+        return c, set(), {}, {}, {}, {}, {}, {}
 
     out = {"schema": CACHE_SCHEMA}
     out["urls_seen"] = {}
@@ -2457,3 +2453,4 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
