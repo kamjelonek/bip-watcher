@@ -4812,6 +4812,56 @@
       ],
       "att_sig": "f4005ce41741c9bd03a4deea260702281cd163e2",
       "status": "NOWE"
+    },
+    "6ef481f6bc026424c861d97eb45fc418f53b8256": {
+      "found_at": "2026-02-17T01:42:25",
+      "last_checked": "2026-02-17T01:42:25",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Żagań",
+      "title": "Plan Ogólny Gminy Żagań - Gmina Wiejska Żagań",
+      "url": "https://bip.gminazagan.pl/213/1/archiwum/Plan_Ogolny_Gminy_Zagan/",
+      "keywords": [
+        "plan ogólny"
+      ],
+      "att_sig": "f4005ce41741c9bd03a4deea260702281cd163e2",
+      "status": "NOWE"
+    },
+    "1db58070d9c75a15f2f4cd8f4e67c906040f0609": {
+      "found_at": "2026-02-17T01:42:59",
+      "last_checked": "2026-02-17T01:42:59",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Żagań",
+      "title": "",
+      "url": "https://gminazagan.pl/",
+      "keywords": [],
+      "att_sig": "",
+      "status": "ALIAS"
+    },
+    "3dd2194881b1cb8cacd1d404e8eef35c34187307": {
+      "found_at": "2026-02-17T01:43:01",
+      "last_checked": "2026-02-17T01:43:01",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Żagań",
+      "title": "",
+      "url": "https://gminazagan.pl/",
+      "keywords": [],
+      "att_sig": "",
+      "status": "ALIAS"
+    },
+    "f283919375f8e718c3f7509a0a40db91a856a8db": {
+      "found_at": "2026-02-17T01:43:02",
+      "last_checked": "2026-02-17T01:43:02",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Żagań",
+      "title": "",
+      "url": "https://gminazagan.pl/",
+      "keywords": [],
+      "att_sig": "",
+      "status": "ALIAS"
     }
   },
   "gmina_seeds": {
@@ -11297,6 +11347,8 @@
   "page_fprints": {},
   "gmina_frontiers": {},
   "gmina_retry": {
-    "599fd55dbe092a2ebb014d77b735ee6fe8a52995": []
+    "599fd55dbe092a2ebb014d77b735ee6fe8a52995": [
+      "http://www.bip.gbp.gminazagan.pl"
+    ]
   }
 }
