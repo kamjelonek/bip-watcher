@@ -134,12 +134,12 @@ KEYWORDS = [
     # OZE: wiatr / PV
     "oze",
     "elektrownia wiatrowa", "farma wiatrowa", "wiatr", "wiatrow", "turbina",
-    "fotowolta", "farma fotowoltaiczna", "pv", "magazyn energii",
+    "fotowolta", "farma fotowoltaiczna", "magazyn energii",
 ]
 
 # ===================== KEYWORD MATCH CONFIG (PATCH SAFETY) =====================
 STRICT_ONLY = {
-    "pv", "wz", "ooś", "oos", "kip", "mpzp", "oze"
+    "wz", "mpzp", "oze"
 }
 
 def keyword_match_in_blob(blob: str):
@@ -2466,6 +2466,7 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
 
