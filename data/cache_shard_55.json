@@ -1,0 +1,88 @@
+{
+  "schema": 10,
+  "urls_seen": {
+    "71d15f1b2360af537825c2cf3671586d0d8c61e0": "2026-02-17T09:19:56",
+    "1fafa9a636d890fec7ef3474a0fd4f1181bb53df": "2026-02-17T09:19:57",
+    "db7bf14c153f0a45b30fbfc0df9c7f1f552afcd1": "2026-02-17T09:19:58",
+    "65481a928b05772d112e96d42ac30881c9733f1c": "2026-02-17T09:19:59",
+    "f7498a74193ac1ed4655528fac7597ac161c39e0": "2026-02-17T09:19:58",
+    "6ffb860dbb6f81b2e7c9c03e4a7c860e810ebc66": "2026-02-17T09:20:00",
+    "94886bada3d210381c796dfdfb7830b85e9ed7b7": "2026-02-17T09:19:59",
+    "7f0af537978159c02d9c41c3980af4d55e91851b": "2026-02-17T09:19:57",
+    "1dbaea32682405e543343d0f5d8a7029c17ffe1f": "2026-02-17T09:19:56",
+    "f899b6d517a4fa636e2acc52b2c5d3daef814675": "2026-02-17T09:19:58",
+    "657e0bc7f0aa884dcadea5fafa4bf63a52cbec5c": "2026-02-17T09:19:56",
+    "28de6ad211c76e425c3ea33d10845487de49f798": "2026-02-17T09:19:54",
+    "307abcc8af11708713a855327f59c20d7d4ef07c": "2026-02-17T09:19:57",
+    "ebae95eb0be7427b0686f12d6a500e762693394a": "2026-02-17T09:19:57",
+    "0545e11b7672fb34339b975fd5cede3db4c19897": "2026-02-17T09:19:55",
+    "6f2fced28d27705bf0a45573da7f2a17612289ee": "2026-02-17T09:19:55",
+    "ac7e55d44999b4e8502a64f4697b1d9e33e05e17": "2026-02-17T09:20:00",
+    "8cd9748ed157db3215c53412ce11be7185238230": "2026-02-17T09:19:58",
+    "77fb1ca7edcec29a7d39657d7a67fff1da285513": "2026-02-17T09:19:55"
+  },
+  "content_seen": {
+    "ebae95eb0be7427b0686f12d6a500e762693394a": {
+      "found_at": "2026-02-17T09:19:57",
+      "last_checked": "2026-02-17T09:19:57",
+      "etag": "\"ffc-6497fc441c48d-gzip\"",
+      "last_modified": "Thu, 29 Jan 2026 05:02:42 GMT",
+      "gmina": "Wiązów",
+      "title": "Biuletyn Informacji Publicznej",
+      "url": "https://bip.wiazow.madkom.pl/wp-json",
+      "keywords": [],
+      "att_sig": "",
+      "status": "NO_MATCH"
+    },
+    "db7bf14c153f0a45b30fbfc0df9c7f1f552afcd1": {
+      "found_at": "2026-02-17T09:19:58",
+      "last_checked": "2026-02-17T09:19:58",
+      "etag": "\"ffc-6497fc441c48d-gzip\"",
+      "last_modified": "Thu, 29 Jan 2026 05:02:42 GMT",
+      "gmina": "Wiązów",
+      "title": "Biuletyn Informacji Publicznej",
+      "url": "https://bip.wiazow.madkom.pl/wp-json/wp/v2/posts",
+      "keywords": [],
+      "att_sig": "",
+      "status": "NO_MATCH"
+    },
+    "8cd9748ed157db3215c53412ce11be7185238230": {
+      "found_at": "2026-02-17T09:19:58",
+      "last_checked": "2026-02-17T09:19:58",
+      "etag": "\"ffc-6497fc441c48d-gzip\"",
+      "last_modified": "Thu, 29 Jan 2026 05:02:42 GMT",
+      "gmina": "Wiązów",
+      "title": "Biuletyn Informacji Publicznej",
+      "url": "https://bip.wiazow.madkom.pl/api",
+      "keywords": [],
+      "att_sig": "",
+      "status": "NO_MATCH"
+    }
+  },
+  "gmina_seeds": {
+    "21689bda2e6ff6c52a77477269f1e12aa303e519": {
+      "allowed_host": "bip.wiazow.madkom.pl",
+      "start_final": "https://bip.wiazow.madkom.pl/",
+      "seeds": [
+        "https://bip.wiazow.madkom.pl/rss",
+        "https://bip.wiazow.madkom.pl/feed",
+        "https://bip.wiazow.madkom.pl/rss.xml",
+        "https://bip.wiazow.madkom.pl/feed.xml",
+        "https://bip.wiazow.madkom.pl/wp-json",
+        "https://bip.wiazow.madkom.pl/wp-json/wp/v2/posts",
+        "https://bip.wiazow.madkom.pl/api",
+        "https://bip.wiazow.madkom.pl/api/ogloszenia",
+        "https://bip.wiazow.madkom.pl/api/announcements",
+        "https://bip.wiazow.madkom.pl/e,kalkulator.html"
+      ],
+      "ts": "2026-02-17T09:19:55"
+    }
+  },
+  "page_fprints": {},
+  "gmina_frontiers": {
+    "21689bda2e6ff6c52a77477269f1e12aa303e519": []
+  },
+  "gmina_retry": {
+    "21689bda2e6ff6c52a77477269f1e12aa303e519": []
+  }
+}
