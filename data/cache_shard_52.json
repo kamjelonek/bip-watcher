@@ -1396,6 +1396,48 @@
       ],
       "att_sig": "",
       "status": "NOWE"
+    },
+    "03a9df08af753f15ceeec785ae92f1dc555347d8": {
+      "found_at": "2026-02-17T12:07:58",
+      "last_checked": "2026-02-17T12:07:58",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Marcinowice",
+      "title": "Rejestr zmian, rejestr 976, menu 9 - BIP - Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/?bip=3&rejid=976",
+      "keywords": [
+        "planu ogólnego"
+      ],
+      "att_sig": "38edc73835b647cb4aba72c0646237761ca62386",
+      "status": "NOWE"
+    },
+    "501154aca1c5c4b64eab6129ac005acf11f3b9e4": {
+      "found_at": "2026-02-17T12:10:00",
+      "last_checked": "2026-02-17T12:10:00",
+      "etag": "",
+      "last_modified": "Thu, 04 Jan 2024 17:02:54 GMT",
+      "gmina": "Marcinowice",
+      "title": "Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/4a10.html?id=612",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
+    },
+    "31fa80e67d3bd0397499d2558cae414ebe8dd2d6": {
+      "found_at": "2026-02-17T12:12:41",
+      "last_checked": "2026-02-17T12:12:41",
+      "etag": "",
+      "last_modified": "Thu, 04 Jan 2024 17:04:12 GMT",
+      "gmina": "Marcinowice",
+      "title": "Gmina Marcinowice",
+      "url": "https://marcinowice.biuletyn.net/archiwum/bip.marcinowice.pl/3887.html?id=372",
+      "keywords": [
+        "studium uwarunkowań"
+      ],
+      "att_sig": "",
+      "status": "NOWE"
     }
   },
   "gmina_seeds": {
