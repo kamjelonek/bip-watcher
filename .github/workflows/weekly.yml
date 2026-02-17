@@ -40,24 +40,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # ========== POBIERANIE CACHE Z POPRZEDNIEGO MERGE ==========
-      - name: Download master cache (if exists)
-        uses: actions/download-artifact@v4
-        with:
-          name: bip-master-cache
-          path: data
-        continue-on-error: true
-
-      - name: Unpack master cache if downloaded
+      # ===================== ROZPAKOWANIE GŁÓWNEGO CACHE =====================
+      - name: Unpack cache.zip if exists
         run: |
+          mkdir -p data
           if [ -f data/cache.zip ]; then
             unzip -o data/cache.zip -d data
-            echo "✅ Master cache loaded"
+            echo "✅ cache.zip unpacked to data/cache.json"
           else
-            echo "ℹ️ No master cache – starting fresh"
+            echo "ℹ️ No cache.zip found – starting fresh"
           fi
 
-      # ========== RUN ==========
+      # ===================== RUN =====================
       - name: Run watcher (sharded)
         continue-on-error: true
         env:
@@ -73,12 +67,12 @@ jobs:
         run: |
           python bip_watcher.py
 
-      # ========== WYSYŁKA SHARDOWEGO CACHE ==========
-      - name: Upload shard cache
+      # ===================== WYSYŁKA ARTEFAKTÓW (LOGÓW I PLIKU SHARDOWEGO) =====================
+      - name: Upload shard outputs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: bip-shard-${{ matrix.shard }}
+          name: bip-output-shard-${{ matrix.shard }}
           retention-days: 30
           if-no-files-found: warn
           path: |
@@ -104,17 +98,16 @@ jobs:
         with:
           python-version: "3.11"
 
-      # ========== POBIERANIE WSZYSTKICH SHARDOWYCH ARTEFAKTÓW ==========
       - name: Download all shard artifacts
+        if: always()
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      # ========== SCALANIE CACHE ==========
       - name: Merge shard caches
         run: |
           python - <<'PY'
-          import os, json, glob, zipfile
+          import os, json, glob, zipfile, shutil
 
           def iso_max(a, b):
               return a if (a or "") >= (b or "") else b
@@ -130,8 +123,25 @@ jobs:
               "dead_urls": {}
           }
 
-          # Znajdź wszystkie pliki shardowe
-          shard_files = glob.glob("artifacts/**/cache_shard_*.json", recursive=True)
+          # Wczytaj istniejący cache.json (jeśli istnieje)
+          if os.path.exists("data/cache.json"):
+              with open("data/cache.json", "r") as f:
+                  try:
+                      merged = json.load(f)
+                  except:
+                      pass
+              # Upewnij się, że wszystkie klucze istnieją
+              for k in ["urls_seen", "content_seen", "gmina_seeds", "page_fprints", "gmina_frontiers", "gmina_retry", "dead_urls"]:
+                  if k not in merged:
+                      merged[k] = {}
+
+          # Przeszukaj pobrane artefakty w poszukiwaniu plików cache_shard_*.json
+          shard_files = []
+          for root, dirs, files in os.walk("artifacts"):
+              for f in files:
+                  if f.startswith("cache_shard_") and f.endswith(".json"):
+                      shard_files.append(os.path.join(root, f))
+
           if not shard_files:
               print("No shard cache files found")
           else:
@@ -143,15 +153,20 @@ jobs:
                       print(f"Error reading {f}: {e}")
                       continue
 
+                  # Scalanie pól
                   for k in merged:
-                      if k == "schema": continue
-                      if k not in data: continue
+                      if k == "schema":
+                          continue
+                      if k not in data:
+                          continue
                       if isinstance(merged[k], dict) and isinstance(data[k], dict):
                           if k == "urls_seen":
+                              # Dla urls_seen wybieramy nowszy timestamp
                               for url, ts in data[k].items():
                                   if url not in merged[k] or iso_max(merged[k].get(url, ""), ts) == ts:
                                       merged[k][url] = ts
                           elif k == "dead_urls":
+                              # Dla dead_urls łączymy listy bez duplikatów
                               for gkey, urls in data[k].items():
                                   if gkey not in merged[k]:
                                       merged[k][gkey] = []
@@ -160,6 +175,7 @@ jobs:
                                       if u not in existing:
                                           merged[k][gkey].append(u)
                           else:
+                              # Dla pozostałych słowników zwykłe update
                               merged[k].update(data[k])
                       else:
                           merged[k] = data[k]
@@ -171,29 +187,34 @@ jobs:
           with open("data/cache.json", "w") as f:
               json.dump(merged, f, indent=2)
 
-          # Spakuj do cache.zip
+          # Spakuj cache.json do cache.zip
           with zipfile.ZipFile("data/cache.zip", "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
               z.write("data/cache.json", arcname="cache.json")
 
-          print("OK: data/cache.json and data/cache.zip created")
+          # Opcjonalnie: usuń pliki shardowe z artifacts (nie są już potrzebne)
+          # (Nie trzeba, bo artifact i tak zostanie usunięty po 30 dniach)
+
+          print("OK: data/cache.json and data/cache.zip updated")
           PY
 
-      # ========== WYSYŁKA MASTER CACHE ==========
-      - name: Upload master cache
-        uses: actions/upload-artifact@v4
-        with:
-          name: bip-master-cache
-          retention-days: 30
-          path: |
-            data/cache.json
-            data/cache.zip
+      - name: Commit merged cache and zip
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase || true
+          git add data/cache.json data/cache.zip
+          git commit -m "Merge shard caches [skip ci]" || echo "Nothing to commit"
+          git push || true
 
-      - name: Upload merged report
+      - name: Upload merged report (optional)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: bip-merged-report
           retention-days: 30
+          if-no-files-found: warn
           path: |
+            data/cache.json
+            data/cache.zip
             data/summary_report.txt
             data/log.csv
