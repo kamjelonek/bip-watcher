@@ -3848,6 +3848,42 @@
       "keywords": [],
       "att_sig": "",
       "status": "ALIAS"
+    },
+    "bda9686dbb7f8e12614917718a3dca97ec3056f0": {
+      "found_at": "2026-02-17T07:21:31",
+      "last_checked": "2026-02-17T07:21:31",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Biała",
+      "title": "",
+      "url": "https://biala.gmina.pl/",
+      "keywords": [],
+      "att_sig": "",
+      "status": "ALIAS"
+    },
+    "c71facacbe2e68128c9eafbb420a53b672e88f30": {
+      "found_at": "2026-02-17T07:21:31",
+      "last_checked": "2026-02-17T07:21:31",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Biała",
+      "title": "",
+      "url": "https://biala.gmina.pl/",
+      "keywords": [],
+      "att_sig": "",
+      "status": "ALIAS"
+    },
+    "ded6ced9f419d08377177815ea4ee3024dd0b076": {
+      "found_at": "2026-02-17T07:23:15",
+      "last_checked": "2026-02-17T07:23:15",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Biała",
+      "title": "",
+      "url": "https://biala.gmina.pl/",
+      "keywords": [],
+      "att_sig": "",
+      "status": "ALIAS"
     }
   },
   "gmina_seeds": {
@@ -12433,8 +12469,12 @@
     }
   },
   "page_fprints": {},
-  "gmina_frontiers": {},
-  "gmina_retry": {
+  "gmina_frontiers": {
     "116175a7f5710f71441d349714509f63d1bbbe36": []
+  },
+  "gmina_retry": {
+    "116175a7f5710f71441d349714509f63d1bbbe36": [
+      "https://.bip.biala.gmina.pl/1283/informacja-burmistrza-bialej-o-uprawnieniach-wyborcow-niepelnosprawnych-w-wyborach-zarzadzonych-na-dzien-16-listopada-2014-r.html"
+    ]
   }
 }
