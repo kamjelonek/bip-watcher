@@ -14,11 +14,56 @@ permissions:
   issues: write
 
 jobs:
+  init_cache_store:
+    name: Init cache-store branch (single)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repo (main)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create cache-store branch if missing
+        shell: bash
+        run: |
+          set -e
+          git fetch origin +refs/heads/cache-store:refs/remotes/origin/cache-store || true
+
+          if git show-ref --verify --quiet refs/remotes/origin/cache-store; then
+            echo "✅ cache-store already exists"
+            exit 0
+          fi
+
+          echo "ℹ️ cache-store missing -> creating"
+          git checkout --orphan cache-store
+
+          # czyścimy working tree bez git rm (mniej kapryśne)
+          rm -rf ./* ./.gitignore || true
+
+          mkdir -p shards master
+          echo "cache-store initialized" > README.md
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add README.md shards master
+          git commit -m "Initialize cache-store [skip ci]"
+
+          # push z retry na wypadek równoległego runu
+          for i in 1 2 3 4 5; do
+            git push origin cache-store && break
+            echo "⚠️ Push retry #$i ..."
+            sleep $((i*2))
+          done
+
   scan:
     name: Scan shard ${{ matrix.shard }}
     runs-on: ubuntu-latest
     continue-on-error: true
     timeout-minutes: 355
+    needs: [init_cache_store]
 
     strategy:
       fail-fast: false
@@ -32,31 +77,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Ensure cache-store branch exists (create if missing)
-        shell: bash
-        run: |
-          set -e
-          git fetch origin +refs/heads/cache-store:refs/remotes/origin/cache-store || true
-          if git show-ref --verify --quiet refs/remotes/origin/cache-store; then
-            echo "✅ cache-store branch exists"
-          else
-            echo "ℹ️ cache-store branch missing -> creating empty branch"
-            git checkout --orphan cache-store
-            git rm -rf . || true
-            mkdir -p shards master
-            echo "cache-store initialized" > README.md
-            git add README.md shards master
-            git -c user.name="github-actions[bot]" -c user.email="github-actions[bot]@users.noreply.github.com" commit -m "Initialize cache-store"
-            git push origin cache-store
-            git checkout -
-          fi
-
       - name: Checkout cache-store branch into ./cache-store
         uses: actions/checkout@v4
         with:
           ref: cache-store
           path: cache-store
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -76,7 +102,7 @@ jobs:
           mkdir -p data
 
           python - <<'PY'
-          import os, json, glob, gzip, zipfile, shutil
+          import json, glob, gzip, zipfile, shutil
           from pathlib import Path
 
           DATA_DIR = Path("data")
@@ -99,6 +125,8 @@ jobs:
               }
 
           def ensure_keys(d):
+              if not isinstance(d, dict):
+                  d = {}
               for k in REQUIRED:
                   if k not in d:
                       d[k] = {} if k != "schema" else 10
@@ -106,12 +134,9 @@ jobs:
                   d["schema"] = 10
               return d
 
-          def iso_max(a, b):
-              return a if (a or "") >= (b or "") else b
-
           merged = empty_cache()
 
-          # 1) Optional: reconstruct master cache.zip from committed parts (faster bootstrap)
+          # 1) Optional: reconstruct master cache.zip from committed parts (fast bootstrap)
           parts = sorted(glob.glob(str(MASTER_DIR / "cache.zip.part-*")))
           if parts:
               zip_path = DATA_DIR / "cache.zip"
@@ -124,26 +149,23 @@ jobs:
                       z.extractall(DATA_DIR)
                   cj = DATA_DIR / "cache.json"
                   if cj.exists():
-                      merged = json.loads(cj.read_text(encoding="utf-8"))
-                      merged = ensure_keys(merged)
+                      merged = ensure_keys(json.loads(cj.read_text(encoding="utf-8")))
                   print(f"✅ Bootstrapped from master zip parts: {len(parts)} parts")
               except Exception as e:
                   print("⚠️ Failed to use master zip parts:", e)
 
-          # 2) Merge all committed shard gz files
+          # 2) Merge all committed shard gz files (source of truth)
           shard_files = sorted(glob.glob(str(SHARDS_DIR / "cache_shard_*.json.gz")))
           if not shard_files:
-              print("ℹ️ No committed shards found yet (first run) -> starting fresh cache.json")
+              print("ℹ️ No committed shards found yet -> starting fresh cache.json")
           else:
               for sf in shard_files:
                   try:
                       with gzip.open(sf, "rt", encoding="utf-8") as f:
-                          data = json.load(f)
+                          data = ensure_keys(json.load(f))
                   except Exception as e:
                       print("⚠️ Failed reading shard:", sf, e)
                       continue
-
-                  data = ensure_keys(data)
 
                   for k in merged:
                       if k == "schema":
@@ -152,6 +174,7 @@ jobs:
                           continue
                       if isinstance(merged[k], dict) and isinstance(data[k], dict):
                           if k == "urls_seen":
+                              # zachowaj nowszy timestamp
                               for h, ts in data[k].items():
                                   prev = merged[k].get(h, "")
                                   if (ts or "") >= (prev or ""):
@@ -165,17 +188,16 @@ jobs:
                                           merged[k][gkey].append(u)
                                           seen.add(u)
                           else:
-                              # NOTE: last-write-wins; działa, ale docelowo warto zrobić semantyczny merge content_seen
+                              # last-write-wins (działa); semantyczny merge content_seen można dodać później
                               merged[k].update(data[k])
                       else:
                           merged[k] = data[k]
 
               print(f"✅ Merged committed shards: {len(shard_files)}")
 
-          # Save data/cache.json (this is what bip_watcher.py reads)
           DATA_DIR.mkdir(parents=True, exist_ok=True)
           (DATA_DIR / "cache.json").write_text(json.dumps(merged, ensure_ascii=False, indent=2), encoding="utf-8")
-          print("✅ data/cache.json ready:", (DATA_DIR / "cache.json"))
+          print("✅ data/cache.json ready")
           PY
 
       # ===================== RUN =====================
@@ -204,7 +226,6 @@ jobs:
           set -e
           ls -lah data || true
 
-          # shard json must exist; if missing (run failed early), skip commit
           if [ ! -f "data/cache_shard_${SHARD_INDEX}.json" ]; then
             echo "ℹ️ No shard file to commit: data/cache_shard_${SHARD_INDEX}.json"
             exit 0
@@ -229,7 +250,6 @@ jobs:
           git add shards/cache_shard_${SHARD_INDEX}.json.gz
           git commit -m "Update shard ${SHARD_INDEX} [skip ci]" || echo "No changes to commit"
 
-          # push with retry (handles parallel writers)
           for i in 1 2 3 4 5 6 7 8 9 10; do
             git pull --rebase && git push && break
             echo "⚠️ Push retry #$i ..."
@@ -258,17 +278,12 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - name: Checkout repo (main)
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - name: Checkout cache-store
         uses: actions/checkout@v4
         with:
           ref: cache-store
           path: cache-store
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -299,9 +314,6 @@ jobs:
               "gmina_retry": {},
               "dead_urls": {}
           }
-
-          def iso_max(a, b):
-              return a if (a or "") >= (b or "") else b
 
           shard_files = sorted(glob.glob(str(SHARDS / "cache_shard_*.json.gz")))
           if not shard_files:
@@ -357,10 +369,7 @@ jobs:
           set -e
           mkdir -p cache-store/master
 
-          # remove old parts
           rm -f cache-store/master/cache.zip.part-* || true
-
-          # split into 95MB chunks (safe under 100MB)
           split -b 95m data/cache.zip cache-store/master/cache.zip.part-
 
           cd cache-store
@@ -369,10 +378,13 @@ jobs:
 
           git add master/cache.zip.part-*
           git commit -m "Update master cache zip parts [skip ci]" || echo "No changes to commit"
-          git pull --rebase || true
-          git push || true
 
-      # Optional: upload master cache as artifact for convenience (per-run)
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            git pull --rebase && git push && break
+            echo "⚠️ Push retry #$i ..."
+            sleep $((i*2))
+          done
+
       - name: Upload master cache artifact (optional)
         if: always()
         uses: actions/upload-artifact@v4
