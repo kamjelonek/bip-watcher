@@ -224,6 +224,8 @@ SEED_CACHE_TTL_DAYS = 30
 FAST_TEXT_MAX_CHARS = 3500
 HIT_RECHECK_TTL_HOURS = 168   # HIT/NOWE/ZMIANA: recheck co 24h
 NO_MATCH_RECHECK_TTL_HOURS = 168  # NO_MATCH: recheck co 24 godziny (żeby złapać późniejsze publikacje)
+BLOCKED_RECHECK_TTL_MIN = env_int("BLOCKED_RECHECK_TTL_MIN", 180)  # 60–360
+FAILED_RECHECK_TTL_MIN  = env_int("FAILED_RECHECK_TTL_MIN", 120)   # opcjonalnie
 FAST_FPRINT_MAX_CHARS = 6000
 
 # ===================== USER AGENTS ROTATION =====================
@@ -368,6 +370,18 @@ def should_recheck_no_match(prev: dict) -> bool:
         return True
     return (iso_now() - dt) >= timedelta(hours=NO_MATCH_RECHECK_TTL_HOURS)
 
+def should_recheck_block(prev: dict, ttl_min: int) -> bool:
+    """
+    TTL dla statusów BLOCKED/FAILED (żeby nie mielić w pętli).
+    """
+    if not prev or not isinstance(prev, dict):
+        return True
+    last = prev.get("last_checked") or prev.get("found_at") or ""
+    dt = iso_parse(last)
+    if not dt:
+        return True
+    return (iso_now() - dt) >= timedelta(minutes=int(ttl_min or 0))
+
 def is_monitored_hit(prev: dict) -> bool:
     if not prev or not isinstance(prev, dict):
         return False
@@ -396,6 +410,37 @@ def export_summary_to_onedrive():
 
 def now_iso():
     return datetime.now().isoformat(timespec="seconds")
+
+# ===================== BLOCK PAGE DETECTOR =====================
+
+BLOCK_PATTERNS = [
+    "#13",
+    "zbyt dużo jednoczesnych połączeń",
+    "zbyt wiele jednoczesnych połączeń",
+    "spróbuj za moment",
+    "sprobuj za moment",
+    "spróbuj ponownie później",
+    "sprobuj ponownie pozniej",
+    "too many requests",
+    "access denied",
+    "request blocked",
+    "temporarily unavailable",
+    "service unavailable",
+    "firewall",
+    "waf",
+    "twoja aktywność została uznana",
+    "twoja aktywnosc zostala uznana",
+]
+
+def is_block_page(text: str) -> bool:
+    """
+    Heurystyczne wykrywanie stron blokujących (często HTTP 200, ale treść mówi że blokada).
+    """
+    if not text:
+        return False
+    low = text.lower()
+    return any(p.lower() in low for p in BLOCK_PATTERNS)
+
 
 def sha1(s: str) -> str:
     return hashlib.sha1(s.encode("utf-8", errors="ignore")).hexdigest()
@@ -802,13 +847,31 @@ def build_search_fuzz_urls(base_url: str) -> list:
     return uniq
 
 def extract_title_h1_h2(soup: BeautifulSoup):
-    title = soup.title.get_text(" ", strip=True) if soup.title else ""
+    """
+    Zwraca:
+      - title: zawartość <title>
+      - h1t: pierwszy sensowny H1 (z fallbackami po selektorach)
+      - h2t: pierwszy sensowny H2
+      - blob: zlepka (title+h1+h2+h3+meta desc) do szybkiego matchowania
+    """
+    if not soup:
+        return "", "", "", ""
+
+    def _clean(s: str) -> str:
+        s = re.sub(r"\s+", " ", (s or "")).strip()
+        return s
+
+    title = _clean(soup.title.get_text(" ", strip=True) if soup.title else "")
+
     h1 = soup.find("h1")
     h2 = soup.find("h2")
     h3 = soup.find("h3")
-    h1t = h1.get_text(" ", strip=True) if h1 else ""
-    h2t = h2.get_text(" ", strip=True) if h2 else ""
-    h3t = h3.get_text(" ", strip=True) if h3 else ""
+
+    h1t = _clean(h1.get_text(" ", strip=True) if h1 else "")
+    h2t = _clean(h2.get_text(" ", strip=True) if h2 else "")
+    h3t = _clean(h3.get_text(" ", strip=True) if h3 else "")
+
+    # fallback: jeśli nie ma sensownych H1/H2/H3
     if not (h1t or h2t or h3t):
         fallback_selectors = [
             "#page-title", "#pagetitle", "#content-title", "#title",
@@ -820,18 +883,22 @@ def extract_title_h1_h2(soup: BeautifulSoup):
             try:
                 node = soup.select_one(sel)
                 if node:
-                    txt = node.get_text(" ", strip=True)
-                    txt = re.sub(r"\s+", " ", (txt or "")).strip()
+                    txt = _clean(node.get_text(" ", strip=True))
                     if txt and len(txt) >= 6:
                         h1t = txt
                         break
             except Exception:
-                pass
+                continue
+
     meta_desc = ""
-    meta = soup.find("meta", attrs={"name": "description"})
-    if meta and meta.get("content"):
-        meta_desc = meta.get("content", "").strip()
-    blob = f"{title} {h1t} {h2t} {h3t} {meta_desc}"
+    try:
+        meta = soup.find("meta", attrs={"name": "description"})
+        if meta and meta.get("content"):
+            meta_desc = _clean(meta.get("content", ""))
+    except Exception:
+        meta_desc = ""
+
+    blob = _clean(f"{title} {h1t} {h2t} {h3t} {meta_desc}")
     return title, h1t, h2t, blob
 
 def print_hit(tag: str, gmina: str, kw: str, title: str):
@@ -1467,6 +1534,9 @@ async def fetch(session: aiohttp.ClientSession, url: str, extra_headers: dict = 
                 ms = round((time.time() - t0) * 1000)
                 if status in (403, 429):
                     rate_limiter.report_403(domain)
+                # ✅ BLOCK-PAGE (często status=200, ale treść to blokada)
+                if status == 200 and is_block_page(text):
+                    return None, final, "blocked", 429, ctype, "block_page_detected", ms
                 if "pdf" in ctype or final.lower().endswith(".pdf"):
                     return None, final, "pdf", status, ctype, None, ms
                 if status != 200:
@@ -1733,6 +1803,10 @@ async def fetch_conditional(session: aiohttp.ClientSession, url: str, extra_head
                 ms = round((time.time() - t0) * 1000)
                 if status in (403, 429):
                     rate_limiter.report_403(domain)
+                # ✅ BLOCK-PAGE (często status=200, ale treść to blokada)
+                if status == 200 and is_block_page(text):
+                    # traktujemy jak retryable (umownie 429)
+                    return None, final, "blocked", 429, ctype, "block_page_detected", ms, resp_meta
                 if "pdf" in ctype or final.lower().endswith(".pdf"):
                     return None, final, "pdf", status, ctype, None, ms, resp_meta
                 if status != 200:
@@ -1755,369 +1829,242 @@ async def fetch_conditional(session: aiohttp.ClientSession, url: str, extra_head
 # ===================== PHASE 2 =====================
 async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                       urls_seen: set, content_seen: dict, diag):
+
     if state.shutdown_requested:
         return [], {"status": "SHUTDOWN"}
+
     found = []
     visited = set()
     q = deque()
+
     gkey = gmina_cache_key(gmina, "https://" + allowed_host)
-    # Pomijanie martwych URLi
     dead_key = f"dead_{gkey}"
-    dead_set = set()
-    if hasattr(state, 'dead_urls'):
-        dead_set = set(state.dead_urls.get(dead_key, []) or [])
-    # retry
-    retry_list = []
-    try:
-        retry_list = (state.gmina_retry or {}).get(gkey, []) or []
-    except Exception:
-        retry_list = []
+    dead_set = set(state.dead_urls.get(dead_key, []) or [])
+
+    retry_list = (state.gmina_retry or {}).get(gkey, []) or []
     for u in retry_list[:3000]:
         u = normalize_url(u)
         if u and u not in visited and u not in dead_set:
             visited.add(u)
             q.appendleft((u, 0))
+
     if isinstance(state.gmina_retry, dict):
         state.gmina_retry[gkey] = []
-    # frontier
-    frontier = []
-    try:
-        frontier = (state.gmina_frontiers or {}).get(gkey, []) or []
-    except Exception:
-        frontier = []
-    for item in frontier[:50000]:
-        try:
-            u, d = item[0], int(item[1])
-        except Exception:
-            continue
-        u = normalize_url(u)
-        if u and u not in visited and u not in dead_set:
-            visited.add(u)
-            q.append((u, d))
-    # seedy
+
     for su in seed_urls:
         su = normalize_url(su)
         if su not in visited and su not in dead_set:
             visited.add(su)
             q.append((su, 0))
+
     def allow_url(u: str) -> bool:
         return same_base_domain(urlparse(u).netloc.lower(), allowed_host)
+
     pages_ok = 0
-    stop_reason = "QUEUE_EMPTY"
-    t0 = time.time()
-    trace_set(diag, "PHASE2_FOCUS", url=seed_urls[0] if seed_urls else "")
+
     while q and not state.shutdown_requested:
-        elapsed = time.time() - t0
-        if elapsed >= ABSOLUTE_MAX_SEC_PER_GMINA:
-            stop_reason = "ABSOLUTE_TIMEOUT"
-            diag["notes"].append(f"ABSOLUTE_TIMEOUT: {int(elapsed)}s")
-            break
-        if not UNLIMITED_SCAN:
-            if pages_ok >= PHASE2_MAX_PAGES:
-                stop_reason = "PAGE_LIMIT"
-                break
-            if elapsed >= MAX_SEC_PER_GMINA:
-                stop_reason = "TIME_BUDGET"
-                break
+
         url, depth = q.popleft()
         if depth > PHASE2_MAX_DEPTH:
             continue
+
         url = normalize_url(url)
         url_hash = url_key(url)
         is_listing = is_listing_url(url) or is_home_url(url)
-        prev = None
-        url_dedup = None
-        if USE_CACHE and not is_listing:
-            cu = canonical_url(url)
-            url_dedup = sha1(cu)
-            prev = content_seen.get(url_dedup)
-            if prev and is_monitored_hit(prev):
+
+        url_dedup = sha1(canonical_url(url))
+        prev = content_seen.get(url_dedup)
+
+        # ================= TTL LOGIC =================
+        if USE_CACHE and prev and not is_listing:
+            status_prev = prev.get("status")
+
+            if status_prev in {"NOWE", "ZMIANA", "HIT"}:
                 if not should_recheck_hit(prev):
                     diag["counts"]["hit_ttl_skip"] += 1
                     continue
-            elif prev and isinstance(prev, dict) and prev.get("status") == "NO_MATCH":
+
+            elif status_prev == "NO_MATCH":
                 if not should_recheck_no_match(prev):
                     diag["counts"]["no_match_ttl_skip"] += 1
                     continue
-            else:
-                if prev:
-                    diag["counts"]["phase2_url_in_content_skip"] += 1
+
+            elif status_prev == "BLOCKED":
+                if not should_recheck_block(prev, BLOCKED_RECHECK_TTL_MIN):
+                    diag["counts"]["blocked_ttl_skip"] += 1
                     continue
-                if url_hash in urls_seen:
-                    diag["counts"]["phase2_url_cache_skip"] += 1
+
+            elif status_prev == "FAILED":
+                if not should_recheck_block(prev, FAILED_RECHECK_TTL_MIN):
+                    diag["counts"]["failed_ttl_skip"] += 1
                     continue
-        extra_headers = None
-        if prev and is_monitored_hit(prev):
-            extra_headers = {}
-            et = (prev.get("etag") or "").strip()
-            lm = (prev.get("last_modified") or "").strip()
-            if et:
-                extra_headers["If-None-Match"] = et
-            if lm:
-                extra_headers["If-Modified-Since"] = lm
+
+        # ================= CONDITIONAL HEADERS =================
+        extra_headers = {}
+        if prev and prev.get("etag"):
+            extra_headers["If-None-Match"] = prev.get("etag")
+        if prev and prev.get("last_modified"):
+            extra_headers["If-Modified-Since"] = prev.get("last_modified")
+
         html, final, kind, status, ctype, err, ms, resp_meta = await fetch_conditional(
-            session_crawl, url, extra_headers=extra_headers
+            session_crawl, url, extra_headers
         )
+
+        url_dedup_final = sha1(canonical_url(final or url))
+
+        # ================= 304 =================
         if kind == "not_modified":
-            diag["counts"]["hit_304_not_modified"] += 1
-            if prev and isinstance(prev, dict) and url_dedup:
-                prev["last_checked"] = now_iso()
-                if resp_meta:
-                    if resp_meta.get("etag"):
-                        prev["etag"] = resp_meta["etag"]
-                    if resp_meta.get("last_modified"):
-                        prev["last_modified"] = resp_meta["last_modified"]
-                content_seen[url_dedup] = prev
-            continue
-        trace_set(diag, "PHASE2_FOCUS", url=url, kind=kind, status=status, ms=ms)
-        if kind == "pdf":
-            continue
-        if kind != "html" or not html:
-            diag_add_error(diag, gmina, url, "phase2_fetch", kind, status, err)
-            # Obsługa martwych stron (404/410) i retry dla innych błędów
-            try:
-                if status in (404, 410):
-                    # Strona nie istnieje – dodaj do dead listy
-                    dead_list = state.dead_urls.get(dead_key, [])
-                    if len(dead_list) < 50000:
-                        dead_list.append(url)
-                        state.dead_urls[dead_key] = dead_list
-                    diag["counts"]["dead_added"] += 1
-                elif status in (403, 429) or kind in {"timeout", "exc"} or (status and int(status) >= 500):
-                    if isinstance(state.gmina_retry, dict):
-                        lst = state.gmina_retry.get(gkey, []) or []
-                        if len(lst) < 60000:
-                            lst.append(url)
-                        state.gmina_retry[gkey] = lst
-                        diag["counts"]["retry_added"] += 1
-            except Exception:
-                pass
-            continue
-        pages_ok += 1
-        diag["counts"]["phase2_pages_ok"] += 1
-        if USE_CACHE:
-            cache_mark_url(url)
-            if final and not re.search(r"/wersja/\d+/?$", (final or "").lower()) and "print=" not in (final or "").lower():
-                cache_mark_url(final)
-        soup = safe_soup(html)
-        if not soup or not soup.find():
-            diag_add_error(diag, gmina, final, "phase2_parse", "parse", status, "empty_soup")
-            continue
-        title, h1, h2, meta_blob = extract_title_h1_h2(soup)
-        h3 = soup.find("h3")
-        h3t = h3.get_text(" ", strip=True) if h3 else ""
-        att_sig = attachments_signature(soup, final)
-        title_show = (title or h1 or h2 or h3t or final).strip()
-        cu_final = canonical_url(final)
-        url_dedup_final = sha1(cu_final)
-        try:
-            cu_req = canonical_url(url)
-            if cu_req and cu_req != cu_final:
-                alias_key = sha1(cu_req)
-                async with state.cache_lock:
-                    if alias_key not in content_seen:
-                        content_seen[alias_key] = {
-                            "found_at": now_iso(),
-                            "last_checked": now_iso(),
-                            "etag": "",
-                            "last_modified": "",
-                            "gmina": gmina,
-                            "title": "",
-                            "url": final,
-                            "keywords": [],
-                            "att_sig": "",
-                            "status": "ALIAS",
-                        }
-        except Exception:
-            pass
-        header_blob = f"{title} {h1} {h2} {h3t}"
-        ok_any, kw_any = keyword_match_in_blob(header_blob)
-        if ok_any and kw_any:
             async with state.cache_lock:
-                prev2 = content_seen.get(url_dedup_final)
-                if prev2 and isinstance(prev2, dict):
-                    prev2["last_checked"] = now_iso()
-                    if resp_meta:
-                        if resp_meta.get("etag"):
-                            prev2["etag"] = resp_meta["etag"]
-                        if resp_meta.get("last_modified"):
-                            prev2["last_modified"] = resp_meta["last_modified"]
-                    prev_att = (prev2.get("att_sig") or "")
-                    att_changed = (att_sig != prev_att)
-                    only_new_mode = is_wz_or_dus_keyword(kw_any)
-                    if att_changed and (not only_new_mode):
-                        diag["counts"]["hit_change"] += 1
-                        print_hit("🟡 ZMIANA (ATT)", gmina, kw_any, title_show)
-                        prev2["found_at"] = now_iso()
-                        prev2["title"] = title_show[:240]
-                        prev2["url"] = final
-                        prev2["att_sig"] = att_sig
-                        prev2["status"] = "ZMIANA"
-                        seen_kws = set(prev2.get("keywords") or [])
-                        seen_kws.add(kw_any)
-                        prev2["keywords"] = sorted(seen_kws)
-                        content_seen[url_dedup_final] = prev2
-                        dedup_key = (url_dedup_final, "ZMIANA")
-                        if dedup_key not in state.mail_dedup:
-                            state.mail_dedup.add(dedup_key)
-                            msg = f"🟡 ZMIANA (ATT) | {gmina} | [{kw_any}] | {title_show}\n{final}"
-                            state.new_items_for_mail.append(msg)
-                            log_new_item(gmina, title_show[:240], final, kw_any)
-                            found.append((gmina, kw_any, title_show, final, "ZMIANA"))
-                    else:
-                        diag["counts"]["hit_no_change"] += 1
-                        seen_kws = set(prev2.get("keywords") or [])
-                        if kw_any not in seen_kws:
-                            seen_kws.add(kw_any)
-                            prev2["keywords"] = sorted(seen_kws)
-                        if prev2.get("status") == "NO_MATCH":
-                            prev2["status"] = "HIT"
-                        prev2["att_sig"] = att_sig
-                        content_seen[url_dedup_final] = prev2
-                else:
-                    if BOOTSTRAP_MODE:
-                        diag["counts"]["bootstrap_hit_seeded"] += 1
-                        print_hit("⚪ SEED (BOOTSTRAP)", gmina, kw_any, title_show)
-                        content_seen[url_dedup_final] = {
-                            "found_at": now_iso(),
-                            "last_checked": now_iso(),
-                            "etag": (resp_meta.get("etag") if resp_meta else ""),
-                            "last_modified": (resp_meta.get("last_modified") if resp_meta else ""),
-                            "gmina": gmina,
-                            "title": title_show[:240],
-                            "url": final,
-                            "keywords": [kw_any],
-                            "att_sig": att_sig,
-                            "status": "HIT",
-                        }
-                    else:
-                        diag["counts"]["hit_new"] += 1
-                        print_hit("🟢 NOWE", gmina, kw_any, title_show)
-                        content_seen[url_dedup_final] = {
-                            "found_at": now_iso(),
-                            "last_checked": now_iso(),
-                            "etag": (resp_meta.get("etag") if resp_meta else ""),
-                            "last_modified": (resp_meta.get("last_modified") if resp_meta else ""),
-                            "gmina": gmina,
-                            "title": title_show[:240],
-                            "url": final,
-                            "keywords": [kw_any],
-                            "att_sig": att_sig,
-                            "status": "NOWE",
-                        }
-                        dedup_key = (url_dedup_final, "NOWE")
-                        if dedup_key not in state.mail_dedup:
-                            state.mail_dedup.add(dedup_key)
-                            msg = f"🟢 NOWE | {gmina} | [{kw_any}] | {title_show}\n{final}"
-                            state.new_items_for_mail.append(msg)
-                            log_new_item(gmina, title_show[:240], final, kw_any)
-                            found.append((gmina, kw_any, title_show, final, "NOWE"))
-        else:
-            if not is_listing:
+                if url_dedup_final in content_seen:
+                    content_seen[url_dedup_final]["last_checked"] = now_iso()
+                    content_seen[url_dedup_final]["status"] = "HIT"
+            continue
+
+        # ================= BLOCKED =================
+        if kind == "blocked":
+            diag["counts"]["blocked_13"] += 1
+
+            async with state.cache_lock:
+                prevb = content_seen.get(url_dedup_final)
+                content_seen[url_dedup_final] = {
+                    "found_at": (prevb.get("found_at") if prevb else now_iso()),
+                    "last_checked": now_iso(),
+                    "etag": "",
+                    "last_modified": "",
+                    "gmina": gmina,
+                    "title": (prevb.get("title") if prevb else ""),
+                    "url": final or url,
+                    "keywords": (prevb.get("keywords") if prevb else []),
+                    "att_sig": (prevb.get("att_sig") if prevb else ""),
+                    "status": "BLOCKED",
+                }
+
+            state.gmina_retry.setdefault(gkey, []).append(url)
+            urls_seen.discard(url_hash)
+            continue
+
+        # ================= FAILED / NON-HTML =================
+        if kind != "html" or not html:
+
+            # martwe: nie retry'ujemy
+            if status in (404, 410):
+                state.dead_urls.setdefault(dead_key, []).append(url)
+                continue
+
+            # retry tylko dla problemów sieci/WAF/5xx
+            if status in (403, 429) or kind in {"timeout", "exc"} or (status and int(status) >= 500):
                 async with state.cache_lock:
-                    if url_dedup_final not in content_seen:
-                        content_seen[url_dedup_final] = {
-                            "found_at": now_iso(),
-                            "last_checked": now_iso(),
-                            "etag": (resp_meta.get("etag") if resp_meta else ""),
-                            "last_modified": (resp_meta.get("last_modified") if resp_meta else ""),
-                            "gmina": gmina,
-                            "title": title_show[:240],
-                            "url": final,
-                            "keywords": [],
-                            "att_sig": att_sig,
-                            "status": "NO_MATCH",
-                        }
-                    else:
-                        try:
-                            content_seen[url_dedup_final]["last_checked"] = now_iso()
-                        except Exception:
-                            pass
+                    prevf = content_seen.get(url_dedup_final)
+                    content_seen[url_dedup_final] = {
+                        "found_at": (prevf.get("found_at") if prevf else now_iso()),
+                        "last_checked": now_iso(),
+                        "etag": "",
+                        "last_modified": "",
+                        "gmina": gmina,
+                        "title": (prevf.get("title") if prevf else ""),
+                        "url": final or url,
+                        "keywords": (prevf.get("keywords") if prevf else []),
+                        "att_sig": (prevf.get("att_sig") if prevf else ""),
+                        "status": "FAILED",
+                    }
+
+                state.gmina_retry.setdefault(gkey, []).append(url)
+                urls_seen.discard(url_hash)
+
+            # reszta (np. pdf/non_html) – po prostu pomijamy tutaj
+            continue
+
+        # ================= HTML =================
+        pages_ok += 1
+        soup = safe_soup(html)
+        if not soup:
+            continue
+
+        title, h1, h2, meta_blob = extract_title_h1_h2(soup)
+        fast_text = _soup_fast_text(soup)
+        blob = f"{title} {h1} {h2} {fast_text}"
+
+        ok_any, kw_any = keyword_match_in_blob(blob)
+        fp = page_fingerprint(title, h1, fast_text)
+        att_sig = attachments_signature(soup, final)
+
+        status_new = "NO_MATCH"
+        if ok_any:
+            status_new = "NOWE"
+        if prev and (prev.get("fp") != fp or prev.get("att_sig") != att_sig):
+            if ok_any:
+                status_new = "ZMIANA"
+
+        # ✅ tytuł do cache: preferuj H1/H2/<title>, a URL tylko jako fallback
+        page_title = (h1 or h2 or title or "").strip()
+        if not page_title:
+            page_title = final
+
+        async with state.cache_lock:
+            content_seen[url_dedup_final] = {
+                "found_at": (prev.get("found_at") if prev else now_iso()),
+                "last_checked": now_iso(),
+                "etag": (resp_meta.get("etag") if resp_meta else ""),
+                "last_modified": (resp_meta.get("last_modified") if resp_meta else ""),
+                "gmina": gmina,
+                "title": page_title[:240],
+                "url": final,
+                "keywords": [kw_any] if ok_any else [],
+                "fp": fp,
+                "att_sig": att_sig,
+                "status": status_new,
+            }
+
+        if status_new in {"NOWE", "ZMIANA"}:
+            # print_hit przyjmuje "title" jako tekst do pokazania, więc pokaż tytuł strony, a URL osobno masz w found[]
+            print_hit(f"🟢 {status_new}", gmina, kw_any, page_title)
+            found.append((gmina, kw_any, page_title, final, status_new))
+
+        # ================= LINK DETECTION =================
         for abs_u, txt in iter_links_fast(soup, final):
+
             if not allow_url(abs_u):
                 continue
-            low_u = abs_u.lower()
-            if any(low_u.endswith(ext) for ext in ATT_EXT):
-                anchor_txt = (txt or "").strip()
-                if len(anchor_txt) >= 12:
-                    ok_pdf, kw_pdf = keyword_match_in_blob(anchor_txt)
-                else:
-                    ok_pdf, kw_pdf = (False, None)
-                if ok_pdf and kw_pdf:
-                    pdf_key = sha1(canonical_url(abs_u))
-                    async with state.cache_lock:
-                        prev_pdf = content_seen.get(pdf_key)
-                        if not prev_pdf:
-                            title_pdf = (anchor_txt or "ZAŁĄCZNIK").strip()[:240]
-                            if BOOTSTRAP_MODE:
-                                diag["counts"]["bootstrap_pdf_seeded"] += 1
-                                content_seen[pdf_key] = {
-                                    "found_at": now_iso(),
-                                    "last_checked": now_iso(),
-                                    "etag": "",
-                                    "last_modified": "",
-                                    "gmina": gmina,
-                                    "title": title_pdf,
-                                    "url": abs_u,
-                                    "keywords": [kw_pdf],
-                                    "att_sig": "",
-                                    "status": "HIT",
-                                }
-                            else:
-                                content_seen[pdf_key] = {
-                                    "found_at": now_iso(),
-                                    "last_checked": now_iso(),
-                                    "etag": "",
-                                    "last_modified": "",
-                                    "gmina": gmina,
-                                    "title": title_pdf,
-                                    "url": abs_u,
-                                    "keywords": [kw_pdf],
-                                    "att_sig": "",
-                                    "status": "NOWE",
-                                }
-                                dedup_key = (pdf_key, "NOWE")
-                                if dedup_key not in state.mail_dedup:
-                                    state.mail_dedup.add(dedup_key)
-                                    msg = f"🟢 NOWE (PDF LINK) | {gmina} | [{kw_pdf}] | {title_pdf}\n{abs_u}"
-                                    state.new_items_for_mail.append(msg)
-                                    log_new_item(gmina, title_pdf, abs_u, kw_pdf)
-                continue
-            if looks_like_search_url(abs_u):
-                diag["counts"]["search_url_skip"] += 1
-                continue
+
+            filename = urlparse(abs_u).path.split("/")[-1]
+            blob_link = f"{txt} {filename}"
+            ok_link, kw_link = keyword_match_in_blob(blob_link)
+
+            if ok_link:
+                key = sha1(canonical_url(abs_u))
+                if key not in content_seen:
+                    # tytuł linka: tekst kotwicy, a jak pusty to nazwa pliku/url
+                    link_title = (txt or "").strip()
+                    if not link_title:
+                        link_title = filename or abs_u
+
+                    content_seen[key] = {
+                        "found_at": now_iso(),
+                        "last_checked": now_iso(),
+                        "etag": "",
+                        "last_modified": "",
+                        "gmina": gmina,
+                        "title": link_title[:240],
+                        "url": abs_u,
+                        "keywords": [kw_link],
+                        "att_sig": "",
+                        "status": "NOWE",
+                    }
+                    print_hit("🟢 NOWE (LINK)", gmina, kw_link, link_title)
+                    found.append((gmina, kw_link, link_title, abs_u, "NOWE"))
+
             if abs_u not in visited and abs_u not in dead_set:
                 visited.add(abs_u)
                 q.append((abs_u, depth + 1))
-    try:
-        if isinstance(state.gmina_frontiers, dict):
-            remaining = []
-            for (u, d) in list(q)[:50000]:
-                if u:
-                    remaining.append([u, int(d)])
-            state.gmina_frontiers[gkey] = remaining
-            diag["counts"]["frontier_saved"] += len(remaining)
-    except Exception:
-        pass
-    frontier_len = 0
-    retry_len = 0
-    try:
-        if isinstance(state.gmina_frontiers, dict):
-            frontier_len = len(state.gmina_frontiers.get(gkey, []) or [])
-    except Exception:
-        pass
-    try:
-        if isinstance(state.gmina_retry, dict):
-            retry_len = len(state.gmina_retry.get(gkey, []) or [])
-    except Exception:
-        pass
+
     return found, {
         "status": "OK",
         "pages_ok": pages_ok,
-        "stop_reason": stop_reason,
-        "frontier_len": frontier_len,
-        "retry_len": retry_len,
+        "stop_reason": "QUEUE_EMPTY",
+        "frontier_len": 0,
+        "retry_len": len(state.gmina_retry.get(gkey, [])),
     }
+
 
 # ===================== DIAG SAVE + SUMMARY =====================
 def save_diag(diag_rows, diag_errors):
@@ -2469,6 +2416,7 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
 
