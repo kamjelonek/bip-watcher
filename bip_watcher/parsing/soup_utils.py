@@ -1,9 +1,14 @@
 # parsing/soup_utils.py
+
 import re
 from bs4 import BeautifulSoup
+from urllib.parse import urlparse, urlunparse
+
 from bip_watcher.config import FAST_TEXT_MAX_CHARS, ATT_EXT
 from bip_watcher.utils import safe_soup, now_iso, sha1
 
+
+# Regex to remove UI/navigation elements
 _KILL_UI_RE = re.compile(
     r"(menu|nav|navbar|sidebar|panel|left|right|breadcrumbs|okruszk|stopka|footer|header|"
     r"cookie|rodo|deklaracja|dostepn|dostępn|wyszuk|search|login|logowan|"
@@ -12,13 +17,13 @@ _KILL_UI_RE = re.compile(
     re.IGNORECASE
 )
 
+
 def extract_title_h1_h2(soup: BeautifulSoup):
     if not soup:
         return "", "", "", ""
 
     def _clean(s: str) -> str:
-        s = re.sub(r"\s+", " ", (s or "")).strip()
-        return s
+        return re.sub(r"\s+", " ", (s or "")).strip()
 
     title = _clean(soup.title.get_text(" ", strip=True) if soup.title else "")
 
@@ -30,6 +35,7 @@ def extract_title_h1_h2(soup: BeautifulSoup):
     h2t = _clean(h2.get_text(" ", strip=True) if h2 else "")
     h3t = _clean(h3.get_text(" ", strip=True) if h3 else "")
 
+    # fallback selectors
     if not (h1t or h2t or h3t):
         fallback_selectors = [
             "#page-title", "#pagetitle", "#content-title", "#title",
@@ -48,20 +54,24 @@ def extract_title_h1_h2(soup: BeautifulSoup):
             except Exception:
                 continue
 
+    # meta description
     meta_desc = ""
     try:
         meta = soup.find("meta", attrs={"name": "description"})
         if meta and meta.get("content"):
             meta_desc = _clean(meta.get("content", ""))
     except Exception:
-        meta_desc = ""
+        pass
 
     blob = _clean(f"{title} {h1t} {h2t} {h3t} {meta_desc}")
     return title, h1t, h2t, blob
 
+
 def _strip_dynamic_noise(txt: str) -> str:
     if not txt:
         return ""
+
+    # remove timestamps, counters, metadata
     txt = re.sub(
         r"wygenerowano:\s*\d{1,2}\s+[a-ząćęłńóśźż]+\s+\d{4}\s*r?\.?\s*\d{1,2}:\d{2}:\d{2}",
         "", txt, flags=re.IGNORECASE
@@ -89,8 +99,10 @@ def _strip_dynamic_noise(txt: str) -> str:
     txt = re.sub(r"(data\s+wytworzenia|data\s+utworzenia|data\s+publikacji)\s*:\s*.*?(?=\s{2,}|$)", "", txt, flags=re.IGNORECASE)
     txt = re.sub(r"(data\s+zmiany|data\s+modyfikacji|ostatnia\s+modyfikacja)\s*:\s*.*?(?=\s{2,}|$)", "", txt, flags=re.IGNORECASE)
     txt = re.sub(r"(rejestr\s+zmian|historia\s+zmian)\s*:\s*.*?(?=$)", "", txt, flags=re.IGNORECASE)
+
     txt = re.sub(r"\s+", " ", txt).strip()
     return txt
+
 
 def _pick_main_container(soup: BeautifulSoup):
     selectors = [
@@ -98,7 +110,7 @@ def _pick_main_container(soup: BeautifulSoup):
         "#content", "#main", "#page", "#primary",
         ".content", ".main", ".page-content", ".entry-content",
         ".article", ".post", ".news", ".text", ".tresc", ".treść",
-        ".bip-content", ".content-area"
+        ".bip-content", ".content-area",
     ]
     for sel in selectors:
         try:
@@ -111,14 +123,21 @@ def _pick_main_container(soup: BeautifulSoup):
             pass
     return soup
 
+
 def _soup_fast_text(soup: BeautifulSoup, max_chars: int = FAST_TEXT_MAX_CHARS) -> str:
     try:
         if not soup:
             return ""
+
+        # remove scripts/styles
         for tag in soup(["script", "style", "noscript"]):
             tag.decompose()
+
+        # remove nav/footer/header/aside
         for tag in soup.find_all(["nav", "footer", "header", "aside"]):
             tag.decompose()
+
+        # remove UI elements by class
         for el in list(soup.find_all(True, attrs={"class": True})):
             try:
                 cls = " ".join(el.get("class") or [])
@@ -126,50 +145,67 @@ def _soup_fast_text(soup: BeautifulSoup, max_chars: int = FAST_TEXT_MAX_CHARS) -
                     el.decompose()
             except Exception:
                 continue
+
+        # remove UI elements by id
         for el in list(soup.find_all(True, attrs={"id": True})):
             try:
-                _id = (el.get("id") or "")
+                _id = el.get("id") or ""
                 if _id and _KILL_UI_RE.search(_id):
                     el.decompose()
             except Exception:
                 continue
+
+        # remove sections with "metryka", "rejestr zmian", etc.
         for hdr in soup.find_all(["h2", "h3", "h4"]):
             try:
                 t = (hdr.get_text(" ", strip=True) or "").lower()
-                if any(x in t for x in ["metryka", "rejestr zmian", "historia zmian",
-                                        "skróty", "skroty", "na skróty", "na skroty",
-                                        "przydatne linki", "szybkie linki", "polecane"]):
+                if any(x in t for x in [
+                    "metryka", "rejestr zmian", "historia zmian",
+                    "skróty", "skroty", "na skróty", "na skroty",
+                    "przydatne linki", "szybkie linki", "polecane"
+                ]):
                     parent = hdr.find_parent(["section", "div", "article", "table"]) or hdr.parent
                     if parent:
                         parent.decompose()
             except Exception:
                 pass
+
         main = _pick_main_container(soup)
         txt = main.get_text(" ", strip=True)
         txt = re.sub(r"\s+", " ", (txt or "")).strip()
         txt = _strip_dynamic_noise(txt)
+
         if len(txt) > max_chars:
             txt = txt[:max_chars]
+
         return txt
+
     except Exception:
         return ""
+
 
 def page_fingerprint(title: str, h1: str, fast_text: str) -> str:
     base = f"{(title or '')[:180]}|{(h1 or '')[:180]}|{(fast_text or '')}"
     return sha1(base)
 
+
 def attachments_signature(soup: BeautifulSoup, base_url: str) -> str:
     if not soup:
         return ""
+
     items = []
+
     for a in soup.find_all("a", href=True):
         href = (a.get("href") or "").strip()
         if not href:
             continue
+
         abs_u = normalize_url(urljoin(base_url, href))
         low = abs_u.lower()
+
         if not any(low.endswith(ext) for ext in ATT_EXT):
             continue
+
         p = urlparse(abs_u)
         clean_url = urlunparse((
             "https",
@@ -179,18 +215,19 @@ def attachments_signature(soup: BeautifulSoup, base_url: str) -> str:
             "",
             ""
         ))
+
         txt = a.get_text(" ", strip=True) or ""
         size = ""
-        m = re.search(
-            r"(\d+(?:[.,]\d+)?)\s*(kb|mb|gb)",
-            txt,
-            flags=re.IGNORECASE
-        )
+
+        m = re.search(r"(\d+(?:[.,]\d+)?)\s*(kb|mb|gb)", txt, flags=re.IGNORECASE)
         if m:
             size = m.group(1).replace(",", ".") + m.group(2).lower()
+
         items.append((clean_url, size))
+
     if not items:
         return ""
+
     items.sort()
     blob = "||".join([f"{u}::{s}" for u, s in items])
     return sha1(blob)

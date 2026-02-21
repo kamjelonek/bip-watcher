@@ -1,8 +1,8 @@
 # state.py
-import asyncio, signal, time
+
+import asyncio
+import signal
 from bip_watcher.utils import now_iso
-from bip_watcher.cache import load_cache_v2
-from bip_watcher.config import RUN_DEADLINE_MIN, env_int
 
 class GlobalState:
     def __init__(self):
@@ -25,11 +25,15 @@ class GlobalState:
         self.shutdown_requested = True
         print("\n⚠️  CTRL+C detected - graceful shutdown...", flush=True)
 
+
 state = GlobalState()
+
 
 def signal_handler(signum, frame):
     state.request_shutdown()
 
+
+# Register signal handlers (ignored on platforms that don't support it)
 try:
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)

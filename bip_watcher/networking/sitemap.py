@@ -98,16 +98,17 @@ def parse_sitemap_xml(xml_text: str, base_url: str = "") -> tuple:
     return _dedup(urls), _dedup(children)
 
 # ------------------------------------------------------------
-# Missing function: collect_sitemap_urls
+# collect_sitemap_urls (with safe local import)
 # ------------------------------------------------------------
-
-from bip_watcher.networking.fetch_normal import fetch_text_best_effort
 
 async def collect_sitemap_urls(session, base_url, diag, max_urls=4000):
     """
     Collects sitemap URLs from common sitemap locations and robots.txt.
     Returns a list of discovered URLs.
     """
+
+    # LOCAL IMPORT → prevents circular import
+    from bip_watcher.networking.fetch_normal import fetch_text_best_effort
 
     urls = []
     seen = set()
