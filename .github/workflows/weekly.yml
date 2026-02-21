@@ -2,7 +2,8 @@ name: BIP Watcher Weekly
 
 on:
   schedule:
-    - cron: "0 5 * * 1"
+    - cron: "0 6 * * 1"   # poniedziałek 6:00 UTC
+    - cron: "0 6 * * 4"   # czwartek 6:00 UTC
   workflow_dispatch: {}
 
 concurrency:
@@ -39,7 +40,6 @@ jobs:
           echo "ℹ️ cache-store missing -> creating"
           git checkout --orphan cache-store
 
-          # czyścimy working tree bez git rm (mniej kapryśne)
           rm -rf ./* ./.gitignore || true
 
           mkdir -p shards master
@@ -51,7 +51,6 @@ jobs:
           git add README.md shards master
           git commit -m "Initialize cache-store [skip ci]"
 
-          # push z retry na wypadek równoległego runu
           for i in 1 2 3 4 5; do
             git push origin cache-store && break
             echo "⚠️ Push retry #$i ..."
@@ -62,6 +61,12 @@ jobs:
     name: Scan shard ${{ matrix.shard }}
     runs-on: ubuntu-latest
     continue-on-error: true
+    # ── TIMEOUT FIX ──────────────────────────────────────────────────────────
+    # Job timeout:        355 min  (GHA limit dla tego runnera)
+    # Krok Python:        325 min  (timeout-minutes na stepie)
+    # RUN_DEADLINE_MIN:   315 min  (Python sam kończy po tym czasie)
+    # Zostaje 30 min zapasu na "Compress shard and commit" zanim GHA ubije joba
+    # ─────────────────────────────────────────────────────────────────────────
     timeout-minutes: 355
     needs: [init_cache_store]
 
@@ -174,7 +179,6 @@ jobs:
                           continue
                       if isinstance(merged[k], dict) and isinstance(data[k], dict):
                           if k == "urls_seen":
-                              # zachowaj nowszy timestamp
                               for h, ts in data[k].items():
                                   prev = merged[k].get(h, "")
                                   if (ts or "") >= (prev or ""):
@@ -188,7 +192,6 @@ jobs:
                                           merged[k][gkey].append(u)
                                           seen.add(u)
                           else:
-                              # last-write-wins (działa); semantyczny merge content_seen można dodać później
                               merged[k].update(data[k])
                       else:
                           merged[k] = data[k]
@@ -203,22 +206,25 @@ jobs:
       # ===================== RUN =====================
       - name: Run watcher (sharded)
         continue-on-error: true
+        timeout-minutes: 325   # ← NOWE: step timeout; Python kończy po 315 min sam z siebie
         env:
           PYTHONUNBUFFERED: "1"
           SHARD_TOTAL: "58"
           SHARD_INDEX: "${{ matrix.shard }}"
-          RUN_DEADLINE_MIN: "345"
+          RUN_DEADLINE_MIN: "315"   # ← ZMIANA: było 345, teraz 315 (30 min zapasu na commit)
           CONCURRENT_GMINY: "20"
           CONCURRENT_REQUESTS: "80"
           LIMIT_PER_HOST: "8"
           RATE_MIN_DELAY: "0.1"
-          CHECKPOINT_EVERY_SEC: "900"
+          CHECKPOINT_EVERY_SEC: "600"   # ← ZMIANA: było 900, teraz 600 (checkpoint co 10 min)
         run: |
           python bip_watcher.py
 
       # ===================== COMMIT THIS SHARD TO cache-store =====================
+      # if: always() gwarantuje wykonanie nawet gdy krok Pythona przekroczył timeout lub błąd
       - name: Compress shard and commit to cache-store
         if: always()
+        timeout-minutes: 25   # ← NOWE: własny timeout — GHA nie ubije tego kroku przed job timeout
         shell: bash
         env:
           SHARD_INDEX: "${{ matrix.shard }}"
@@ -271,7 +277,7 @@ jobs:
             data/diag_errors.csv
 
   merge:
-    name: Merge caches + publish master zip parts
+    name: Merge caches + email wyników
     runs-on: ubuntu-latest
     needs: [scan]
     if: always()
@@ -394,3 +400,162 @@ jobs:
           path: |
             data/cache.json
             data/cache.zip
+
+      # ===================== EMAIL Z WYNIKAMI =====================
+      # GMAIL_APP_PASSWORD musi być dodane jako GitHub Secret (nigdy w plaintext!)
+      # Instrukcja: Settings → Secrets and variables → Actions → New repository secret
+      # Nazwa: GMAIL_APP_PASSWORD  Wartość: nowe hasło aplikacji z myaccount.google.com/apppasswords
+      - name: Send results email
+        if: always()
+        shell: bash
+        env:
+          GMAIL_USER: "kamiljelonek227@gmail.com"
+          GMAIL_APP_PASSWORD: "sldy dhtk redc vwrn"
+        run: |
+          python - <<'PY'
+          import os, json, glob, gzip, smtplib
+          from email.mime.text import MIMEText
+          from email.mime.multipart import MIMEMultipart
+          from datetime import datetime
+          from pathlib import Path
+          from collections import defaultdict
+
+          GMAIL_USER = os.environ.get("GMAIL_USER", "")
+          GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
+
+          if not GMAIL_APP_PASSWORD:
+              print("⚠️ Brak GMAIL_APP_PASSWORD w GitHub Secrets — email pominięty")
+              print("   Dodaj secret: Settings → Secrets and variables → Actions → New repository secret")
+              print("   Nazwa: GMAIL_APP_PASSWORD")
+              exit(0)
+
+          # ── Zbierz NOWE i ZMIANA z ostatniego runu ──────────────────────────────
+          # Źródło: content_seen z każdego sharda
+          # "ostatni run" = wpisy z found_at z ostatnich 12h (odporność na drift)
+          STORE = Path("cache-store/shards")
+          shard_files = sorted(glob.glob(str(STORE / "cache_shard_*.json.gz")))
+
+          from datetime import timezone, timedelta
+          now_utc = datetime.now(timezone.utc)
+          CUTOFF_HOURS = 12  # wpisy starsze niż 12h to poprzednie runy
+
+          # gmina -> {nowe: [(title, url, keywords)], zmiana: [...]}
+          results = defaultdict(lambda: {"nowe": [], "zmiana": []})
+          total_shards_ok = 0
+
+          for sf in shard_files:
+              try:
+                  with gzip.open(sf, "rt", encoding="utf-8") as f:
+                      data = json.load(f)
+              except Exception as e:
+                  print(f"⚠️ Błąd czytania {sf}: {e}")
+                  continue
+              total_shards_ok += 1
+
+              content_seen = data.get("content_seen", {})
+              for key, meta in content_seen.items():
+                  if not isinstance(meta, dict):
+                      continue
+                  status = meta.get("status", "")
+                  if status not in ("NOWE", "ZMIANA"):
+                      continue
+
+                  # filtruj po czasie — tylko wpisy z tego runu
+                  found_at_str = meta.get("found_at", "")
+                  if found_at_str:
+                      try:
+                          found_at = datetime.fromisoformat(found_at_str.replace("Z", "+00:00"))
+                          if found_at.tzinfo is None:
+                              found_at = found_at.replace(tzinfo=timezone.utc)
+                          age_hours = (now_utc - found_at).total_seconds() / 3600
+                          if age_hours > CUTOFF_HOURS:
+                              continue  # stary wpis z poprzedniego runu
+                      except Exception:
+                          pass  # brak daty = nie filtrujemy
+
+                  gmina = meta.get("gmina") or meta.get("seed_name") or "nieznana"
+                  url = meta.get("url") or key
+                  title = (meta.get("title") or meta.get("h1") or "").strip() or "(brak tytułu)"
+                  keywords = meta.get("keywords") or []
+                  if isinstance(keywords, list):
+                      kw_str = ", ".join(keywords[:5])
+                  else:
+                      kw_str = str(keywords)
+
+                  entry = (title, url, kw_str)
+                  if status == "NOWE":
+                      results[gmina]["nowe"].append(entry)
+                  else:
+                      results[gmina]["zmiana"].append(entry)
+
+          total_nowe = sum(len(v["nowe"]) for v in results.values())
+          total_zmiana = sum(len(v["zmiana"]) for v in results.values())
+          run_date = now_utc.strftime("%Y-%m-%d %H:%M UTC")
+
+          print(f"📊 Shardów odczytanych: {total_shards_ok}/{len(shard_files)}")
+          print(f"📊 NOWE: {total_nowe}, ZMIANA: {total_zmiana}")
+
+          # ── Zbuduj treść emaila ────────────────────────────────────────────────
+          if total_nowe == 0 and total_zmiana == 0:
+              subject = f"BIP Watcher {now_utc.strftime('%Y-%m-%d')} — brak nowych wyników"
+              body_lines = [
+                  f"BIP Watcher — skan {run_date}",
+                  f"Odczytano shardów: {total_shards_ok}/{len(shard_files)}",
+                  "",
+                  "Brak nowych ogłoszeń ani zmian załączników w tym skanie.",
+              ]
+          else:
+              subject = f"BIP Watcher {now_utc.strftime('%Y-%m-%d')} — {total_nowe} NOWYCH, {total_zmiana} ZMIAN"
+              body_lines = [
+                  f"BIP Watcher — skan {run_date}",
+                  f"Odczytano shardów: {total_shards_ok}/{len(shard_files)}",
+                  f"Łącznie: {total_nowe} nowych ogłoszeń | {total_zmiana} zmienionych załączników",
+                  "=" * 65,
+              ]
+
+              for gmina in sorted(results.keys()):
+                  v = results[gmina]
+                  if not v["nowe"] and not v["zmiana"]:
+                      continue
+
+                  body_lines.append("")
+                  body_lines.append(f"📍 {gmina}")
+
+                  if v["nowe"]:
+                      body_lines.append(f"  🟢 NOWE ({len(v['nowe'])}):")
+                      for title, url, kw in v["nowe"][:30]:
+                          body_lines.append(f"    • {title}")
+                          body_lines.append(f"      {url}")
+                          if kw:
+                              body_lines.append(f"      [{kw}]")
+                  if v["zmiana"]:
+                      body_lines.append(f"  🔄 ZMIANA ZAŁĄCZNIKÓW ({len(v['zmiana'])}):")
+                      for title, url, kw in v["zmiana"][:15]:
+                          body_lines.append(f"    • {title}")
+                          body_lines.append(f"      {url}")
+                          if kw:
+                              body_lines.append(f"      [{kw}]")
+
+              if total_nowe > 30 or total_zmiana > 15:
+                  body_lines.append("")
+                  body_lines.append("(Lista skrócona — pełne wyniki w artifacts GitHub Actions)")
+
+          body = "\n".join(body_lines)
+
+          # ── Wyślij ────────────────────────────────────────────────────────────
+          try:
+              msg = MIMEMultipart("alternative")
+              msg["Subject"] = subject
+              msg["From"] = GMAIL_USER
+              msg["To"] = GMAIL_USER
+              msg.attach(MIMEText(body, "plain", "utf-8"))
+
+              with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+                  server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
+                  server.sendmail(GMAIL_USER, [GMAIL_USER], msg.as_string())
+
+              print(f"✅ Email wysłany: {subject}")
+          except Exception as e:
+              print(f"❌ Błąd wysyłania emaila: {e}")
+              raise
+          PY
