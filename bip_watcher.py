@@ -968,6 +968,46 @@ JS_EXTRA_SEED_PATHS = [
 ]
 
 # ===================== FAST TEXT + FINGERPRINT =====================
+# ===================== GENERIC / TEMPLATE PAGES FILTER =====================
+
+SITEWIDE_TITLES_RE = re.compile(
+    r"(biuletyn informacji publicznej|\bbip\b|gmina|urząd gminy|urzad gminy|"
+    r"miasto|urząd miasta|urzad miasta|starostwo|powiat|województwo|wojewodztwo)",
+    re.IGNORECASE
+)
+
+def is_generic_bip_page(title: str, h1: str, url: str, fast_text: str = "") -> bool:
+    """
+    Zwraca True jeśli strona wygląda na:
+    - home / landing BIP (krótka treść, głównie menu)
+    - listing/archiwum/wyszukiwarka
+    - stronę-szablon z tytułem typu "Gmina X Biuletyn Informacji Publicznej"
+    UWAGA: nie blokujemy crawl'u, tylko nie raportujemy jej jako NOWE/ZMIANA.
+    """
+    t = (title or "").strip().lower()
+    h = (h1 or "").strip().lower()
+    u = (url or "").strip().lower()
+    txt = (fast_text or "").strip()
+
+    # 1) Listing / archiwum / wyszukiwarka — prawie zawsze nie jest pojedynczą treścią ogłoszenia
+    if is_listing_url(url):
+        return True
+
+    # 2) Home wycinamy TYLKO jeśli nie ma „mięsa” w treści (żeby nie zgubić ogłoszeń wklejonych na home)
+    if is_home_url(url) and len(txt) < 600:
+        return True
+
+    # 3) Typowe brandowe tytuły/H1 ("... BIP ...") + krótka treść
+    blob = re.sub(r"\s+", " ", f"{t} {h}").strip()
+    if not blob:
+        return False
+
+    # krótkie, typowo szablonowe nagłówki
+    if len(blob) <= 90 and SITEWIDE_TITLES_RE.search(blob) and len(txt) < 600:
+        return True
+
+    return False
+
 _KILL_UI_RE = re.compile(
     r"(menu|nav|navbar|sidebar|panel|left|right|breadcrumbs|okruszk|stopka|footer|header|"
     r"cookie|rodo|deklaracja|dostepn|dostępn|wyszuk|search|login|logowan|"
@@ -2067,14 +2107,22 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
         title, h1, h2, meta_blob = extract_title_h1_h2(soup)
         fast_text = _soup_fast_text(soup)
         blob = f"{title} {h1} {h2} {fast_text}"
-
+        
         ok_any, kw_any = keyword_match_in_blob(blob)
         fp = page_fingerprint(title, h1, fast_text)
         att_sig = attachments_signature(soup, final_c)
-
+        
+        # ✅ filtr: nie raportuj stron-szablonów (home/listing/brand BIP), ale crawluj linki normalnie
+        generic_page = is_generic_bip_page(title, h1, final_c, fast_text=fast_text)
+        if generic_page:
+            diag["counts"]["generic_skipped"] += 1
+            ok_any = False
+            kw_any = None
+        
         status_new = "NO_MATCH"
         if ok_any:
             status_new = "NOWE"
+        
         if prev and (prev.get("fp") != fp or prev.get("att_sig") != att_sig):
             if ok_any:
                 status_new = "ZMIANA"
@@ -2118,28 +2166,33 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             filename = urlparse(cu).path.split("/")[-1]
             blob_link = f"{txt} {filename}"
             ok_link, kw_link = keyword_match_in_blob(blob_link)
-
+            
             if ok_link:
-                key = sha1(canonical_url(cu))
-                if key not in content_seen:
-                    link_title = (txt or "").strip()
-                    if not link_title:
-                        link_title = filename or cu
-
-                    content_seen[key] = {
-                        "found_at": now_iso(),
-                        "last_checked": now_iso(),
-                        "etag": "",
-                        "last_modified": "",
-                        "gmina": gmina,
-                        "title": link_title[:240],
-                        "url": cu,
-                        "keywords": [kw_link],
-                        "att_sig": "",
-                        "status": "NOWE",
-                    }
-                    print_hit("🟢 NOWE (LINK)", gmina, kw_link, link_title)
-                    found.append((gmina, kw_link, link_title, cu, "NOWE"))
+                link_title = (txt or "").strip()
+                if not link_title:
+                    link_title = filename or cu
+            
+                # ✅ odfiltruj linki o tytule brandowym/bez treści
+                lt = link_title.lower()
+                if ("biuletyn informacji publicznej" in lt) or (lt == "bip") or (len(lt) <= 6 and "bip" in lt):
+                    diag["counts"]["generic_link_skipped"] += 1
+                else:
+                    key = sha1(canonical_url(cu))
+                    if key not in content_seen:
+                        content_seen[key] = {
+                            "found_at": now_iso(),
+                            "last_checked": now_iso(),
+                            "etag": "",
+                            "last_modified": "",
+                            "gmina": gmina,
+                            "title": link_title[:240],
+                            "url": cu,
+                            "keywords": [kw_link],
+                            "att_sig": "",
+                            "status": "NOWE",
+                        }
+                        print_hit("🟢 NOWE (LINK)", gmina, kw_link, link_title)
+                        found.append((gmina, kw_link, link_title, cu, "NOWE"))
 
             if cu not in visited and cu not in dead_set:
                 visited.add(cu)
@@ -2503,6 +2556,7 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
 
