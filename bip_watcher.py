@@ -336,6 +336,36 @@ def iso_parse(s: str):
     except Exception:
         return None
 
+def _canon(u: str) -> str:
+    return canonical_url(normalize_url(u or ""))
+
+def retry_add(gkey: str, retry_seen: set, url: str):
+    """
+    Deduplikowany retry (po canonical_url).
+    retry_seen trzyma hashe canonical URL, żeby lista nie puchła.
+    """
+    cu = _canon(url)
+    if not cu:
+        return
+    hu = sha1(cu)
+    if hu in retry_seen:
+        return
+    retry_seen.add(hu)
+    state.gmina_retry.setdefault(gkey, []).append(cu)
+
+def dead_add(dead_key: str, dead_set: set, url: str):
+    """
+    Dodaje URL do dead_urls i aktualizuje dead_set w trakcie runu,
+    żeby nie mielić 404/410 wielokrotnie.
+    """
+    cu = _canon(url)
+    if not cu:
+        return
+    if cu in dead_set:
+        return
+    dead_set.add(cu)
+    state.dead_urls.setdefault(dead_key, []).append(cu)
+
 def pick_rows_for_shard(rows, shard_index: int, shard_total: int):
     """
     Stabilny podział: ten sam wiersz zawsze trafi do tego samego sharda.
@@ -1509,12 +1539,15 @@ async def fetch_start_matrix(session_default: aiohttp.ClientSession,
 async def fetch(session: aiohttp.ClientSession, url: str, extra_headers: dict = None):
     url = normalize_url(url)
     domain = urlparse(url).netloc
+
     for ssl_mode in (False, None):
         try:
             await rate_limiter.wait(domain)
+
             headers = get_random_headers()
             if extra_headers:
                 headers.update(extra_headers)
+
             t0 = time.time()
             async with session.get(
                 url,
@@ -1526,26 +1559,38 @@ async def fetch(session: aiohttp.ClientSession, url: str, extra_headers: dict = 
                 final = normalize_url(str(resp.url))
                 status = resp.status
                 ctype = (resp.headers.get("Content-Type", "") or "").lower()
+
                 data = await resp.read()
                 try:
                     text = data.decode("utf-8", errors="ignore")
                 except Exception:
                     text = data.decode("latin-1", errors="ignore")
+
                 ms = round((time.time() - t0) * 1000)
+
+                # standardowe kary dla 403/429
                 if status in (403, 429):
                     rate_limiter.report_403(domain)
+
                 # ✅ BLOCK-PAGE (często status=200, ale treść to blokada)
                 if status == 200 and is_block_page(text):
+                    # ważne: kara domeny jak za 429/403, inaczej WAF będzie się nasilał
+                    rate_limiter.report_403(domain)
                     return None, final, "blocked", 429, ctype, "block_page_detected", ms
+
                 if "pdf" in ctype or final.lower().endswith(".pdf"):
                     return None, final, "pdf", status, ctype, None, ms
+
                 if status != 200:
                     if ssl_mode is None:
                         return None, final, "http_err", status, ctype, f"HTTP {status}", ms
                     continue
+
                 if text and len(text) > 800 and re.search(r"<[^>]+>", text[:2500]) is None:
                     return None, final, "non_html", status, ctype, None, ms
+
                 return text, final, "html", status, ctype, None, ms
+
         except asyncio.TimeoutError:
             if ssl_mode is None:
                 return None, url, "timeout", None, "", "request_timeout", 0
@@ -1554,6 +1599,7 @@ async def fetch(session: aiohttp.ClientSession, url: str, extra_headers: dict = 
             if ssl_mode is None:
                 return None, url, "exc", None, "", str(e), 0
             continue
+
     return None, url, "exc", None, "", "fetch_failed", 0
 
 # ===================== PAGINATION GUARD =====================
@@ -1777,45 +1823,66 @@ async def phase1_discover(gmina: str, start_url: str,
 async def fetch_conditional(session: aiohttp.ClientSession, url: str, extra_headers: dict = None):
     url = normalize_url(url)
     domain = urlparse(url).netloc
+
     for ssl_mode in (False, None):
         try:
             await rate_limiter.wait(domain)
+
             headers = get_random_headers()
             if extra_headers:
                 headers.update(extra_headers)
+
             t0 = time.time()
-            async with session.get(url, timeout=REQUEST_TIMEOUT, ssl=ssl_mode,
-                                   allow_redirects=True, headers=headers) as resp:
+            async with session.get(
+                url,
+                timeout=REQUEST_TIMEOUT,
+                ssl=ssl_mode,
+                allow_redirects=True,
+                headers=headers
+            ) as resp:
                 final = normalize_url(str(resp.url))
                 status = resp.status
                 ctype = (resp.headers.get("Content-Type", "") or "").lower()
+
                 etag = resp.headers.get("ETag", "") or resp.headers.get("Etag", "") or ""
                 last_mod = resp.headers.get("Last-Modified", "") or resp.headers.get("last-modified", "") or ""
                 resp_meta = {"etag": etag, "last_modified": last_mod}
+
                 if status == 304:
                     ms = round((time.time() - t0) * 1000)
                     return None, final, "not_modified", status, ctype, None, ms, resp_meta
+
                 data = await resp.read()
                 try:
                     text = data.decode("utf-8", errors="ignore")
                 except Exception:
                     text = data.decode("latin-1", errors="ignore")
+
                 ms = round((time.time() - t0) * 1000)
+
+                # standardowe kary dla 403/429
                 if status in (403, 429):
                     rate_limiter.report_403(domain)
+
                 # ✅ BLOCK-PAGE (często status=200, ale treść to blokada)
                 if status == 200 and is_block_page(text):
-                    # traktujemy jak retryable (umownie 429)
+                    # ważne: kara domeny jak za 429/403
+                    rate_limiter.report_403(domain)
                     return None, final, "blocked", 429, ctype, "block_page_detected", ms, resp_meta
+
                 if "pdf" in ctype or final.lower().endswith(".pdf"):
                     return None, final, "pdf", status, ctype, None, ms, resp_meta
+
                 if status != 200:
                     if ssl_mode is None:
                         return None, final, "http_err", status, ctype, f"HTTP {status}", ms, resp_meta
                     continue
+
                 if text and len(text) > 800 and re.search(r"<[^>]+>", text[:2500]) is None:
                     return None, final, "non_html", status, ctype, None, ms, resp_meta
+
                 return text, final, "html", status, ctype, None, ms, resp_meta
+
         except asyncio.TimeoutError:
             if ssl_mode is None:
                 return None, url, "timeout", None, "", "request_timeout", 0, {}
@@ -1824,6 +1891,7 @@ async def fetch_conditional(session: aiohttp.ClientSession, url: str, extra_head
             if ssl_mode is None:
                 return None, url, "exc", None, "", str(e), 0, {}
             continue
+
     return None, url, "exc", None, "", "fetch_failed", 0, {}
 
 # ===================== PHASE 2 =====================
@@ -1839,23 +1907,34 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
 
     gkey = gmina_cache_key(gmina, "https://" + allowed_host)
     dead_key = f"dead_{gkey}"
+
+    # ✅ dead_set aktualizowany w locie
     dead_set = set(state.dead_urls.get(dead_key, []) or [])
 
+    # ✅ dedup retry (po canonical_url)
+    retry_seen = set()
+    existing_retry = (state.gmina_retry or {}).get(gkey, []) or []
+    for u in existing_retry:
+        retry_seen.add(sha1(_canon(u)))
+
+    # ---- najpierw retry (priorytet) ----
     retry_list = (state.gmina_retry or {}).get(gkey, []) or []
     for u in retry_list[:3000]:
-        u = normalize_url(u)
-        if u and u not in visited and u not in dead_set:
-            visited.add(u)
-            q.appendleft((u, 0))
+        cu = _canon(u)
+        if cu and cu not in visited and cu not in dead_set:
+            visited.add(cu)
+            q.appendleft((cu, 0))
 
+    # wyczyść retry w pamięci (zostawimy tylko nowe dopiski przez retry_add)
     if isinstance(state.gmina_retry, dict):
         state.gmina_retry[gkey] = []
 
+    # ---- potem seeds ----
     for su in seed_urls:
-        su = normalize_url(su)
-        if su not in visited and su not in dead_set:
-            visited.add(su)
-            q.append((su, 0))
+        cu = _canon(su)
+        if cu and cu not in visited and cu not in dead_set:
+            visited.add(cu)
+            q.append((cu, 0))
 
     def allow_url(u: str) -> bool:
         return same_base_domain(urlparse(u).netloc.lower(), allowed_host)
@@ -1868,7 +1947,10 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
         if depth > PHASE2_MAX_DEPTH:
             continue
 
-        url = normalize_url(url)
+        url = _canon(url)
+        if not url:
+            continue
+
         url_hash = url_key(url)
         is_listing = is_listing_url(url) or is_home_url(url)
 
@@ -1910,7 +1992,8 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             session_crawl, url, extra_headers
         )
 
-        url_dedup_final = sha1(canonical_url(final or url))
+        final_c = _canon(final or url)
+        url_dedup_final = sha1(canonical_url(final_c))
 
         # ================= 304 =================
         if kind == "not_modified":
@@ -1933,13 +2016,14 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                     "last_modified": "",
                     "gmina": gmina,
                     "title": (prevb.get("title") if prevb else ""),
-                    "url": final or url,
+                    "url": final_c,
                     "keywords": (prevb.get("keywords") if prevb else []),
                     "att_sig": (prevb.get("att_sig") if prevb else ""),
                     "status": "BLOCKED",
                 }
 
-            state.gmina_retry.setdefault(gkey, []).append(url)
+            # ✅ dedup retry
+            retry_add(gkey, retry_seen, final_c)
             urls_seen.discard(url_hash)
             continue
 
@@ -1948,7 +2032,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
 
             # martwe: nie retry'ujemy
             if status in (404, 410):
-                state.dead_urls.setdefault(dead_key, []).append(url)
+                dead_add(dead_key, dead_set, final_c)
                 continue
 
             # retry tylko dla problemów sieci/WAF/5xx
@@ -1962,16 +2046,16 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                         "last_modified": "",
                         "gmina": gmina,
                         "title": (prevf.get("title") if prevf else ""),
-                        "url": final or url,
+                        "url": final_c,
                         "keywords": (prevf.get("keywords") if prevf else []),
                         "att_sig": (prevf.get("att_sig") if prevf else ""),
                         "status": "FAILED",
                     }
 
-                state.gmina_retry.setdefault(gkey, []).append(url)
+                # ✅ dedup retry
+                retry_add(gkey, retry_seen, final_c)
                 urls_seen.discard(url_hash)
 
-            # reszta (np. pdf/non_html) – po prostu pomijamy tutaj
             continue
 
         # ================= HTML =================
@@ -1986,7 +2070,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
 
         ok_any, kw_any = keyword_match_in_blob(blob)
         fp = page_fingerprint(title, h1, fast_text)
-        att_sig = attachments_signature(soup, final)
+        att_sig = attachments_signature(soup, final_c)
 
         status_new = "NO_MATCH"
         if ok_any:
@@ -1995,10 +2079,9 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             if ok_any:
                 status_new = "ZMIANA"
 
-        # ✅ tytuł do cache: preferuj H1/H2/<title>, a URL tylko jako fallback
         page_title = (h1 or h2 or title or "").strip()
         if not page_title:
-            page_title = final
+            page_title = final_c
 
         async with state.cache_lock:
             content_seen[url_dedup_final] = {
@@ -2008,7 +2091,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                 "last_modified": (resp_meta.get("last_modified") if resp_meta else ""),
                 "gmina": gmina,
                 "title": page_title[:240],
-                "url": final,
+                "url": final_c,
                 "keywords": [kw_any] if ok_any else [],
                 "fp": fp,
                 "att_sig": att_sig,
@@ -2016,27 +2099,32 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             }
 
         if status_new in {"NOWE", "ZMIANA"}:
-            # print_hit przyjmuje "title" jako tekst do pokazania, więc pokaż tytuł strony, a URL osobno masz w found[]
             print_hit(f"🟢 {status_new}", gmina, kw_any, page_title)
-            found.append((gmina, kw_any, page_title, final, status_new))
+            found.append((gmina, kw_any, page_title, final_c, status_new))
 
         # ================= LINK DETECTION =================
-        for abs_u, txt in iter_links_fast(soup, final):
+        for abs_u, txt in iter_links_fast(soup, final_c):
 
-            if not allow_url(abs_u):
+            cu = _canon(abs_u)
+            if not cu:
                 continue
 
-            filename = urlparse(abs_u).path.split("/")[-1]
+            if not allow_url(cu):
+                continue
+
+            if cu in dead_set:
+                continue
+
+            filename = urlparse(cu).path.split("/")[-1]
             blob_link = f"{txt} {filename}"
             ok_link, kw_link = keyword_match_in_blob(blob_link)
 
             if ok_link:
-                key = sha1(canonical_url(abs_u))
+                key = sha1(canonical_url(cu))
                 if key not in content_seen:
-                    # tytuł linka: tekst kotwicy, a jak pusty to nazwa pliku/url
                     link_title = (txt or "").strip()
                     if not link_title:
-                        link_title = filename or abs_u
+                        link_title = filename or cu
 
                     content_seen[key] = {
                         "found_at": now_iso(),
@@ -2045,24 +2133,25 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                         "last_modified": "",
                         "gmina": gmina,
                         "title": link_title[:240],
-                        "url": abs_u,
+                        "url": cu,
                         "keywords": [kw_link],
                         "att_sig": "",
                         "status": "NOWE",
                     }
                     print_hit("🟢 NOWE (LINK)", gmina, kw_link, link_title)
-                    found.append((gmina, kw_link, link_title, abs_u, "NOWE"))
+                    found.append((gmina, kw_link, link_title, cu, "NOWE"))
 
-            if abs_u not in visited and abs_u not in dead_set:
-                visited.add(abs_u)
-                q.append((abs_u, depth + 1))
+            if cu not in visited and cu not in dead_set:
+                visited.add(cu)
+                q.append((cu, depth + 1))
 
+    # ✅ realny frontier_len (co zostało w kolejce)
     return found, {
         "status": "OK",
         "pages_ok": pages_ok,
-        "stop_reason": "QUEUE_EMPTY",
-        "frontier_len": 0,
-        "retry_len": len(state.gmina_retry.get(gkey, [])),
+        "stop_reason": ("SHUTDOWN" if state.shutdown_requested else "QUEUE_EMPTY"),
+        "frontier_len": len(q),
+        "retry_len": len((state.gmina_retry or {}).get(gkey, []) or []),
     }
 
 
@@ -2231,12 +2320,10 @@ async def worker(name: str,
                         purge_old_cache(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints, state.dead_urls)
                 except Exception as ex:
                     print(f"⚠️ checkpoint save failed: {ex}", flush=True)
-            frontier_len = p2meta.get('frontier_len', '?')
-            retry_len = p2meta.get('retry_len', '?')
-            print(f"✅ [{name}] DONE: {gmina} (found {len(found)}, frontier={frontier_len}, retry={retry_len})", flush=True)
             frontier_len = int((p2meta or {}).get("frontier_len", 0) or 0)
             retry_len = int((p2meta or {}).get("retry_len", 0) or 0)
             print(f"✅ [{name}] DONE: {gmina} (found {len(found)}, frontier={frontier_len}, retry={retry_len})", flush=True)
+            
             if frontier_len == 0 and retry_len == 0:
                 print(f"   ✅ Gmina {gmina} – pełne przeskanowanie (frontier i retry puste)")
 
@@ -2416,6 +2503,7 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
 
