@@ -113,6 +113,13 @@ CRAWL_ALL_INTERNAL_LINKS = True  # ✅ bierz wszystko z domeny, poza ignorowanym
 BOOTSTRAP_MODE = False
 FORCE_PHASE1_REDISCOVERY = True   # ✅ Phase1 zawsze robi discovery, seed_cache tylko jako dodatek
 
+# ===================== REPORTING RULES (NEW) =====================
+REAL_NEW_ONLY = True           # NOWE tylko gdy nie ma rekordu w cache (content_seen)
+CHANGE_ONLY_ATTACHMENTS = True # ZMIANA tylko gdy zmieniły się załączniki (att_sig)
+ENABLE_LINK_HITS = False       # WYŁĄCZA "NOWE (LINK)" z samych anchorów (zalecane)
+ALIAS_FINAL_AND_SOURCE_KEYS = True  # zapisuj meta pod kluczem final i źródłowym (anti-redirect duplicates)
+
+
 # ===================== EMAIL =====================
 EMAIL_TO = "planowanie@wpd-polska.pl"
 ENABLE_EMAIL = False
@@ -222,8 +229,8 @@ PAGINATION_CAP_LOW  = 1200 if UNLIMITED_SCAN else 300
 CACHE_CHECKPOINT_EVERY_N_GMINY = 3
 SEED_CACHE_TTL_DAYS = 30
 FAST_TEXT_MAX_CHARS = 3500
-HIT_RECHECK_TTL_HOURS = 168   # HIT/NOWE/ZMIANA: recheck co 24h
-NO_MATCH_RECHECK_TTL_HOURS = 168  # NO_MATCH: recheck co 24 godziny (żeby złapać późniejsze publikacje)
+HIT_RECHECK_TTL_HOURS = 24   # HIT/NOWE/ZMIANA: recheck co 24h
+NO_MATCH_RECHECK_TTL_HOURS = 24  # NO_MATCH: recheck co 24 godziny (żeby złapać późniejsze publikacje)
 BLOCKED_RECHECK_TTL_MIN = env_int("BLOCKED_RECHECK_TTL_MIN", 180)  # 60–360
 FAILED_RECHECK_TTL_MIN  = env_int("FAILED_RECHECK_TTL_MIN", 120)   # opcjonalnie
 FAST_FPRINT_MAX_CHARS = 6000
@@ -1935,6 +1942,7 @@ async def fetch_conditional(session: aiohttp.ClientSession, url: str, extra_head
     return None, url, "exc", None, "", "fetch_failed", 0, {}
 
 # ===================== PHASE 2 =====================
+# ===================== PHASE 2 =====================
 async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                       urls_seen: set, content_seen: dict, diag):
 
@@ -1994,39 +2002,43 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
         url_hash = url_key(url)
         is_listing = is_listing_url(url) or is_home_url(url)
 
+        # --- klucze cache ---
         url_dedup = sha1(canonical_url(url))
-        prev = content_seen.get(url_dedup)
 
-        # ================= TTL LOGIC =================
-        if USE_CACHE and prev and not is_listing:
-            status_prev = prev.get("status")
+        # ✅ IMPORTANT: prev weźmiemy docelowo po final_c (po redirectach)
+        prev_pre = content_seen.get(url_dedup)
+
+        # ================= TTL LOGIC (na bazie prev_pre; doprecyzujemy po final) =================
+        if USE_CACHE and prev_pre and not is_listing:
+            status_prev = prev_pre.get("status")
 
             if status_prev in {"NOWE", "ZMIANA", "HIT"}:
-                if not should_recheck_hit(prev):
+                if not should_recheck_hit(prev_pre):
                     diag["counts"]["hit_ttl_skip"] += 1
                     continue
 
             elif status_prev == "NO_MATCH":
-                if not should_recheck_no_match(prev):
+                if not should_recheck_no_match(prev_pre):
                     diag["counts"]["no_match_ttl_skip"] += 1
                     continue
 
             elif status_prev == "BLOCKED":
-                if not should_recheck_block(prev, BLOCKED_RECHECK_TTL_MIN):
+                if not should_recheck_block(prev_pre, BLOCKED_RECHECK_TTL_MIN):
                     diag["counts"]["blocked_ttl_skip"] += 1
                     continue
 
             elif status_prev == "FAILED":
-                if not should_recheck_block(prev, FAILED_RECHECK_TTL_MIN):
+                if not should_recheck_block(prev_pre, FAILED_RECHECK_TTL_MIN):
                     diag["counts"]["failed_ttl_skip"] += 1
                     continue
 
         # ================= CONDITIONAL HEADERS =================
         extra_headers = {}
-        if prev and prev.get("etag"):
-            extra_headers["If-None-Match"] = prev.get("etag")
-        if prev and prev.get("last_modified"):
-            extra_headers["If-Modified-Since"] = prev.get("last_modified")
+        # (tu używamy prev_pre, bo jeszcze nie znamy final; po fetch przemapujemy)
+        if prev_pre and prev_pre.get("etag"):
+            extra_headers["If-None-Match"] = prev_pre.get("etag")
+        if prev_pre and prev_pre.get("last_modified"):
+            extra_headers["If-Modified-Since"] = prev_pre.get("last_modified")
 
         html, final, kind, status, ctype, err, ms, resp_meta = await fetch_conditional(
             session_crawl, url, extra_headers
@@ -2035,12 +2047,29 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
         final_c = _canon(final or url)
         url_dedup_final = sha1(canonical_url(final_c))
 
+        # ✅ kluczowe: prev po FINAL (redirect-proof) + fallback
+        prev = content_seen.get(url_dedup_final) or prev_pre
+
+        # debug redirect count (opcjonalne)
+        try:
+            if final_c and final_c != url:
+                diag["counts"]["redirected"] += 1
+        except Exception:
+            pass
+
         # ================= 304 =================
         if kind == "not_modified":
             async with state.cache_lock:
                 if url_dedup_final in content_seen:
                     content_seen[url_dedup_final]["last_checked"] = now_iso()
                     content_seen[url_dedup_final]["status"] = "HIT"
+                # ✅ aliasuj też klucz wejściowy, żeby kolejne runy nie robiły duplikatów po redirect
+                if ALIAS_FINAL_AND_SOURCE_KEYS and (url_dedup != url_dedup_final):
+                    if url_dedup in content_seen:
+                        content_seen[url_dedup]["last_checked"] = now_iso()
+                        content_seen[url_dedup]["status"] = "HIT"
+                    else:
+                        content_seen[url_dedup] = content_seen.get(url_dedup_final, {}).copy()
             continue
 
         # ================= BLOCKED =================
@@ -2048,7 +2077,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             diag["counts"]["blocked_13"] += 1
 
             async with state.cache_lock:
-                prevb = content_seen.get(url_dedup_final)
+                prevb = content_seen.get(url_dedup_final) or prev_pre
                 content_seen[url_dedup_final] = {
                     "found_at": (prevb.get("found_at") if prevb else now_iso()),
                     "last_checked": now_iso(),
@@ -2059,8 +2088,11 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                     "url": final_c,
                     "keywords": (prevb.get("keywords") if prevb else []),
                     "att_sig": (prevb.get("att_sig") if prevb else ""),
+                    "fp": (prevb.get("fp") if prevb else ""),
                     "status": "BLOCKED",
                 }
+                if ALIAS_FINAL_AND_SOURCE_KEYS and (url_dedup != url_dedup_final):
+                    content_seen[url_dedup] = content_seen[url_dedup_final]
 
             # ✅ dedup retry
             retry_add(gkey, retry_seen, final_c)
@@ -2078,7 +2110,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             # retry tylko dla problemów sieci/WAF/5xx
             if status in (403, 429) or kind in {"timeout", "exc"} or (status and int(status) >= 500):
                 async with state.cache_lock:
-                    prevf = content_seen.get(url_dedup_final)
+                    prevf = content_seen.get(url_dedup_final) or prev_pre
                     content_seen[url_dedup_final] = {
                         "found_at": (prevf.get("found_at") if prevf else now_iso()),
                         "last_checked": now_iso(),
@@ -2089,8 +2121,11 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                         "url": final_c,
                         "keywords": (prevf.get("keywords") if prevf else []),
                         "att_sig": (prevf.get("att_sig") if prevf else ""),
+                        "fp": (prevf.get("fp") if prevf else ""),
                         "status": "FAILED",
                     }
+                    if ALIAS_FINAL_AND_SOURCE_KEYS and (url_dedup != url_dedup_final):
+                        content_seen[url_dedup] = content_seen[url_dedup_final]
 
                 # ✅ dedup retry
                 retry_add(gkey, retry_seen, final_c)
@@ -2107,44 +2142,59 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
         title, h1, h2, meta_blob = extract_title_h1_h2(soup)
         fast_text = _soup_fast_text(soup)
         blob = f"{title} {h1} {h2} {fast_text}"
-        
+
         ok_any, kw_any = keyword_match_in_blob(blob)
         fp = page_fingerprint(title, h1, fast_text)
         att_sig = attachments_signature(soup, final_c)
-        
+
         # ✅ filtr: nie raportuj stron-szablonów (home/listing/brand BIP), ale crawluj linki normalnie
         generic_page = is_generic_bip_page(title, h1, final_c, fast_text=fast_text)
         if generic_page:
             diag["counts"]["generic_skipped"] += 1
             ok_any = False
             kw_any = None
-        
-        status_new = "NO_MATCH"
-        if ok_any:
-            status_new = "NOWE"
-        
-        if prev and (prev.get("fp") != fp or prev.get("att_sig") != att_sig):
+
+        # ================= STATUS LOGIC (REAL NEW + CHANGE ONLY ATTACHMENTS) =================
+        # NOWE: tylko jeśli prev nie istnieje (REAL_NEW_ONLY)
+        # ZMIANA: tylko jeśli zmieniły się załączniki (CHANGE_ONLY_ATTACHMENTS)
+        if prev is None:
+            status_new = "NOWE" if ok_any else "NO_MATCH"
+        else:
+            # już widziane: NIE może stać się NOWE
+            status_new = "HIT" if ok_any else "NO_MATCH"
+
             if ok_any:
-                status_new = "ZMIANA"
+                if CHANGE_ONLY_ATTACHMENTS:
+                    if (prev.get("att_sig") or "") != (att_sig or ""):
+                        status_new = "ZMIANA"
+                else:
+                    # fallback: stare zachowanie (fp lub att_sig)
+                    if (prev.get("fp") != fp) or (prev.get("att_sig") != att_sig):
+                        status_new = "ZMIANA"
 
         page_title = (h1 or h2 or title or "").strip()
         if not page_title:
             page_title = final_c
 
+        meta = {
+            "found_at": (prev.get("found_at") if prev else now_iso()),
+            "last_checked": now_iso(),
+            "etag": (resp_meta.get("etag") if resp_meta else ""),
+            "last_modified": (resp_meta.get("last_modified") if resp_meta else ""),
+            "gmina": gmina,
+            "title": page_title[:240],
+            "url": final_c,
+            "keywords": [kw_any] if ok_any else [],
+            "fp": fp,
+            "att_sig": att_sig,
+            "status": status_new,
+        }
+
         async with state.cache_lock:
-            content_seen[url_dedup_final] = {
-                "found_at": (prev.get("found_at") if prev else now_iso()),
-                "last_checked": now_iso(),
-                "etag": (resp_meta.get("etag") if resp_meta else ""),
-                "last_modified": (resp_meta.get("last_modified") if resp_meta else ""),
-                "gmina": gmina,
-                "title": page_title[:240],
-                "url": final_c,
-                "keywords": [kw_any] if ok_any else [],
-                "fp": fp,
-                "att_sig": att_sig,
-                "status": status_new,
-            }
+            content_seen[url_dedup_final] = meta
+            # ✅ alias na klucz wejściowy (anti-redirect duplicates)
+            if ALIAS_FINAL_AND_SOURCE_KEYS and (url_dedup != url_dedup_final):
+                content_seen[url_dedup] = meta
 
         if status_new in {"NOWE", "ZMIANA"}:
             print_hit(f"🟢 {status_new}", gmina, kw_any, page_title)
@@ -2166,13 +2216,13 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             filename = urlparse(cu).path.split("/")[-1]
             blob_link = f"{txt} {filename}"
             ok_link, kw_link = keyword_match_in_blob(blob_link)
-            
-            if ok_link:
+
+            # ✅ WYŁĄCZAMY "NOWE (LINK)" (zalecane)
+            if ENABLE_LINK_HITS and ok_link:
                 link_title = (txt or "").strip()
                 if not link_title:
                     link_title = filename or cu
-            
-                # ✅ odfiltruj linki o tytule brandowym/bez treści
+
                 lt = link_title.lower()
                 if ("biuletyn informacji publicznej" in lt) or (lt == "bip") or (len(lt) <= 6 and "bip" in lt):
                     diag["counts"]["generic_link_skipped"] += 1
@@ -2188,6 +2238,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                             "title": link_title[:240],
                             "url": cu,
                             "keywords": [kw_link],
+                            "fp": "",
                             "att_sig": "",
                             "status": "NOWE",
                         }
@@ -2556,6 +2607,7 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
 
