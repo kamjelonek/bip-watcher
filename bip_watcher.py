@@ -1171,10 +1171,15 @@ ATT_EXT = (
     ".tif", ".tiff",
 )
 
-def attachments_signature(soup: BeautifulSoup, base_url: str) -> str:
+def attachments_signature(soup: BeautifulSoup, base_url: str) -> set:
+    """
+    Zwraca ZBIÓR (set) canonicznych URL-i załączników na stronie.
+    Porównanie zbiorów (nowe - stare) pozwala wykryć DODANE pliki
+    niezależnie od tego czy strona to listing czy pojedyncze ogłoszenie.
+    """
     if not soup:
-        return ""
-    items = []
+        return set()
+    result = set()
     for a in soup.find_all("a", href=True):
         href = (a.get("href") or "").strip()
         if not href:
@@ -1184,36 +1189,39 @@ def attachments_signature(soup: BeautifulSoup, base_url: str) -> str:
         if not any(low.endswith(ext) for ext in ATT_EXT):
             continue
         p = urlparse(abs_u)
-        # ===================== FIX 1: lstrip("www.") -> removeprefix =====================
-        # lstrip usuwa DOWOLNĄ kombinację liter 'w' i '.' z lewej strony,
-        # co niszczyło np. "wroclaw.bip.pl" -> "oclaw.bip.pl".
-        # To powodowało niestabilność att_sig między runami dla tych samych URL-i.
+        # FIX 1: lstrip("www.") -> startswith (lstrip niszczyło np. "wroclaw.bip.pl")
         netloc = p.netloc.lower()
         if netloc.startswith("www."):
             netloc = netloc[4:]
-        clean_url = urlunparse((
-            "https",
-            netloc,
-            p.path,
-            "",
-            "",
-            ""
-        ))
-        txt = a.get_text(" ", strip=True) or ""
-        size = ""
-        m = re.search(
-            r"(\d+(?:[.,]\d+)?)\s*(kb|mb|gb)",
-            txt,
-            flags=re.IGNORECASE
-        )
-        if m:
-            size = m.group(1).replace(",", ".") + m.group(2).lower()
-        items.append((clean_url, size))
-    if not items:
-        return ""
-    items.sort()
-    blob = "||".join([f"{u}::{s}" for u, s in items])
-    return sha1(blob)
+        clean_url = urlunparse(("https", netloc, p.path, "", "", ""))
+        result.add(clean_url)
+    return result
+
+
+def att_sig_serialize(att_set: set) -> str:
+    """Serializuje zbiór załączników do JSON (do zapisu w cache)."""
+    return json.dumps(sorted(att_set), ensure_ascii=False)
+
+
+def att_sig_deserialize(stored) -> set:
+    """Deserializuje zbiór załączników z cache (obsługuje stary format hash i nowy JSON)."""
+    if not stored:
+        return set()
+    if isinstance(stored, set):
+        return stored
+    if isinstance(stored, list):
+        return set(stored)
+    if isinstance(stored, str):
+        # nowy format: JSON lista
+        try:
+            data = json.loads(stored)
+            if isinstance(data, list):
+                return set(data)
+        except Exception:
+            pass
+        # stary format: hash sha1 — nie da się odtworzyć zbioru, traktuj jako pusty
+        return set()
+    return set()
 
 # ===================== START URL VARIANTS =====================
 def _www_variants(netloc: str):
@@ -2180,39 +2188,23 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
 
         ok_any, kw_any = keyword_match_in_blob(blob)
         fp = page_fingerprint(title, h1, fast_text)
-        att_sig = attachments_signature(soup, final_c)
+        att_set = attachments_signature(soup, final_c)
 
-        # ✅ filtr: nie raportuj stron-szablonów (home/listing/brand BIP), ale crawluj linki normalnie
-        generic_page = is_generic_bip_page(title, h1, final_c, fast_text=fast_text)
-        if generic_page:
-            diag["counts"]["generic_skipped"] += 1
-            ok_any = False
-            kw_any = None
-
-        # ===================== FIX 3: Strony listingowe nigdy nie mogą dać ZMIANA =====================
-        # Nawet jeśli generic_page=False (strona ma dużo treści i przeszła przez filtr),
-        # strony listingowe BIP mają att_sig zmieniające się przy każdym nowym wpisie
-        # na liście. Dlatego dla stron home/listing całkowicie pomijamy porównanie att_sig
-        # i wymuszamy status HIT (jeśli była wcześniej widziana) lub NO_MATCH.
-        force_no_att_sig_check = is_listing_url(final_c) or is_home_url(final_c)
-
-        # ================= STATUS LOGIC (REAL NEW + CHANGE ONLY ATTACHMENTS) =================
-        # NOWE: tylko jeśli prev nie istnieje (REAL_NEW_ONLY)
-        # ZMIANA: tylko jeśli zmieniły się załączniki (CHANGE_ONLY_ATTACHMENTS)
+        # ================= STATUS LOGIC =================
+        # NOWE:   URL nigdy wcześniej nie widziany
+        # ZMIANA: na stronie pojawiły się NOWE pliki (których wcześniej nie było)
+        #         — porównujemy zbiory, nie hashe; każda strona bez wyjątków
+        # Filtry listingów usunięte — każda strona gdzie dodano załącznik = ZMIANA
         if prev is None:
             status_new = "NOWE" if ok_any else "NO_MATCH"
         else:
-            # już widziane: NIE może stać się NOWE
             status_new = "HIT" if ok_any else "NO_MATCH"
 
-            if ok_any and not force_no_att_sig_check:
-                if CHANGE_ONLY_ATTACHMENTS:
-                    if (prev.get("att_sig") or "") != (att_sig or ""):
-                        status_new = "ZMIANA"
-                else:
-                    # fallback: stare zachowanie (fp lub att_sig)
-                    if (prev.get("fp") != fp) or (prev.get("att_sig") != att_sig):
-                        status_new = "ZMIANA"
+            prev_att_set = att_sig_deserialize(prev.get("att_sig") or "")
+            added_files = att_set - prev_att_set   # pliki których wcześniej nie było
+            if added_files:
+                status_new = "ZMIANA"
+                diag["counts"]["att_added"] += len(added_files)
 
         page_title = (h1 or h2 or title or "").strip()
         if not page_title:
@@ -2228,7 +2220,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             "url": final_c,
             "keywords": [kw_any] if ok_any else [],
             "fp": fp,
-            "att_sig": att_sig,
+            "att_sig": att_sig_serialize(att_set),
             "status": status_new,
         }
 
