@@ -3,7 +3,8 @@ import time
 from collections import deque
 from urllib.parse import urlparse, urljoin, urlunparse
 from bip_watcher.utils import normalize_url, canonical_url, is_valid_url, safe_soup, url_key
-from bip_watcher.networking.fetch_normal import fetch_start_matrix, collect_sitemap_urls
+from bip_watcher.networking.fetch_normal import fetch_start_matrix
+from bip_watcher.networking.sitemap import collect_sitemap_urls
 from bip_watcher.parsing.link_extraction import iter_links_fast, should_skip_href
 from bip_watcher.parsing.soup_utils import extract_title_h1_h2, _soup_fast_text
 from bip_watcher.config import *
