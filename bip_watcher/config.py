@@ -163,3 +163,36 @@ ATT_EXT = (
     ".dwg", ".dxf",
     ".tif", ".tiff",
 )
+
+# ===================== LISTING URL BONUS (SITEMAP) =====================
+LISTING_URL_HINTS = [
+    "ogloszenia", "ogłoszenia", "obwieszc", "komunikat", "zawiadom",
+    "konsultac", "wylozen", "wyłożen", "przystap", "przystąp",
+    "prawo-miejscowe", "prawo_miejscowe", "uchwaly", "uchwał",
+    "rejestr-urbanist", "rejestr_urbanist", "urbanist",
+    "mpzp", "plan-ogolny", "plan_ogolny", "studium", "planowanie", 
+    "warunki-zabudowy", "warunki_zabudowy", "wz",
+    "ochrona-srodowiska", "ochrona_srodowiska",
+    "srodowisko", "środowisko", "pv", "fotowolta", "fotowoltaika", "slonecz", "słonecz",
+    "oze", "energia", "energetyka", "decyzje-srodowisk", "decyzje_srodowisk", "ooś", "oos",
+    # DODANE:
+    "archiwum-ogloszen", "archiwum_ogloszen", "bip-archiwum",
+    "kategoria", "kategorie", "lista-ogloszen", "lista_ogloszen",
+    "decyzje", "decyzja", "postanowienie", "obwieszczenie",
+    "srodowiskowe", "srodowiskowa", "srodowiskowych",
+    "plany", "plan", "plany-zagospodarowania", "plany_zagospodarowania",
+    "uchwala", "uchwaly", "uchwal", "uchwalone",
+]
+
+JS_EXTRA_SEED_PATHS = [
+    "/rss", "/feed", "/rss.xml", "/feed.xml",
+    "/wp-json", "/wp-json/wp/v2/posts",
+    "/api", "/api/ogloszenia", "/api/announcements",
+    # DODANE:
+    "/sitemap.xml.gz", "/sitemap_index.xml.gz", "/sitemap.php",
+    "/sitemap.xml?page=1", "/sitemap.xml?page=2",
+    "/ogloszenia.xml", "/ogloszenia.rss",
+    "/kategorie.xml", "/kategorie.rss",
+    "/bip-sitemap.xml", "/bip-sitemap_index.xml",
+]
+
