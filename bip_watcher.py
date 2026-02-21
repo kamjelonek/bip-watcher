@@ -1030,7 +1030,7 @@ def is_generic_bip_page(title: str, h1: str, url: str, fast_text: str = "") -> b
         return False
 
     # krótkie, typowo szablonowe nagłówki
-    if len(blob) <= 90 and SITEWIDE_TITLES_RE.search(blob) and len(txt) < 600:
+    if len(blob) <= 90 and SITEWIDE_TITLES_RE.search(blob) and len(txt) < 300:
         return True
 
     # ===================== FIX 2: Strony-listy kategorii =====================
@@ -1045,10 +1045,10 @@ def is_generic_bip_page(title: str, h1: str, url: str, fast_text: str = "") -> b
     return False
 
 _KILL_UI_RE = re.compile(
-    r"(menu|nav|navbar|sidebar|panel|left|right|breadcrumbs|okruszk|stopka|footer|header|"
+    r"(^menu$|^nav$|navbar|^sidebar$|breadcrumbs|okruszk|^stopka$|^footer$|^header$|"
     r"cookie|rodo|deklaracja|dostepn|dostępn|wyszuk|search|login|logowan|"
     r"share|udostepn|udostępn|drukuj|print|rss|"
-    r"skroty|skróty|szybkie|quick|shortcut|przydatne|polecane|na-skróty|na-skroty|links|linki)",
+    r"skroty|skróty|szybkie|quick|shortcut|przydatne|polecane|na-skróty|na-skroty)",
     re.IGNORECASE
 )
 
