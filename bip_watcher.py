@@ -983,12 +983,32 @@ SITEWIDE_TITLES_RE = re.compile(
     re.IGNORECASE
 )
 
+# ===================== FIX 1: Regex do wykrywania stron-list BIPu =====================
+# Strony, których tytuł/H1 to wyłącznie generyczna etykieta kategorii BIP
+# (np. "Warunki zabudowy", "Miejscowy plan zagospodarowania przestrzennego")
+# bez żadnego numeru sprawy / lokalizacji — są LISTINGAMI, nie pojedynczymi ogłoszeniami.
+# Takie strony mają zmieniający się att_sig (nowe wpisy na liście) i nie powinny
+# generować ZMIANA przy każdym uruchomieniu.
+GENERIC_CATEGORY_TITLES_RE = re.compile(
+    r"^(warunki zabudowy|decyzje? (o |środowiskow|srodowiskow)|"
+    r"miejscowy plan|plan miejscowy|plan ogólny|plan ogolny|"
+    r"studium uwarunkowań|studium uwarunkowan|"
+    r"mpzp|oze|farma wiatrowa|elektrownia wiatrowa|fotowolta|"
+    r"obwieszczenia?|zawiadomienia?|komunikaty?|ogłoszenia?|ogloszenia?|"
+    r"uchwały?|uchwaly?|postanowienia?|decyzje?|"
+    r"planowanie przestrzenne|zagospodarowanie przestrzenne|"
+    r"ochrona środowiska|ochrona srodowiska|"
+    r"biuletyn informacji publicznej|bip)\s*$",
+    re.IGNORECASE
+)
+
 def is_generic_bip_page(title: str, h1: str, url: str, fast_text: str = "") -> bool:
     """
     Zwraca True jeśli strona wygląda na:
     - home / landing BIP (krótka treść, głównie menu)
     - listing/archiwum/wyszukiwarka
     - stronę-szablon z tytułem typu "Gmina X Biuletyn Informacji Publicznej"
+    - stronę-listę kategorii (np. "Warunki zabudowy") — FIX 2
     UWAGA: nie blokujemy crawl'u, tylko nie raportujemy jej jako NOWE/ZMIANA.
     """
     t = (title or "").strip().lower()
@@ -1000,7 +1020,7 @@ def is_generic_bip_page(title: str, h1: str, url: str, fast_text: str = "") -> b
     if is_listing_url(url):
         return True
 
-    # 2) Home wycinamy TYLKO jeśli nie ma „mięsa” w treści (żeby nie zgubić ogłoszeń wklejonych na home)
+    # 2) Home wycinamy TYLKO jeśli nie ma „mięsa" w treści (żeby nie zgubić ogłoszeń wklejonych na home)
     if is_home_url(url) and len(txt) < 600:
         return True
 
@@ -1011,6 +1031,15 @@ def is_generic_bip_page(title: str, h1: str, url: str, fast_text: str = "") -> b
 
     # krótkie, typowo szablonowe nagłówki
     if len(blob) <= 90 and SITEWIDE_TITLES_RE.search(blob) and len(txt) < 600:
+        return True
+
+    # ===================== FIX 2: Strony-listy kategorii =====================
+    # Jeśli H1 (lub title gdy brak H1) to DOKŁADNIE generyczna nazwa kategorii
+    # (bez żadnych dodatkowych słów jak numer działki, lokalizacja, data itp.)
+    # to jest to strona listingowa — att_sig będzie się zmieniać przy każdym
+    # nowym wpisie, więc nie raportujemy jej jako ZMIANA.
+    check_label = (h or t or "").strip()
+    if check_label and GENERIC_CATEGORY_TITLES_RE.match(check_label):
         return True
 
     return False
@@ -1155,9 +1184,16 @@ def attachments_signature(soup: BeautifulSoup, base_url: str) -> str:
         if not any(low.endswith(ext) for ext in ATT_EXT):
             continue
         p = urlparse(abs_u)
+        # ===================== FIX 1: lstrip("www.") -> removeprefix =====================
+        # lstrip usuwa DOWOLNĄ kombinację liter 'w' i '.' z lewej strony,
+        # co niszczyło np. "wroclaw.bip.pl" -> "oclaw.bip.pl".
+        # To powodowało niestabilność att_sig między runami dla tych samych URL-i.
+        netloc = p.netloc.lower()
+        if netloc.startswith("www."):
+            netloc = netloc[4:]
         clean_url = urlunparse((
             "https",
-            p.netloc.lower().lstrip("www."),
+            netloc,
             p.path,
             "",
             "",
@@ -1942,7 +1978,6 @@ async def fetch_conditional(session: aiohttp.ClientSession, url: str, extra_head
     return None, url, "exc", None, "", "fetch_failed", 0, {}
 
 # ===================== PHASE 2 =====================
-# ===================== PHASE 2 =====================
 async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                       urls_seen: set, content_seen: dict, diag):
 
@@ -2154,6 +2189,13 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             ok_any = False
             kw_any = None
 
+        # ===================== FIX 3: Strony listingowe nigdy nie mogą dać ZMIANA =====================
+        # Nawet jeśli generic_page=False (strona ma dużo treści i przeszła przez filtr),
+        # strony listingowe BIP mają att_sig zmieniające się przy każdym nowym wpisie
+        # na liście. Dlatego dla stron home/listing całkowicie pomijamy porównanie att_sig
+        # i wymuszamy status HIT (jeśli była wcześniej widziana) lub NO_MATCH.
+        force_no_att_sig_check = is_listing_url(final_c) or is_home_url(final_c)
+
         # ================= STATUS LOGIC (REAL NEW + CHANGE ONLY ATTACHMENTS) =================
         # NOWE: tylko jeśli prev nie istnieje (REAL_NEW_ONLY)
         # ZMIANA: tylko jeśli zmieniły się załączniki (CHANGE_ONLY_ATTACHMENTS)
@@ -2163,7 +2205,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             # już widziane: NIE może stać się NOWE
             status_new = "HIT" if ok_any else "NO_MATCH"
 
-            if ok_any:
+            if ok_any and not force_no_att_sig_check:
                 if CHANGE_ONLY_ATTACHMENTS:
                     if (prev.get("att_sig") or "") != (att_sig or ""):
                         status_new = "ZMIANA"
@@ -2607,15 +2649,3 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
-
-
-
-
-
-
-
-
-
-
-
-
