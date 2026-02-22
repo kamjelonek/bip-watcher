@@ -203,8 +203,8 @@ CONCURRENT_GMINY = env_int("CONCURRENT_GMINY", 8)
 CONCURRENT_REQUESTS = env_int("CONCURRENT_REQUESTS", 30)
 LIMIT_PER_HOST = env_int("LIMIT_PER_HOST", 4)
 
-PHASE1_MAX_PAGES = 5000      # było 5000 (120 było za mało, 5000 za dużo — 600 to dobry kompromis)
-PHASE1_MAX_SEEDS = 100000     # było 100000 (2000 było za mało, 100k absurd — 8000 wystarczy)
+PHASE1_MAX_PAGES = 600      # było 5000 (120 było za mało, 5000 za dużo — 600 to dobry kompromis)
+PHASE1_MAX_SEEDS = 8000     # było 100000 (2000 było za mało, 100k absurd — 8000 wystarczy)
 PHASE2_MAX_DEPTH = 4       # było 4 (często BIPy mają głębiej)
 PHASE2_MAX_PAGES = 1000000   # było 5000 (przy UNLIMITED_SCAN i tak ogranicza Cię czas)
 ABSOLUTE_MAX_SEC_PER_GMINA = 10**9
@@ -444,7 +444,8 @@ def now_iso():
 
 # ===================== BLOCK PAGE DETECTOR =====================
 
-BLOCK_PATTERNS = [
+# Wzorce pewne (substring wystarczy — bardzo charakterystyczne dla WAF/blokad)
+_BLOCK_PATTERNS_SURE = [
     "#13",
     "zbyt dużo jednoczesnych połączeń",
     "zbyt wiele jednoczesnych połączeń",
@@ -452,25 +453,56 @@ BLOCK_PATTERNS = [
     "sprobuj za moment",
     "spróbuj ponownie później",
     "sprobuj ponownie pozniej",
-    "too many requests",
-    "access denied",
-    "request blocked",
-    "temporarily unavailable",
-    "service unavailable",
-    "firewall",
-    "waf",
     "twoja aktywność została uznana",
     "twoja aktywnosc zostala uznana",
+    "too many requests",
+    "request blocked",
+    "403 forbidden",
+    "access denied",
+]
+
+# Wzorce wymagające kontekstu — fraza musi pojawić się jako samodzielne wyrażenie
+# w krótkim obszarze strony (<4000 znaków), a strona musi mieć mało treści.
+# "service unavailable", "firewall", "waf" są zbyt ogólne — mogą być w normalnej
+# treści BIP-ów (stopki, informacje serwisowe, treści o przepisach).
+_BLOCK_PATTERNS_CONTEXT = [
+    # tylko gdy jest to główny komunikat strony (< 800 znaków tekstu widocznego)
+    r"\bservice unavailable\b",
+    r"\btemporarily unavailable\b",
+    r"\bsite is unavailable\b",
 ]
 
 def is_block_page(text: str) -> bool:
     """
-    Heurystyczne wykrywanie stron blokujących (często HTTP 200, ale treść mówi że blokada).
+    Heurystyczne wykrywanie stron blokujących (HTTP 200, ale treść = blokada WAF).
+    Poprawka: usunięto 'firewall', 'waf', 'service unavailable' jako zwykłe substrings
+    — były przyczyną false positives na normalnych stronach BIP.
     """
     if not text:
         return False
     low = text.lower()
-    return any(p.lower() in low for p in BLOCK_PATTERNS)
+
+    # 1. Wzorce pewne — zawsze blokada
+    for p in _BLOCK_PATTERNS_SURE:
+        if p.lower() in low:
+            return True
+
+    # 2. Wzorce kontekstowe — tylko gdy strona ma mało widocznej treści
+    # (prawdziwa blokada WAF to zazwyczaj 1-3 zdania, nie pełna strona BIP)
+    import re as _re
+    try:
+        from bs4 import BeautifulSoup as _BS
+        _soup = _BS(text[:8000], "html.parser")
+        visible = _re.sub(r"\s+", " ", _soup.get_text(" ", strip=True)).strip()
+    except Exception:
+        visible = _re.sub(r"<[^>]+>", " ", text[:4000]).strip()
+
+    if len(visible) < 600:
+        for pattern in _BLOCK_PATTERNS_CONTEXT:
+            if _re.search(pattern, low[:4000]):
+                return True
+
+    return False
 
 
 def sha1(s: str) -> str:
@@ -2688,4 +2720,3 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
-
