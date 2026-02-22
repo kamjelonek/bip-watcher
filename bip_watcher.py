@@ -521,8 +521,8 @@ def is_listing_url(u: str) -> bool:
     low = (u or "").lower()
     return any(x in low for x in [
         "/kategorie/", "/kategoria/", "kategoria=", "category", "/category/",
-        "lista", "archiwum", "wszystkie", "tag", "/tag/",
-        "page=", "strona=", "offset=", "start=", "limit=",
+        "/lista", "lista=", "archiwum", "wszystkie", "tag", "/tag/",
+        "page=", "strona=", "offset=", "limit=",
         "/rss", "/feed", "rss.xml", "feed.xml",
         "wyszuk", "szukaj", "search", "query=", "filter", "filtr",
         "ostatnio_dodane", "ostatnio_zaktualizowane",
