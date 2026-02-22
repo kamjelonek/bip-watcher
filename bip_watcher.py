@@ -2042,6 +2042,8 @@ async def worker(name: str, queue: asyncio.Queue,
                 print(f"   ✅ Gmina {gmina} – pełne przeskanowanie")
 
             # DEBUG: pokaż wszystkie URL-e w retry wraz z ostatnim statusem z cache
+            # DEBUG: pokaż wszystkie URL-e w retry wraz z ostatnim statusem z cache
+            gkey = gmina_cache_key(gmina, start_url)
             retry_debug = (state.gmina_retry or {}).get(gkey, []) or []
             if retry_debug:
                 print("\n🔴 RETRY DEBUG [" + gmina + "] — " + str(len(retry_debug)) + " URL-i nie udalo sie pobrac:", flush=True)
@@ -2225,3 +2227,4 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
