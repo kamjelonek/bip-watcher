@@ -1,11 +1,18 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.4 (CELL + VS Code / Windows) - PRODUCTION
-Zmiany v2.4:
-- _soup_fast_text: usuwa TYLKO script/style/noscript, bierze cały tekst strony
-- Usunięty page_fingerprint i fp z cache (niepotrzebne, att_sig wystarczy)
-- ENABLE_LINK_HITS=True: łapie ogłoszenia z anchor textu linków na stronach listingowych
-- blob do matchowania = title + h1 + h2 + CAŁY tekst strony
+BIP WATCHER v2.5 (CELL + VS Code / Windows) - PRODUCTION
+Zmiany v2.5:
+- FIX #1: Deduplikacja raportowania — reported_urls_this_run w GlobalState
+           zapobiega setkom duplikatów NOWE dla tego samego URL w jednej sesji
+- FIX #2: _soup_fast_text usuwa nav/header/footer/aside — eliminuje fałszywe
+           pozytywy z menu nawigacyjnego (keyword w menu ≠ ogłoszenie)
+- FIX #3: detect_js_app wykrywa też puste strony (<300 znaków tekstu)
+           nawet bez markerów React/Vue/Next.js (łapie MADKOM i podobne)
+- FIX #4: JS_EXTRA_SEED_PATHS + LISTING_URL_HINTS rozszerzone o endpointy
+           platformy lubelskiej (/index.php?id=ostatnio_dodane itp.)
+- FIX #5: should_skip_href pozbawiony hardcodowanego wyjątku dla gminadomaniow.pl
+           — zastąpiony ogólnym mechanizmem (prognoza-pogody jako ogólny pattern)
+- CACHE_SCHEMA bump do 12
 """
 
 import os, csv, json, hashlib, asyncio, re, time, smtplib, warnings, socket, random, signal
@@ -111,7 +118,7 @@ FORCE_PHASE1_REDISCOVERY = True
 # ===================== REPORTING RULES =====================
 REAL_NEW_ONLY = True
 CHANGE_ONLY_ATTACHMENTS = True
-ENABLE_LINK_HITS = True        # ✅ WŁĄCZONE — łapie ogłoszenia z anchor textu na listingach
+ENABLE_LINK_HITS = True
 ALIAS_FINAL_AND_SOURCE_KEYS = True
 
 # ===================== EMAIL =====================
@@ -171,6 +178,14 @@ IGNORE_URL_SUBSTR = [
     "login", "logowanie", "rejestracja", "newsletter", "archiwum-2",
     "galeria-zdjec", "galeria_zdjec", "multimedia", "wideo",
 ]
+
+# ✅ FIX #5: Ogólne wzorce URL do pominięcia (zamiast hardcodu konkretnych domen)
+IGNORE_URL_PATH_PATTERNS = [
+    r"prognoza.pogody",
+    r"prognoza_pogody",
+    r"/wersja/\d+/?$",
+]
+
 IGNORE_ANCHOR_TEXT = [
     "przejdź do menu", "przejdz do menu",
     "przejdź do treści", "przejdz do tresci",
@@ -192,7 +207,7 @@ LIMIT_PER_HOST = env_int("LIMIT_PER_HOST", 4)
 
 PHASE1_MAX_PAGES = 1000
 PHASE1_MAX_SEEDS = 12000
-PHASE2_MAX_DEPTH = 4           # ✅ zwiększone z 4 — BIPy często mają głębszą strukturę
+PHASE2_MAX_DEPTH = 4
 PHASE2_MAX_PAGES = 1000000
 
 ABSOLUTE_MAX_SEC_PER_GMINA = 10**9
@@ -216,7 +231,6 @@ PAGINATION_CAP_LOW  = 1200 if UNLIMITED_SCAN else 300
 CACHE_CHECKPOINT_EVERY_N_GMINY = 3
 SEED_CACHE_TTL_DAYS = 30
 
-# ✅ Brak limitu tekstu — skanujemy całą stronę
 FAST_TEXT_MAX_CHARS = 999_999
 
 HIT_RECHECK_TTL_HOURS = 24
@@ -299,6 +313,8 @@ class GlobalState:
         self.dead_urls = {}
         self.cache_lock = asyncio.Lock()
         self.mail_dedup = set()
+        # ✅ FIX #1: deduplikacja raportowania w ramach jednej sesji
+        self.reported_urls_this_run: set = set()
 
     def request_shutdown(self):
         self.shutdown_requested = True
@@ -527,6 +543,8 @@ def is_listing_url(u: str) -> bool:
         "page=", "strona=", "offset=", "start=", "limit=",
         "/rss", "/feed", "rss.xml", "feed.xml",
         "wyszuk", "szukaj", "search", "query=", "filter", "filtr",
+        # ✅ FIX #4: platforma lubelska
+        "ostatnio_dodane", "ostatnio_zaktualizowane",
     ])
 
 def is_phase1_listing(u: str) -> bool:
@@ -582,15 +600,17 @@ def anchor_is_ignored(text: str) -> bool:
     return any(x in t for x in IGNORE_ANCHOR_TEXT)
 
 def should_skip_href(abs_href: str) -> bool:
+    """
+    ✅ FIX #5: Usunięto hardcode gminadomaniow.pl.
+    Teraz używamy ogólnych wzorców z IGNORE_URL_PATH_PATTERNS.
+    """
     u = (abs_href or "").lower()
-    try:
-        host = urlparse(abs_href).netloc.lower()
-        if ("gminadomaniow.pl" in host) and ("/aktualnosci/" in u) and ("prognoza-pogody" in u):
+
+    # Ogólne wzorce ścieżek do pominięcia
+    for pattern in IGNORE_URL_PATH_PATTERNS:
+        if re.search(pattern, u):
             return True
-    except Exception:
-        pass
-    if re.search(r"/wersja/\d+/?$", u):
-        return True
+
     if url_is_ignored(u):
         return True
     if any(u.endswith(ext) for ext in BAD_EXT):
@@ -631,6 +651,10 @@ def safe_soup(html: str):
 
 # ===================== SITEMAP + ROBOTS + JS HEAVY =====================
 def detect_js_app(html: str) -> bool:
+    """
+    ✅ FIX #3: Wykrywa JS-heavy strony nie tylko po markerach React/Vue/Next.js,
+    ale też po braku treści (<300 znaków). Łapie MADKOM, puste SPA, itp.
+    """
     if not html:
         return False
     low = html.lower()
@@ -649,11 +673,23 @@ def detect_js_app(html: str) -> bool:
             return has_marker
         txt = soup.get_text(" ", strip=True)
         txt = re.sub(r"\s+", " ", txt).strip()
+
+        # ✅ NOWE: jeśli strona ma mniej niż 300 znaków tekstu — prawie na pewno JS shell
+        if len(txt) < 300:
+            return True
+
+        # Istniejące warunki
         if len(txt) < 200 and has_marker:
             return True
         scripts = len(soup.find_all("script"))
         if len(txt) < 120 and scripts >= 8:
             return True
+
+        # ✅ NOWE: dużo tagów script, mało tekstu → JS-heavy
+        scripts_with_src = len(soup.find_all("script", src=True))
+        if scripts_with_src > 10 and len(txt) < 500:
+            return True
+
         return False
     except Exception:
         return has_marker
@@ -877,8 +913,11 @@ LISTING_URL_HINTS = [
     "srodowiskowe", "srodowiskowa", "srodowiskowych",
     "plany", "plan", "plany-zagospodarowania", "plany_zagospodarowania",
     "uchwala", "uchwaly", "uchwal", "uchwalone",
+    # ✅ FIX #4: platforma lubelska
+    "ostatnio_dodane", "ostatnio_zaktualizowane",
 ]
 
+# ✅ FIX #4: rozszerzone o endpointy platformy lubelskiej
 JS_EXTRA_SEED_PATHS = [
     "/rss", "/feed", "/rss.xml", "/feed.xml",
     "/wp-json", "/wp-json/wp/v2/posts",
@@ -888,26 +927,43 @@ JS_EXTRA_SEED_PATHS = [
     "/ogloszenia.xml", "/ogloszenia.rss",
     "/kategorie.xml", "/kategorie.rss",
     "/bip-sitemap.xml", "/bip-sitemap_index.xml",
+    # Platforma lubelska (bip.lubelskie.pl)
+    "/index.php?id=ostatnio_dodane",
+    "/index.php?id=ostatnio_zaktualizowane",
+    "/index.php?id=1",
+    # Platforma SSDIP/eSIP
+    "/dokumenty",
+    "/dokumenty/kategorie",
 ]
 
 # ===================== FAST TEXT =====================
-# ✅ KLUCZOWA ZMIANA v2.4:
-# Usuwa TYLKO script/style/noscript — bierze CAŁY tekst strony.
-# Nie filtrujemy nav/footer/header/aside ani klas UI.
-# Keyword może być gdziekolwiek na stronie — w tytule dokumentu,
-# w treści tabeli, w stopce kategorii, w metatagu — wszędzie.
+# ✅ FIX #2: Usuwamy nav/header/footer/aside żeby keyword w menu nawigacyjnym
+# nie powodował fałszywych trafień na każdej podstronie BIPu.
+# Treść ogłoszeń jest w <main>, <article>, <section> lub divach treści —
+# nigdy w <nav> czy <footer>.
 def _soup_fast_text(soup: BeautifulSoup, max_chars: int = FAST_TEXT_MAX_CHARS) -> str:
     try:
         if not soup:
             return ""
-        # Usuń tylko kod i style — nic więcej
+        # Zawsze usuń kod
         for tag in soup(["script", "style", "noscript"]):
             tag.decompose()
-        # Weź CAŁY widoczny tekst strony
+
+        # Usuń nawigację TYLKO jeśli strona ma sensowny element głównej treści
+        # Bez tego na BIP-ach z tabelową architekturą stracimy treść
+        has_main_content = bool(
+            soup.find("main") or
+            soup.find(id=re.compile(r"(content|tresc|main|article)", re.I)) or
+            soup.find(class_=re.compile(r"(content|tresc|main|article)", re.I))
+        )
+        if has_main_content:
+            for tag in soup(["nav", "header", "footer", "aside"]):
+                tag.decompose()
+
         txt = soup.get_text(" ", strip=True)
         txt = re.sub(r"\s+", " ", (txt or "")).strip()
         txt = _strip_dynamic_noise(txt)
-        return txt
+        return txt[:max_chars]
     except Exception:
         return ""
 
@@ -948,11 +1004,6 @@ GENERIC_CATEGORY_TITLES_RE = re.compile(
 )
 
 def is_generic_bip_page(title: str, h1: str, url: str, fast_text: str = "") -> bool:
-    """
-    Zwraca True dla stron-listingów kategorii BIP.
-    Nie blokuje crawlowania — tylko nie raportujemy jej jako NOWE/ZMIANA strony jako całości.
-    Linki NA tej stronie nadal są analizowane przez ENABLE_LINK_HITS.
-    """
     t = (title or "").strip().lower()
     h = (h1 or "").strip().lower()
     txt = (fast_text or "").strip()
@@ -1091,7 +1142,7 @@ def candidate_start_urls(start_url: str):
                     yield auxu
 
 # ===================== CACHE =====================
-CACHE_SCHEMA = 11  # ✅ bump — usunięto page_fprints i fp
+CACHE_SCHEMA = 12  # ✅ bump v2.5
 
 def _empty_cache():
     return {
@@ -1133,7 +1184,6 @@ def load_cache_v2():
             c.setdefault("gmina_frontiers", {})
             c.setdefault("gmina_retry", {})
             c.setdefault("dead_urls", {})
-            # usuń stare page_fprints jeśli istnieją
             c.pop("page_fprints", None)
 
         urls = c.get("urls_seen", {})
@@ -1493,12 +1543,6 @@ def seed_cache_put(gmina: str, start_url: str, allowed_host: str, start_final: s
 
 # ===================== LINK EXTRACTION =====================
 def iter_links_fast(soup: BeautifulSoup, base_url: str):
-    """
-    Iteruje po wszystkich linkach na stronie.
-    Zwraca (abs_url, anchor_text) dla każdego linka który nie jest odfiltrowany.
-    NIE filtrujemy po anchor_is_ignored tutaj dla linków do podstron HTML —
-    to robi phase2 tylko dla crawlowania, nie dla keyword match.
-    """
     yielded = set()
     all_links = []
     try:
@@ -1588,7 +1632,7 @@ async def phase1_discover(gmina: str, start_url: str,
                         for pth in JS_EXTRA_SEED_PATHS:
                             u2 = normalize_url(urljoin(base_site, pth))
                             if same_base_domain(urlparse(u2).netloc.lower(), allowed_host):
-                                seeds[u2] = max(seeds.get(u2, 0), 16)
+                                seeds[u2] = max(seeds.get(u2, 0), 20)  # wyższy priorytet dla JS-owych
                     except Exception:
                         pass
             except Exception:
@@ -1898,23 +1942,20 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
 
         title, h1, h2, meta_blob = extract_title_h1_h2(soup)
 
-        # ✅ att_set PRZED _soup_fast_text (bo fast_text robi decompose na script/style)
+        # att_set PRZED _soup_fast_text (decompose modyfikuje soup in-place)
         att_set = attachments_signature(soup, final_c)
 
-        # ✅ CAŁY tekst strony — bez żadnego filtrowania poza script/style
+        # ✅ FIX #2: fast_text bez nav/header/footer — mniej fałszywych pozytywów
         fast_text = _soup_fast_text(soup)
 
-        # ✅ blob = wszystko: tytuł + nagłówki + CAŁY tekst strony
+        # blob = tytuł + nagłówki + tekst treści (bez nawigacji)
         blob = f"{title} {h1} {h2} {fast_text}"
         ok_any, kw_any = keyword_match_in_blob(blob)
 
         # ================= STATUS LOGIC =================
-        # Nie raportujemy samej strony listingowej jako NOWE/ZMIANA —
-        # ale jej linki analizujemy przez ENABLE_LINK_HITS poniżej.
         is_generic = is_generic_bip_page(title, h1, final_c, fast_text)
 
         if is_generic:
-            # Strona-listing: nie raportuj jej samej, ale crawluj dalej
             status_new = "NO_MATCH"
         elif prev is None:
             status_new = "NOWE" if ok_any else "NO_MATCH"
@@ -1948,16 +1989,16 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             if ALIAS_FINAL_AND_SOURCE_KEYS and (url_dedup != url_dedup_final):
                 content_seen[url_dedup] = meta
 
+        # ✅ FIX #1: raportuj NOWE/ZMIANA tylko jeśli URL nie był jeszcze raportowany w tej sesji
         if status_new in {"NOWE", "ZMIANA"}:
-            print_hit(f"🟢 {status_new}", gmina, kw_any, page_title)
-            found.append((gmina, kw_any, page_title, final_c, status_new))
+            if final_c not in state.reported_urls_this_run:
+                state.reported_urls_this_run.add(final_c)
+                print_hit(f"🟢 {status_new}", gmina, kw_any, page_title)
+                found.append((gmina, kw_any, page_title, final_c, status_new))
+            else:
+                diag["counts"]["dedup_skipped"] += 1
 
         # ================= LINK HITS =================
-        # ✅ Analizuj KAŻDY link na stronie (w tym na listingach kategorii).
-        # Jeśli anchor text linka zawiera keyword → zapisz URL linka jako NOWE.
-        # To łapie ogłoszenia typu:
-        #   "Plan ogólny Gminy X - Projekt" → link do document_id=2259580
-        #   "Decyzja środowiskowa dla farmy wiatrowej" → link do document_id=...
         for abs_u, txt in iter_links_fast(soup, final_c):
             cu = _canon(abs_u)
             if not cu or not allow_url(cu):
@@ -1965,22 +2006,20 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             if cu in dead_set:
                 continue
 
-            # Matchuj keyword w anchor text + nazwie pliku
             filename = urlparse(cu).path.split("/")[-1]
-            # ✅ Użyj SAMEGO anchor textu do matchowania (nie crawlowanej treści)
             blob_link = f"{txt} {filename}"
             ok_link, kw_link = keyword_match_in_blob(blob_link)
 
             if ENABLE_LINK_HITS and ok_link and txt:
                 link_title = txt.strip()
 
-                # Filtruj generyczne etykiety nawigacyjne
                 lt = link_title.lower()
                 skip_generic = (
                     "biuletyn informacji publicznej" in lt
                     or lt == "bip"
                     or (len(lt) <= 6 and "bip" in lt)
                     or anchor_is_ignored(lt)
+                    or len(link_title) < 8  # ✅ filtruj bardzo krótkie anchor texty
                 )
 
                 if not skip_generic:
@@ -1988,26 +2027,29 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                     prev_link = content_seen.get(key)
 
                     if prev_link is None:
-                        # Pierwszy raz widzimy ten link z keywordem — NOWE
-                        async with state.cache_lock:
-                            content_seen[key] = {
-                                "found_at": now_iso(),
-                                "last_checked": now_iso(),
-                                "etag": "",
-                                "last_modified": "",
-                                "gmina": gmina,
-                                "title": link_title[:240],
-                                "url": cu,
-                                "keywords": [kw_link],
-                                "att_sig": "",
-                                "status": "NOWE",
-                            }
-                        print_hit("🟢 NOWE (LINK)", gmina, kw_link, link_title)
-                        found.append((gmina, kw_link, link_title, cu, "NOWE"))
-                        diag["counts"]["link_hits_new"] += 1
-                    # jeśli prev_link istnieje — już widzieliśmy, nie duplikuj
+                        # ✅ FIX #1: sprawdź też reported_urls_this_run dla linków
+                        if cu not in state.reported_urls_this_run:
+                            async with state.cache_lock:
+                                content_seen[key] = {
+                                    "found_at": now_iso(),
+                                    "last_checked": now_iso(),
+                                    "etag": "",
+                                    "last_modified": "",
+                                    "gmina": gmina,
+                                    "title": link_title[:240],
+                                    "url": cu,
+                                    "keywords": [kw_link],
+                                    "att_sig": "",
+                                    "status": "NOWE",
+                                }
+                            state.reported_urls_this_run.add(cu)
+                            print_hit("🟢 NOWE (LINK)", gmina, kw_link, link_title)
+                            found.append((gmina, kw_link, link_title, cu, "NOWE"))
+                            diag["counts"]["link_hits_new"] += 1
+                        else:
+                            diag["counts"]["link_dedup_skipped"] += 1
 
-            # Dodaj do kolejki crawlowania (niezależnie od keyword match)
+            # Dodaj do kolejki crawlowania
             if cu not in visited and cu not in dead_set:
                 visited.add(cu)
                 q.append((cu, depth + 1))
@@ -2205,7 +2247,6 @@ async def main():
         print("   ✅ Cache wyczyszczony.")
         print()
 
-    # ✅ load_cache_v2 zwraca 7 wartości (usunięto page_fprints)
     (state.raw_cache, state.urls_seen, state.content_seen,
      state.gmina_seeds, state.gmina_frontiers,
      state.gmina_retry, state.dead_urls) = load_cache_v2()
