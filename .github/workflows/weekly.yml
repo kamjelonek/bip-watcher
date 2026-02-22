@@ -15,11 +15,11 @@ permissions:
   issues: write
 
 jobs:
+  # ===================== KROK 0: Init cache-store branch =====================
   init_cache_store:
     name: Init cache-store branch (single)
     runs-on: ubuntu-latest
     timeout-minutes: 10
-
     steps:
       - name: Checkout repo (main)
         uses: actions/checkout@v4
@@ -39,15 +39,12 @@ jobs:
 
           echo "ℹ️ cache-store missing -> creating"
           git checkout --orphan cache-store
-
           rm -rf ./* ./.gitignore || true
-
           mkdir -p shards master
           echo "cache-store initialized" > README.md
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
           git add README.md shards master
           git commit -m "Initialize cache-store [skip ci]"
 
@@ -57,24 +54,73 @@ jobs:
             sleep $((i*2))
           done
 
+  # ===================== KROK 1: Policz gminy → zbuduj matrix =====================
+  setup:
+    name: Build dynamic shard matrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [init_cache_store]
+    outputs:
+      matrix: ${{ steps.build_matrix.outputs.matrix }}
+      total: ${{ steps.build_matrix.outputs.total }}
+
+    steps:
+      - name: Checkout repo (main)
+        uses: actions/checkout@v4
+
+      - name: Build shard matrix from CSV
+        id: build_matrix
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import csv, json, os
+          from pathlib import Path
+
+          csv_file = Path("data/bipy1.csv")
+          if not csv_file.exists():
+              # fallback: szukaj w katalogu głównym
+              csv_file = Path("bipy1.csv")
+
+          rows = []
+          if csv_file.exists():
+              with open(csv_file, encoding="utf-8") as f:
+                  reader = csv.DictReader(f)
+                  for row in reader:
+                      name = (row.get("name") or "").strip()
+                      url  = (row.get("url") or "").strip()
+                      if name and url:
+                          rows.append((name, url))
+
+          total = len(rows)
+          # Shard index = numer wiersza, jeden shard per gmina
+          indices = list(range(total))
+          matrix = json.dumps({"shard": indices})
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"matrix={matrix}\n")
+              f.write(f"total={total}\n")
+
+          print(f"✅ Gmin: {total}, matrix: {indices[:5]}...{indices[-3:]}")
+          PY
+
+  # ===================== KROK 2: Skan — jeden shard = jedna gmina =====================
   scan:
     name: Scan shard ${{ matrix.shard }}
     runs-on: ubuntu-latest
     continue-on-error: true
-    # ── TIMEOUT FIX ──────────────────────────────────────────────────────────
-    # Job timeout:        355 min  (GHA limit dla tego runnera)
-    # Krok Python:        325 min  (timeout-minutes na stepie)
+    # ── TIMEOUT ──────────────────────────────────────────────────────────────
+    # Job timeout:        355 min  (GHA limit)
+    # Krok Python:        325 min  (step timeout)
     # RUN_DEADLINE_MIN:   315 min  (Python sam kończy po tym czasie)
-    # Zostaje 30 min zapasu na "Compress shard and commit" zanim GHA ubije joba
+    # Zostaje 30 min zapasu na commit sharda przed ubiciem joba
     # ─────────────────────────────────────────────────────────────────────────
     timeout-minutes: 355
-    needs: [init_cache_store]
+    needs: [setup]
 
     strategy:
       fail-fast: false
-      max-parallel: 8
-      matrix:
-        shard: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57]
+      max-parallel: 10       # ← max 10 gmin równolegle
+      matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
 
     steps:
       - name: Checkout repo (main)
@@ -100,13 +146,13 @@ jobs:
           pip install -r requirements.txt
 
       # ===================== BUILD data/cache.json FROM cache-store =====================
-      - name: Build cache.json from committed shards (and optional master zip parts)
+      - name: Build cache.json from committed shards
         shell: bash
         run: |
           set -e
           mkdir -p data
 
-          python - <<'PY'
+          python3 - <<'PY'
           import json, glob, gzip, zipfile, shutil
           from pathlib import Path
 
@@ -115,33 +161,23 @@ jobs:
           SHARDS_DIR = STORE_DIR / "shards"
           MASTER_DIR = STORE_DIR / "master"
 
-          REQUIRED = ["schema","urls_seen","content_seen","gmina_seeds","page_fprints","gmina_frontiers","gmina_retry","dead_urls"]
+          REQUIRED = ["schema","urls_seen","content_seen","gmina_seeds",
+                      "page_fprints","gmina_frontiers","gmina_retry","dead_urls"]
 
           def empty_cache():
-              return {
-                  "schema": 10,
-                  "urls_seen": {},
-                  "content_seen": {},
-                  "gmina_seeds": {},
-                  "page_fprints": {},
-                  "gmina_frontiers": {},
-                  "gmina_retry": {},
-                  "dead_urls": {},
-              }
+              return {k: ({} if k != "schema" else 10) for k in REQUIRED}
 
           def ensure_keys(d):
-              if not isinstance(d, dict):
-                  d = {}
+              if not isinstance(d, dict): d = {}
               for k in REQUIRED:
                   if k not in d:
                       d[k] = {} if k != "schema" else 10
-              if not isinstance(d.get("schema"), int):
-                  d["schema"] = 10
+              if not isinstance(d.get("schema"), int): d["schema"] = 10
               return d
 
           merged = empty_cache()
 
-          # 1) Optional: reconstruct master cache.zip from committed parts (fast bootstrap)
+          # 1) Optional: bootstrap z master zip parts
           parts = sorted(glob.glob(str(MASTER_DIR / "cache.zip.part-*")))
           if parts:
               zip_path = DATA_DIR / "cache.zip"
@@ -155,33 +191,28 @@ jobs:
                   cj = DATA_DIR / "cache.json"
                   if cj.exists():
                       merged = ensure_keys(json.loads(cj.read_text(encoding="utf-8")))
-                  print(f"✅ Bootstrapped from master zip parts: {len(parts)} parts")
+                  print(f"✅ Bootstrap z master zip: {len(parts)} parts")
               except Exception as e:
-                  print("⚠️ Failed to use master zip parts:", e)
+                  print(f"⚠️ Master zip failed: {e}")
 
-          # 2) Merge all committed shard gz files (source of truth)
+          # 2) Merge shardów (source of truth — nadpisują master)
           shard_files = sorted(glob.glob(str(SHARDS_DIR / "cache_shard_*.json.gz")))
           if not shard_files:
-              print("ℹ️ No committed shards found yet -> starting fresh cache.json")
+              print("ℹ️ Brak shardów — startujemy świeżo")
           else:
               for sf in shard_files:
                   try:
                       with gzip.open(sf, "rt", encoding="utf-8") as f:
                           data = ensure_keys(json.load(f))
                   except Exception as e:
-                      print("⚠️ Failed reading shard:", sf, e)
+                      print(f"⚠️ Błąd sharda {sf}: {e}")
                       continue
-
                   for k in merged:
-                      if k == "schema":
-                          continue
-                      if k not in data:
-                          continue
+                      if k == "schema" or k not in data: continue
                       if isinstance(merged[k], dict) and isinstance(data[k], dict):
                           if k == "urls_seen":
                               for h, ts in data[k].items():
-                                  prev = merged[k].get(h, "")
-                                  if (ts or "") >= (prev or ""):
+                                  if (ts or "") >= (merged[k].get(h, "")):
                                       merged[k][h] = ts
                           elif k == "dead_urls":
                               for gkey, urls in data[k].items():
@@ -195,36 +226,38 @@ jobs:
                               merged[k].update(data[k])
                       else:
                           merged[k] = data[k]
-
-              print(f"✅ Merged committed shards: {len(shard_files)}")
+              print(f"✅ Zmergowano {len(shard_files)} shardów")
 
           DATA_DIR.mkdir(parents=True, exist_ok=True)
-          (DATA_DIR / "cache.json").write_text(json.dumps(merged, ensure_ascii=False, indent=2), encoding="utf-8")
-          print("✅ data/cache.json ready")
+          (DATA_DIR / "cache.json").write_text(
+              json.dumps(merged, ensure_ascii=False, indent=2), encoding="utf-8")
+          print("✅ data/cache.json gotowy")
           PY
 
       # ===================== RUN =====================
-      - name: Run watcher (sharded)
+      - name: Run watcher (1 gmina = 1 shard)
         continue-on-error: true
-        timeout-minutes: 325   # ← NOWE: step timeout; Python kończy po 315 min sam z siebie
+        timeout-minutes: 325
         env:
           PYTHONUNBUFFERED: "1"
-          SHARD_TOTAL: "58"
+          # SHARD_TOTAL = liczba gmin (z poprzedniego joba)
+          SHARD_TOTAL: ${{ needs.setup.outputs.total }}
+          # SHARD_INDEX = numer wiersza w CSV (= numer tej gminy)
           SHARD_INDEX: "${{ matrix.shard }}"
-          RUN_DEADLINE_MIN: "315"   # ← ZMIANA: było 345, teraz 315 (30 min zapasu na commit)
-          CONCURRENT_GMINY: "20"
-          CONCURRENT_REQUESTS: "80"
-          LIMIT_PER_HOST: "8"
-          RATE_MIN_DELAY: "0.1"
-          CHECKPOINT_EVERY_SEC: "600"   # ← ZMIANA: było 900, teraz 600 (checkpoint co 10 min)
+          RUN_DEADLINE_MIN: "315"
+          # Jedna gmina = jeden worker, nie ma sensu więcej
+          CONCURRENT_GMINY: "1"
+          CONCURRENT_REQUESTS: "30"
+          LIMIT_PER_HOST: "4"
+          RATE_MIN_DELAY: "0.3"
+          CHECKPOINT_EVERY_SEC: "300"   # checkpoint co 5 min (jedna gmina)
         run: |
           python bip_watcher.py
 
-      # ===================== COMMIT THIS SHARD TO cache-store =====================
-      # if: always() gwarantuje wykonanie nawet gdy krok Pythona przekroczył timeout lub błąd
+      # ===================== COMMIT THIS SHARD =====================
       - name: Compress shard and commit to cache-store
         if: always()
-        timeout-minutes: 25   # ← NOWE: własny timeout — GHA nie ubije tego kroku przed job timeout
+        timeout-minutes: 25
         shell: bash
         env:
           SHARD_INDEX: "${{ matrix.shard }}"
@@ -233,20 +266,20 @@ jobs:
           ls -lah data || true
 
           if [ ! -f "data/cache_shard_${SHARD_INDEX}.json" ]; then
-            echo "ℹ️ No shard file to commit: data/cache_shard_${SHARD_INDEX}.json"
+            echo "ℹ️ Brak pliku sharda: data/cache_shard_${SHARD_INDEX}.json"
             exit 0
           fi
 
           mkdir -p cache-store/shards
 
-          python - <<'PY'
+          python3 - <<'PY'
           import os, gzip, shutil
           shard = os.environ["SHARD_INDEX"]
           src = f"data/cache_shard_{shard}.json"
           dst = f"cache-store/shards/cache_shard_{shard}.json.gz"
           with open(src, "rb") as f_in, gzip.open(dst, "wb", compresslevel=9) as f_out:
               shutil.copyfileobj(f_in, f_out)
-          print("✅ Written:", dst)
+          print("✅ Shard skompresowany:", dst)
           PY
 
           cd cache-store
@@ -262,7 +295,7 @@ jobs:
             sleep $((i*2))
           done
 
-      # ===================== OPTIONAL: keep per-run artifacts (debug/logs) =====================
+      # ===================== ARTIFACTS (debug) =====================
       - name: Upload shard outputs (logs)
         if: always()
         uses: actions/upload-artifact@v4
@@ -276,6 +309,7 @@ jobs:
             data/diag_gminy.csv
             data/diag_errors.csv
 
+  # ===================== KROK 3: Merge + email =====================
   merge:
     name: Merge caches + email wyników
     runs-on: ubuntu-latest
@@ -302,7 +336,7 @@ jobs:
           set -e
           mkdir -p data
 
-          python - <<'PY'
+          python3 - <<'PY'
           import json, glob, gzip, zipfile
           from pathlib import Path
 
@@ -323,26 +357,21 @@ jobs:
 
           shard_files = sorted(glob.glob(str(SHARDS / "cache_shard_*.json.gz")))
           if not shard_files:
-              print("No committed shards found -> writing empty master")
+              print("Brak shardów -> pusty master")
           else:
               for sf in shard_files:
                   try:
                       with gzip.open(sf, "rt", encoding="utf-8") as f:
                           data = json.load(f)
                   except Exception as e:
-                      print("Error reading", sf, e)
+                      print(f"Błąd {sf}: {e}")
                       continue
-
                   for k in merged:
-                      if k == "schema":
-                          continue
-                      if k not in data:
-                          continue
+                      if k == "schema" or k not in data: continue
                       if isinstance(merged[k], dict) and isinstance(data[k], dict):
                           if k == "urls_seen":
                               for h, ts in data[k].items():
-                                  prev = merged[k].get(h, "")
-                                  if (ts or "") >= (prev or ""):
+                                  if (ts or "") >= (merged[k].get(h, "")):
                                       merged[k][h] = ts
                           elif k == "dead_urls":
                               for gkey, urls in data[k].items():
@@ -356,16 +385,17 @@ jobs:
                               merged[k].update(data[k])
                       else:
                           merged[k] = data[k]
-
-              print("Merged committed shards:", len(shard_files))
+              print(f"Zmergowano {len(shard_files)} shardów")
 
           DATA.mkdir(parents=True, exist_ok=True)
-          (DATA / "cache.json").write_text(json.dumps(merged, ensure_ascii=False, indent=2), encoding="utf-8")
+          (DATA / "cache.json").write_text(
+              json.dumps(merged, ensure_ascii=False, indent=2), encoding="utf-8")
 
-          with zipfile.ZipFile(DATA / "cache.zip", "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
+          with zipfile.ZipFile(DATA / "cache.zip", "w",
+                               compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
               z.write(DATA / "cache.json", arcname="cache.json")
 
-          print("OK: data/cache.json + data/cache.zip created")
+          print("OK: data/cache.json + data/cache.zip")
           PY
 
       - name: Split cache.zip into <100MB parts and commit to cache-store
@@ -374,14 +404,12 @@ jobs:
         run: |
           set -e
           mkdir -p cache-store/master
-
           rm -f cache-store/master/cache.zip.part-* || true
           split -b 95m data/cache.zip cache-store/master/cache.zip.part-
 
           cd cache-store
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
           git add master/cache.zip.part-*
           git commit -m "Update master cache zip parts [skip ci]" || echo "No changes to commit"
 
@@ -391,7 +419,7 @@ jobs:
             sleep $((i*2))
           done
 
-      - name: Upload master cache artifact (optional)
+      - name: Upload master cache artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -402,9 +430,6 @@ jobs:
             data/cache.zip
 
       # ===================== EMAIL Z WYNIKAMI =====================
-      # GMAIL_APP_PASSWORD musi być dodane jako GitHub Secret (nigdy w plaintext!)
-      # Instrukcja: Settings → Secrets and variables → Actions → New repository secret
-      # Nazwa: GMAIL_APP_PASSWORD  Wartość: nowe hasło aplikacji z myaccount.google.com/apppasswords
       - name: Send results email
         if: always()
         shell: bash
@@ -412,11 +437,11 @@ jobs:
           GMAIL_USER: "kamiljelonek227@gmail.com"
           GMAIL_APP_PASSWORD: "sldy dhtk redc vwrn"
         run: |
-          python - <<'PY'
+          python3 - <<'PY'
           import os, json, glob, gzip, smtplib
           from email.mime.text import MIMEText
           from email.mime.multipart import MIMEMultipart
-          from datetime import datetime
+          from datetime import datetime, timezone
           from pathlib import Path
           from collections import defaultdict
 
@@ -424,22 +449,15 @@ jobs:
           GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
 
           if not GMAIL_APP_PASSWORD:
-              print("⚠️ Brak GMAIL_APP_PASSWORD w GitHub Secrets — email pominięty")
-              print("   Dodaj secret: Settings → Secrets and variables → Actions → New repository secret")
-              print("   Nazwa: GMAIL_APP_PASSWORD")
+              print("⚠️ Brak GMAIL_APP_PASSWORD — email pominięty")
               exit(0)
 
-          # ── Zbierz NOWE i ZMIANA z ostatniego runu ──────────────────────────────
-          # Źródło: content_seen z każdego sharda
-          # "ostatni run" = wpisy z found_at z ostatnich 12h (odporność na drift)
           STORE = Path("cache-store/shards")
           shard_files = sorted(glob.glob(str(STORE / "cache_shard_*.json.gz")))
 
-          from datetime import timezone, timedelta
           now_utc = datetime.now(timezone.utc)
-          CUTOFF_HOURS = 12  # wpisy starsze niż 12h to poprzednie runy
+          CUTOFF_HOURS = 12
 
-          # gmina -> {nowe: [(title, url, keywords)], zmiana: [...]}
           results = defaultdict(lambda: {"nowe": [], "zmiana": []})
           total_shards_ok = 0
 
@@ -448,39 +466,33 @@ jobs:
                   with gzip.open(sf, "rt", encoding="utf-8") as f:
                       data = json.load(f)
               except Exception as e:
-                  print(f"⚠️ Błąd czytania {sf}: {e}")
+                  print(f"⚠️ Błąd {sf}: {e}")
                   continue
               total_shards_ok += 1
 
               content_seen = data.get("content_seen", {})
               for key, meta in content_seen.items():
-                  if not isinstance(meta, dict):
-                      continue
+                  if not isinstance(meta, dict): continue
                   status = meta.get("status", "")
-                  if status not in ("NOWE", "ZMIANA"):
-                      continue
+                  if status not in ("NOWE", "ZMIANA"): continue
 
-                  # filtruj po czasie — tylko wpisy z tego runu
                   found_at_str = meta.get("found_at", "")
                   if found_at_str:
                       try:
-                          found_at = datetime.fromisoformat(found_at_str.replace("Z", "+00:00"))
+                          found_at = datetime.fromisoformat(
+                              found_at_str.replace("Z", "+00:00"))
                           if found_at.tzinfo is None:
                               found_at = found_at.replace(tzinfo=timezone.utc)
-                          age_hours = (now_utc - found_at).total_seconds() / 3600
-                          if age_hours > CUTOFF_HOURS:
-                              continue  # stary wpis z poprzedniego runu
+                          if (now_utc - found_at).total_seconds() / 3600 > CUTOFF_HOURS:
+                              continue
                       except Exception:
-                          pass  # brak daty = nie filtrujemy
+                          pass
 
-                  gmina = meta.get("gmina") or meta.get("seed_name") or "nieznana"
-                  url = meta.get("url") or key
-                  title = (meta.get("title") or meta.get("h1") or "").strip() or "(brak tytułu)"
-                  keywords = meta.get("keywords") or []
-                  if isinstance(keywords, list):
-                      kw_str = ", ".join(keywords[:5])
-                  else:
-                      kw_str = str(keywords)
+                  gmina   = meta.get("gmina") or "nieznana"
+                  url     = meta.get("url") or key
+                  title   = (meta.get("title") or "").strip() or "(brak tytułu)"
+                  kws     = meta.get("keywords") or []
+                  kw_str  = ", ".join(kws[:5]) if isinstance(kws, list) else str(kws)
 
                   entry = (title, url, kw_str)
                   if status == "NOWE":
@@ -488,53 +500,47 @@ jobs:
                   else:
                       results[gmina]["zmiana"].append(entry)
 
-          total_nowe = sum(len(v["nowe"]) for v in results.values())
+          total_nowe   = sum(len(v["nowe"])   for v in results.values())
           total_zmiana = sum(len(v["zmiana"]) for v in results.values())
           run_date = now_utc.strftime("%Y-%m-%d %H:%M UTC")
 
-          print(f"📊 Shardów odczytanych: {total_shards_ok}/{len(shard_files)}")
+          print(f"📊 Shardów: {total_shards_ok}/{len(shard_files)}")
           print(f"📊 NOWE: {total_nowe}, ZMIANA: {total_zmiana}")
 
-          # ── Zbuduj treść emaila ────────────────────────────────────────────────
           if total_nowe == 0 and total_zmiana == 0:
               subject = f"BIP Watcher {now_utc.strftime('%Y-%m-%d')} — brak nowych wyników"
               body_lines = [
                   f"BIP Watcher — skan {run_date}",
-                  f"Odczytano shardów: {total_shards_ok}/{len(shard_files)}",
+                  f"Shardów: {total_shards_ok}/{len(shard_files)}",
                   "",
                   "Brak nowych ogłoszeń ani zmian załączników w tym skanie.",
               ]
           else:
-              subject = f"BIP Watcher {now_utc.strftime('%Y-%m-%d')} — {total_nowe} NOWYCH, {total_zmiana} ZMIAN"
+              subject = (f"BIP Watcher {now_utc.strftime('%Y-%m-%d')} "
+                         f"— {total_nowe} NOWYCH, {total_zmiana} ZMIAN")
               body_lines = [
                   f"BIP Watcher — skan {run_date}",
-                  f"Odczytano shardów: {total_shards_ok}/{len(shard_files)}",
-                  f"Łącznie: {total_nowe} nowych ogłoszeń | {total_zmiana} zmienionych załączników",
+                  f"Shardów: {total_shards_ok}/{len(shard_files)}",
+                  f"Łącznie: {total_nowe} nowych | {total_zmiana} zmian załączników",
                   "=" * 65,
               ]
-
               for gmina in sorted(results.keys()):
                   v = results[gmina]
-                  if not v["nowe"] and not v["zmiana"]:
-                      continue
-
+                  if not v["nowe"] and not v["zmiana"]: continue
                   body_lines.append("")
                   body_lines.append(f"📍 {gmina}")
-
                   if v["nowe"]:
                       body_lines.append(f"  🟢 NOWE ({len(v['nowe'])}):")
                       for title, url, kw in v["nowe"][:30]:
                           body_lines.append(f"    • {title}")
                           body_lines.append(f"      {url}")
-                          if kw:
-                              body_lines.append(f"      [{kw}]")
+                          if kw: body_lines.append(f"      [{kw}]")
                   if v["zmiana"]:
                       body_lines.append(f"  🔄 ZMIANA ZAŁĄCZNIKÓW ({len(v['zmiana'])}):")
                       for title, url, kw in v["zmiana"][:15]:
                           body_lines.append(f"    • {title}")
                           body_lines.append(f"      {url}")
-                          if kw:
-                              body_lines.append(f"      [{kw}]")
+                          if kw: body_lines.append(f"      [{kw}]")
 
               if total_nowe > 30 or total_zmiana > 15:
                   body_lines.append("")
@@ -542,20 +548,17 @@ jobs:
 
           body = "\n".join(body_lines)
 
-          # ── Wyślij ────────────────────────────────────────────────────────────
           try:
               msg = MIMEMultipart("alternative")
               msg["Subject"] = subject
-              msg["From"] = GMAIL_USER
-              msg["To"] = GMAIL_USER
+              msg["From"]    = GMAIL_USER
+              msg["To"]      = GMAIL_USER
               msg.attach(MIMEText(body, "plain", "utf-8"))
-
               with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
                   server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
                   server.sendmail(GMAIL_USER, [GMAIL_USER], msg.as_string())
-
               print(f"✅ Email wysłany: {subject}")
           except Exception as e:
-              print(f"❌ Błąd wysyłania emaila: {e}")
+              print(f"❌ Błąd emaila: {e}")
               raise
           PY
