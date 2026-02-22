@@ -446,16 +446,6 @@ def is_block_page(text: str) -> bool:
     for p in _BLOCK_PATTERNS_SURE:
         if p.lower() in low:
             return True
-    try:
-        from bs4 import BeautifulSoup as _BS
-        _soup = _BS(text[:8000], "html.parser")
-        visible = re.sub(r"\s+", " ", _soup.get_text(" ", strip=True)).strip()
-    except Exception:
-        visible = re.sub(r"<[^>]+>", " ", text[:4000]).strip()
-    if len(visible) < 600:
-        for pattern in _BLOCK_PATTERNS_CONTEXT:
-            if re.search(pattern, low[:4000]):
-                return True
     return False
 
 def retry_io(action, tries: int = 5, base_sleep: float = 0.6):
@@ -1665,6 +1655,10 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
         if not url:
             continue
 
+        # pomiń załączniki — obsługiwane przez attachments_signature()
+        if any(url.lower().endswith(ext) for ext in ATT_EXT):
+            continue
+
         url_hash = url_key(url)
         is_listing = is_listing_url(url) or is_home_url(url)
         url_dedup = sha1(canonical_url(url))
@@ -2230,5 +2224,6 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
