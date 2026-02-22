@@ -2,12 +2,12 @@ name: BIP Watcher Weekly
 
 on:
   schedule:
-    - cron: "0 6 * * 1"
-    - cron: "0 6 * * 4"
+    - cron: "0 6 * * 1"   # poniedziałek 6:00 UTC
+    - cron: "0 6 * * 4"   # czwartek 6:00 UTC
   workflow_dispatch:
     inputs:
       full_reset:
-        description: "FULL RESET cache-store (shards + master) i start od zera"
+        description: "FULL RESET — wyczyść cały cache-store i zacznij od zera"
         required: true
         default: "false"
         type: choice
@@ -25,9 +25,11 @@ permissions:
 
 jobs:
 
-  # ===================== KROK 0: Init cache-store =====================
+  # ============================================================
+  # KROK 0: Utwórz branch cache-store jeśli nie istnieje
+  # ============================================================
   init_cache_store:
-    name: Init cache-store branch (single)
+    name: Init cache-store branch
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -39,18 +41,18 @@ jobs:
         shell: bash
         run: |
           set -e
-          git fetch origin +refs/heads/cache-store:refs/remotes/origin/cache-store || true
+          git fetch origin +refs/heads/cache-store:refs/remotes/origin/cache-store 2>/dev/null || true
 
           if git show-ref --verify --quiet refs/remotes/origin/cache-store; then
             echo "✅ cache-store exists"
             exit 0
           fi
 
-          echo "ℹ️ Creating cache-store branch"
+          echo "ℹ️ Creating cache-store orphan branch"
           git checkout --orphan cache-store
           rm -rf ./* ./.gitignore || true
           mkdir -p shards master
-          echo "cache-store initialized" > README.md
+          echo "cache-store initialized $(date -u)" > README.md
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -58,66 +60,90 @@ jobs:
           git commit -m "Initialize cache-store [skip ci]"
           git push origin cache-store
 
-  # ===================== FULL RESET (jeśli wybrany) =====================
+  # ============================================================
+  # KROK 1: FULL RESET (opcjonalny — tylko gdy full_reset=true)
+  # ============================================================
   reset_cache_store:
-    name: FULL RESET cache-store (one-shot)
+    name: FULL RESET cache-store
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [init_cache_store]
-    if: github.event_name == 'workflow_dispatch' && inputs.full_reset == 'true'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.full_reset == 'true'
     steps:
       - uses: actions/checkout@v4
         with:
           ref: cache-store
           fetch-depth: 0
 
-      - name: Wipe shards + master
+      - name: Wipe all shards and master
         shell: bash
         run: |
           set -e
           rm -rf shards master
           mkdir -p shards master
-          echo "RESET @ $(date -u +%F_%T) UTC" > README.md
+          echo "FULL RESET @ $(date -u +%F_%T) UTC" > README.md
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "FULL RESET cache-store [skip ci]" || echo "No changes"
-          git push
+          git commit -m "FULL RESET cache-store [skip ci]" || echo "Nothing to commit"
 
-  # ===================== BUILD MATRIX =====================
+          for i in 1 2 3 4 5; do
+            git pull --rebase && git push && break
+            echo "Push retry #$i"
+            sleep $((i*2))
+          done
+          echo "✅ cache-store wyczyszczony"
+
+  # ============================================================
+  # KROK 2: Zbuduj dynamic matrix (1 shard = 1 gmina)
+  #
+  # KRYTYCZNE: if: always()
+  # Bez tego GHA skipuje setup gdy reset_cache_store jest SKIPPED
+  # (bo reset ma condition 'if: full_reset==true').
+  # GHA zasada: job z needs na SKIPPED job → sam jest SKIPPED,
+  # chyba że ma if: always() lub if: needs.X.result != 'failure'
+  # ============================================================
   setup:
-    name: Build dynamic shard matrix
+    name: Build shard matrix
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [init_cache_store, reset_cache_store]
+    if: always() && needs.init_cache_store.result == 'success'
     outputs:
-      matrix: ${{ steps.build_matrix.outputs.matrix }}
-      total: ${{ steps.build_matrix.outputs.total }}
+      matrix: ${{ steps.build.outputs.matrix }}
+      total: ${{ steps.build.outputs.total }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - id: build_matrix
+      - name: Count gminy and build matrix
+        id: build
         shell: bash
         run: |
           python3 - <<'PY'
           import csv, json, os
           from pathlib import Path
 
-          csv_file = Path("data/bipy1.csv")
-          if not csv_file.exists():
-              csv_file = Path("bipy1.csv")
+          for candidate in ["data/bipy1.csv", "bipy1.csv"]:
+              csv_file = Path(candidate)
+              if csv_file.exists():
+                  break
+          else:
+              print("❌ Nie znaleziono bipy1.csv!")
+              with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+                  f.write('matrix={"shard":[]}\n')
+                  f.write("total=0\n")
+              exit(0)
 
           rows = []
-          if csv_file.exists():
-              with open(csv_file, encoding="utf-8") as f:
-                  reader = csv.DictReader(f)
-                  for row in reader:
-                      name = (row.get("name") or "").strip()
-                      url  = (row.get("url") or "").strip()
-                      if name and url:
-                          rows.append((name, url))
+          with open(csv_file, encoding="utf-8") as f:
+              reader = csv.DictReader(f)
+              for row in reader:
+                  name = (row.get("name") or "").strip()
+                  url  = (row.get("url") or "").strip()
+                  if name and url:
+                      rows.append((name, url))
 
           total = len(rows)
           matrix = json.dumps({"shard": list(range(total))})
@@ -126,16 +152,19 @@ jobs:
               f.write(f"matrix={matrix}\n")
               f.write(f"total={total}\n")
 
-          print(f"Gmin: {total}")
+          print(f"✅ Gmin: {total}, indeksy: 0..{total-1}")
           PY
 
-  # ===================== SCAN =====================
+  # ============================================================
+  # KROK 3: Skan — 1 job = 1 gmina, max 10 równolegle
+  # ============================================================
   scan:
     name: Scan shard ${{ matrix.shard }}
     runs-on: ubuntu-latest
     continue-on-error: true
     timeout-minutes: 355
     needs: [setup]
+    if: needs.setup.result == 'success' && needs.setup.outputs.total != '0'
 
     strategy:
       fail-fast: false
@@ -157,17 +186,51 @@ jobs:
         with:
           python-version: "3.11"
 
-      - run: |
+      - name: Install dependencies
+        run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Build runtime cache.json
+      # ──────────────────────────────────────────────────────────
+      # KLUCZOWA POPRAWKA #1: wczytaj shard tego joba z cache-store
+      # Zamiast zawsze startować z pustym cache.json, każdy shard
+      # wczytuje swój własny plik z poprzedniego runu.
+      # ──────────────────────────────────────────────────────────
+      - name: Restore shard cache from cache-store
         shell: bash
+        env:
+          SHARD_INDEX: "${{ matrix.shard }}"
         run: |
+          set -e
           mkdir -p data
-          echo '{"schema":10,"urls_seen":{},"content_seen":{},"gmina_seeds":{},"page_fprints":{},"gmina_frontiers":{},"gmina_retry":{},"dead_urls":{}}' > data/cache.json
 
+          SHARD_GZ="cache-store/shards/cache_shard_${SHARD_INDEX}.json.gz"
+
+          if [ -f "$SHARD_GZ" ]; then
+            echo "📦 Wczytuję shard $SHARD_INDEX z poprzedniego runu..."
+            gunzip -c "$SHARD_GZ" > "data/cache_shard_${SHARD_INDEX}.json"
+            # Python wczytuje data/cache.json — kopiujemy tam shard
+            cp "data/cache_shard_${SHARD_INDEX}.json" data/cache.json
+            python3 -c "
+          import json
+          with open('data/cache.json') as f:
+              c = json.load(f)
+          urls  = len(c.get('urls_seen', {}))
+          cont  = len(c.get('content_seen', {}))
+          seeds = len(c.get('gmina_seeds', {}))
+          dead  = sum(len(v) for v in c.get('dead_urls', {}).values())
+          print(f'📦 Cache restored: {urls} URLs, {cont} content, {seeds} seeds, {dead} dead')
+          "
+          else
+            echo "ℹ️ Brak poprzedniego sharda $SHARD_INDEX — startujemy świeżo"
+            echo '{"schema":10,"urls_seen":{},"content_seen":{},"gmina_seeds":{},"page_fprints":{},"gmina_frontiers":{},"gmina_retry":{},"dead_urls":{}}' > data/cache.json
+          fi
+
+      # ──────────────────────────────────────────────────────────
+      # RUN
+      # ──────────────────────────────────────────────────────────
       - name: Run watcher
+        continue-on-error: true
         timeout-minutes: 325
         env:
           PYTHONUNBUFFERED: "1"
@@ -179,38 +242,102 @@ jobs:
           LIMIT_PER_HOST: "4"
           RATE_MIN_DELAY: "0.3"
           CHECKPOINT_EVERY_SEC: "300"
-          RESET_CACHE: ${{ inputs.full_reset }}
+          RESET_CACHE: ${{ github.event.inputs.full_reset || 'false' }}
         run: |
           python bip_watcher.py
 
-      - name: Commit shard
+      # ──────────────────────────────────────────────────────────
+      # KLUCZOWA POPRAWKA #2: commit sharda — poprawna kolejność
+      # pull --rebase PRZED commit, push z retry (10 prób)
+      # Przy 10 równoległych jobów konflikty są normalne.
+      # ──────────────────────────────────────────────────────────
+      - name: Compress and commit shard to cache-store
         if: always()
+        timeout-minutes: 25
         shell: bash
         env:
           SHARD_INDEX: "${{ matrix.shard }}"
         run: |
-          if [ ! -f "data/cache_shard_${SHARD_INDEX}.json" ]; then
-            echo "No shard file"
+          set -e
+
+          SHARD_JSON="data/cache_shard_${SHARD_INDEX}.json"
+          SHARD_GZ_DEST="cache-store/shards/cache_shard_${SHARD_INDEX}.json.gz"
+
+          if [ ! -f "$SHARD_JSON" ]; then
+            echo "ℹ️ Brak $SHARD_JSON — nic do zapisania"
             exit 0
           fi
 
           mkdir -p cache-store/shards
-          gzip -9 -c data/cache_shard_${SHARD_INDEX}.json > cache-store/shards/cache_shard_${SHARD_INDEX}.json.gz
+
+          # Kompresja
+          gzip -9 -c "$SHARD_JSON" > "$SHARD_GZ_DEST"
+          SIZE=$(du -h "$SHARD_GZ_DEST" | cut -f1)
+          echo "✅ Shard $SHARD_INDEX skompresowany: $SIZE"
 
           cd cache-store
+
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add shards/cache_shard_${SHARD_INDEX}.json.gz
-          git commit -m "Update shard ${SHARD_INDEX} [skip ci]" || echo "No changes"
-          git pull --rebase
-          git push
 
-  # ===================== MERGE + EMAIL =====================
+          # Pętla: pull → stage → sprawdź zmiany → commit → push
+          # Przy konflikcie: reset commit → pull → spróbuj ponownie
+          COMMITTED=0
+          for i in $(seq 1 10); do
+            # Zawsze najpierw sync z remote
+            git fetch origin cache-store 2>/dev/null || true
+            git rebase origin/cache-store 2>/dev/null || git pull --rebase origin cache-store 2>/dev/null || true
+
+            # Stage pliku sharda (może być zmodyfikowany przez rebase)
+            git add "shards/cache_shard_${SHARD_INDEX}.json.gz"
+
+            # Sprawdź czy są zmiany
+            if git diff --cached --quiet; then
+              echo "ℹ️ Shard $SHARD_INDEX — bez zmian, commit pominięty"
+              COMMITTED=1
+              break
+            fi
+
+            git commit -m "Update shard ${SHARD_INDEX} [skip ci]"
+
+            if git push origin cache-store 2>/dev/null; then
+              echo "✅ Push sharda $SHARD_INDEX OK (próba $i)"
+              COMMITTED=1
+              break
+            fi
+
+            echo "⚠️ Push retry #$i (konflikt) — cofam commit i próbuję ponownie..."
+            git reset HEAD~1
+            sleep $((i * 3 + RANDOM % 5))
+          done
+
+          if [ "$COMMITTED" -eq 0 ]; then
+            echo "❌ Nie udało się zapisać sharda $SHARD_INDEX po 10 próbach!"
+            exit 1
+          fi
+
+      - name: Upload logs artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bip-shard-${{ matrix.shard }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            data/summary_report.txt
+            data/log.csv
+            data/diag_gminy.csv
+            data/diag_errors.csv
+
+  # ============================================================
+  # KROK 4: Merge + email
+  # ============================================================
   merge:
-    name: Merge caches + email
+    name: Merge + email
     runs-on: ubuntu-latest
     needs: [scan]
     if: always()
+    timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v4
@@ -223,10 +350,226 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Merge shards into master cache.json + cache.zip
+        shell: bash
+        run: |
+          mkdir -p data
+          python3 - <<'PY'
+          import json, glob, gzip, zipfile
+          from pathlib import Path
+
+          SHARDS = Path("cache-store/shards")
+          DATA   = Path("data")
+
+          REQUIRED = ["schema","urls_seen","content_seen","gmina_seeds",
+                      "page_fprints","gmina_frontiers","gmina_retry","dead_urls"]
+
+          merged = {k: ({} if k != "schema" else 10) for k in REQUIRED}
+
+          shard_files = sorted(glob.glob(str(SHARDS / "cache_shard_*.json.gz")))
+          print(f"Mergowanie {len(shard_files)} shardów...")
+
+          for sf in shard_files:
+              try:
+                  with gzip.open(sf, "rt", encoding="utf-8") as f:
+                      data = json.load(f)
+              except Exception as e:
+                  print(f"⚠️ Błąd {sf}: {e}")
+                  continue
+
+              for k in merged:
+                  if k == "schema" or k not in data:
+                      continue
+                  if isinstance(merged[k], dict) and isinstance(data[k], dict):
+                      if k == "urls_seen":
+                          for h, ts in data[k].items():
+                              if (ts or "") >= (merged[k].get(h, "")):
+                                  merged[k][h] = ts
+                      elif k == "dead_urls":
+                          for gkey, urls in data[k].items():
+                              merged[k].setdefault(gkey, [])
+                              seen = set(merged[k][gkey])
+                              for u in urls:
+                                  if u not in seen:
+                                      merged[k][gkey].append(u)
+                                      seen.add(u)
+                      else:
+                          merged[k].update(data[k])
+                  else:
+                      merged[k] = data[k]
+
+          DATA.mkdir(parents=True, exist_ok=True)
+          (DATA / "cache.json").write_text(
+              json.dumps(merged, ensure_ascii=False, indent=2), encoding="utf-8")
+
+          with zipfile.ZipFile(DATA / "cache.zip", "w",
+                               compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
+              z.write(DATA / "cache.json", arcname="cache.json")
+
+          urls_n  = len(merged.get("urls_seen", {}))
+          cont_n  = len(merged.get("content_seen", {}))
+          seeds_n = len(merged.get("gmina_seeds", {}))
+          dead_n  = sum(len(v) for v in merged.get("dead_urls", {}).values())
+          print(f"✅ Merge: {urls_n} URLs, {cont_n} content, {seeds_n} seeds, {dead_n} dead")
+          PY
+
+      - name: Split + commit master cache
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p cache-store/master
+          rm -f cache-store/master/cache.zip.part-* || true
+          split -b 95m data/cache.zip cache-store/master/cache.zip.part-
+
+          cd cache-store
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add master/cache.zip.part-*
+          if git diff --cached --quiet; then
+            echo "ℹ️ Master cache bez zmian"
+            exit 0
+          fi
+
+          git commit -m "Update master cache [skip ci]"
+          for i in 1 2 3 4 5; do
+            git pull --rebase && git push && break
+            sleep $((i*3))
+          done
+
+      - name: Upload master cache artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bip-master-cache
+          retention-days: 30
+          path: |
+            data/cache.json
+            data/cache.zip
+
       - name: Send results email
+        if: always()
         shell: bash
         env:
           GMAIL_USER: "kamiljelonek227@gmail.com"
           GMAIL_APP_PASSWORD: "sldy dhtk redc vwrn"
         run: |
-          echo "Email placeholder — merge logic kept minimal after reset mode."
+          python3 - <<'PY'
+          import os, json, glob, gzip, smtplib
+          from email.mime.text import MIMEText
+          from email.mime.multipart import MIMEMultipart
+          from datetime import datetime, timezone
+          from pathlib import Path
+          from collections import defaultdict
+
+          GMAIL_USER         = os.environ.get("GMAIL_USER", "")
+          GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
+
+          if not GMAIL_APP_PASSWORD:
+              print("⚠️ Brak GMAIL_APP_PASSWORD — email pominięty")
+              exit(0)
+
+          SHARDS      = Path("cache-store/shards")
+          shard_files = sorted(glob.glob(str(SHARDS / "cache_shard_*.json.gz")))
+          now_utc     = datetime.now(timezone.utc)
+          CUTOFF_H    = 12
+
+          results   = defaultdict(lambda: {"nowe": [], "zmiana": []})
+          shards_ok = 0
+
+          for sf in shard_files:
+              try:
+                  with gzip.open(sf, "rt", encoding="utf-8") as f:
+                      data = json.load(f)
+              except Exception as e:
+                  print(f"⚠️ {sf}: {e}")
+                  continue
+              shards_ok += 1
+
+              for key, meta in data.get("content_seen", {}).items():
+                  if not isinstance(meta, dict):
+                      continue
+                  status = meta.get("status", "")
+                  if status not in ("NOWE", "ZMIANA"):
+                      continue
+
+                  found_at_str = meta.get("found_at", "")
+                  if found_at_str:
+                      try:
+                          fa = datetime.fromisoformat(found_at_str.replace("Z", "+00:00"))
+                          if fa.tzinfo is None:
+                              fa = fa.replace(tzinfo=timezone.utc)
+                          if (now_utc - fa).total_seconds() / 3600 > CUTOFF_H:
+                              continue
+                      except Exception:
+                          pass
+
+                  gmina  = meta.get("gmina") or "nieznana"
+                  url    = meta.get("url") or key
+                  title  = (meta.get("title") or "").strip() or "(brak tytułu)"
+                  kws    = meta.get("keywords") or []
+                  kw_str = ", ".join(kws[:5]) if isinstance(kws, list) else str(kws)
+
+                  if status == "NOWE":
+                      results[gmina]["nowe"].append((title, url, kw_str))
+                  else:
+                      results[gmina]["zmiana"].append((title, url, kw_str))
+
+          total_nowe   = sum(len(v["nowe"])   for v in results.values())
+          total_zmiana = sum(len(v["zmiana"]) for v in results.values())
+          run_date     = now_utc.strftime("%Y-%m-%d %H:%M UTC")
+
+          print(f"📊 Shardów: {shards_ok}/{len(shard_files)}, NOWE: {total_nowe}, ZMIANA: {total_zmiana}")
+
+          if total_nowe == 0 and total_zmiana == 0:
+              subject = f"BIP Watcher {now_utc.strftime('%Y-%m-%d')} — brak nowych wyników"
+              body_lines = [
+                  f"BIP Watcher — skan {run_date}",
+                  f"Shardów: {shards_ok}/{len(shard_files)}",
+                  "",
+                  "Brak nowych ogłoszeń ani zmian załączników.",
+              ]
+          else:
+              subject = (f"BIP Watcher {now_utc.strftime('%Y-%m-%d')} "
+                         f"— {total_nowe} NOWYCH, {total_zmiana} ZMIAN")
+              body_lines = [
+                  f"BIP Watcher — skan {run_date}",
+                  f"Shardów: {shards_ok}/{len(shard_files)}",
+                  f"Łącznie: {total_nowe} nowych | {total_zmiana} zmian załączników",
+                  "=" * 65,
+              ]
+              for gmina in sorted(results.keys()):
+                  v = results[gmina]
+                  if not v["nowe"] and not v["zmiana"]:
+                      continue
+                  body_lines.append(f"\n📍 {gmina}")
+                  if v["nowe"]:
+                      body_lines.append(f"  🟢 NOWE ({len(v['nowe'])}):")
+                      for title, url, kw in v["nowe"][:30]:
+                          body_lines.append(f"    • {title}")
+                          body_lines.append(f"      {url}")
+                          if kw:
+                              body_lines.append(f"      [{kw}]")
+                  if v["zmiana"]:
+                      body_lines.append(f"  🔄 ZMIANA ZAŁĄCZNIKÓW ({len(v['zmiana'])}):")
+                      for title, url, kw in v["zmiana"][:15]:
+                          body_lines.append(f"    • {title}")
+                          body_lines.append(f"      {url}")
+                          if kw:
+                              body_lines.append(f"      [{kw}]")
+
+          body = "\n".join(body_lines)
+          try:
+              msg = MIMEMultipart("alternative")
+              msg["Subject"] = subject
+              msg["From"]    = GMAIL_USER
+              msg["To"]      = GMAIL_USER
+              msg.attach(MIMEText(body, "plain", "utf-8"))
+              with smtplib.SMTP_SSL("smtp.gmail.com", 465) as srv:
+                  srv.login(GMAIL_USER, GMAIL_APP_PASSWORD)
+                  srv.sendmail(GMAIL_USER, [GMAIL_USER], msg.as_string())
+              print(f"✅ Email wysłany: {subject}")
+          except Exception as e:
+              print(f"❌ Błąd emaila: {e}")
+              raise
+          PY
