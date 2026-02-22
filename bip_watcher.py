@@ -203,8 +203,8 @@ CONCURRENT_GMINY = env_int("CONCURRENT_GMINY", 8)
 CONCURRENT_REQUESTS = env_int("CONCURRENT_REQUESTS", 30)
 LIMIT_PER_HOST = env_int("LIMIT_PER_HOST", 4)
 
-PHASE1_MAX_PAGES = 600      # było 5000 (120 było za mało, 5000 za dużo — 600 to dobry kompromis)
-PHASE1_MAX_SEEDS = 8000     # było 100000 (2000 było za mało, 100k absurd — 8000 wystarczy)
+PHASE1_MAX_PAGES = 1000      # było 5000 (120 było za mało, 5000 za dużo — 600 to dobry kompromis)
+PHASE1_MAX_SEEDS = 12000     # było 100000 (2000 było za mało, 100k absurd — 8000 wystarczy)
 PHASE2_MAX_DEPTH = 4       # było 4 (często BIPy mają głębiej)
 PHASE2_MAX_PAGES = 1000000   # było 5000 (przy UNLIMITED_SCAN i tak ogranicza Cię czas)
 ABSOLUTE_MAX_SEC_PER_GMINA = 10**9
@@ -2720,3 +2720,4 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
