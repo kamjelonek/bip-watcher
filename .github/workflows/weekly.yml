@@ -97,12 +97,6 @@ jobs:
 
   # ============================================================
   # KROK 2: Zbuduj dynamic matrix (1 shard = 1 gmina)
-  #
-  # KRYTYCZNE: if: always()
-  # Bez tego GHA skipuje setup gdy reset_cache_store jest SKIPPED
-  # (bo reset ma condition 'if: full_reset==true').
-  # GHA zasada: job z needs na SKIPPED job → sam jest SKIPPED,
-  # chyba że ma if: always() lub if: needs.X.result != 'failure'
   # ============================================================
   setup:
     name: Build shard matrix
@@ -146,6 +140,7 @@ jobs:
                       rows.append((name, url))
 
           total = len(rows)
+          # 1 shard = 1 gmina, indeksy 0..N-1
           matrix = json.dumps({"shard": list(range(total))})
 
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
@@ -191,11 +186,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # ──────────────────────────────────────────────────────────
-      # KLUCZOWA POPRAWKA #1: wczytaj shard tego joba z cache-store
-      # Zamiast zawsze startować z pustym cache.json, każdy shard
-      # wczytuje swój własny plik z poprzedniego runu.
-      # ──────────────────────────────────────────────────────────
       - name: Restore shard cache from cache-store
         shell: bash
         env:
@@ -209,7 +199,6 @@ jobs:
           if [ -f "$SHARD_GZ" ]; then
             echo "📦 Wczytuję shard $SHARD_INDEX z poprzedniego runu..."
             gunzip -c "$SHARD_GZ" > "data/cache_shard_${SHARD_INDEX}.json"
-            # Python wczytuje data/cache.json — kopiujemy tam shard
             cp "data/cache_shard_${SHARD_INDEX}.json" data/cache.json
             python3 -c "
           import json
@@ -223,12 +212,9 @@ jobs:
           "
           else
             echo "ℹ️ Brak poprzedniego sharda $SHARD_INDEX — startujemy świeżo"
-            echo '{"schema":10,"urls_seen":{},"content_seen":{},"gmina_seeds":{},"page_fprints":{},"gmina_frontiers":{},"gmina_retry":{},"dead_urls":{}}' > data/cache.json
+            echo '{"schema":13,"urls_seen":{},"content_seen":{},"gmina_seeds":{},"gmina_frontiers":{},"gmina_retry":{},"dead_urls":{}}' > data/cache.json
           fi
 
-      # ──────────────────────────────────────────────────────────
-      # RUN
-      # ──────────────────────────────────────────────────────────
       - name: Run watcher
         continue-on-error: true
         timeout-minutes: 325
@@ -246,11 +232,6 @@ jobs:
         run: |
           python bip_watcher.py
 
-      # ──────────────────────────────────────────────────────────
-      # KLUCZOWA POPRAWKA #2: commit sharda — poprawna kolejność
-      # pull --rebase PRZED commit, push z retry (10 prób)
-      # Przy 10 równoległych jobów konflikty są normalne.
-      # ──────────────────────────────────────────────────────────
       - name: Compress and commit shard to cache-store
         if: always()
         timeout-minutes: 25
@@ -269,8 +250,6 @@ jobs:
           fi
 
           mkdir -p cache-store/shards
-
-          # Kompresja
           gzip -9 -c "$SHARD_JSON" > "$SHARD_GZ_DEST"
           SIZE=$(du -h "$SHARD_GZ_DEST" | cut -f1)
           echo "✅ Shard $SHARD_INDEX skompresowany: $SIZE"
@@ -280,18 +259,13 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Pętla: pull → stage → sprawdź zmiany → commit → push
-          # Przy konflikcie: reset commit → pull → spróbuj ponownie
           COMMITTED=0
           for i in $(seq 1 10); do
-            # Zawsze najpierw sync z remote
             git fetch origin cache-store 2>/dev/null || true
             git rebase origin/cache-store 2>/dev/null || git pull --rebase origin cache-store 2>/dev/null || true
 
-            # Stage pliku sharda (może być zmodyfikowany przez rebase)
             git add "shards/cache_shard_${SHARD_INDEX}.json.gz"
 
-            # Sprawdź czy są zmiany
             if git diff --cached --quiet; then
               echo "ℹ️ Shard $SHARD_INDEX — bez zmian, commit pominięty"
               COMMITTED=1
@@ -362,9 +336,9 @@ jobs:
           DATA   = Path("data")
 
           REQUIRED = ["schema","urls_seen","content_seen","gmina_seeds",
-                      "page_fprints","gmina_frontiers","gmina_retry","dead_urls"]
+                      "gmina_frontiers","gmina_retry","dead_urls"]
 
-          merged = {k: ({} if k != "schema" else 10) for k in REQUIRED}
+          merged = {k: ({} if k != "schema" else 13) for k in REQUIRED}
 
           shard_files = sorted(glob.glob(str(SHARDS / "cache_shard_*.json.gz")))
           print(f"Mergowanie {len(shard_files)} shardów...")
@@ -377,7 +351,7 @@ jobs:
                   print(f"⚠️ Błąd {sf}: {e}")
                   continue
 
-              for k in merged:
+              for k in REQUIRED:
                   if k == "schema" or k not in data:
                       continue
                   if isinstance(merged[k], dict) and isinstance(data[k], dict):
