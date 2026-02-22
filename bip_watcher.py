@@ -203,17 +203,17 @@ CONCURRENT_GMINY = env_int("CONCURRENT_GMINY", 8)
 CONCURRENT_REQUESTS = env_int("CONCURRENT_REQUESTS", 30)
 LIMIT_PER_HOST = env_int("LIMIT_PER_HOST", 4)
 
-PHASE1_MAX_PAGES = 5000     # było 120
-PHASE1_MAX_SEEDS = 100000    # było 2000
+PHASE1_MAX_PAGES = 600      # było 5000 (120 było za mało, 5000 za dużo — 600 to dobry kompromis)
+PHASE1_MAX_SEEDS = 8000     # było 100000 (2000 było za mało, 100k absurd — 8000 wystarczy)
 PHASE2_MAX_DEPTH = 4       # było 4 (często BIPy mają głębiej)
 PHASE2_MAX_PAGES = 1000000   # było 5000 (przy UNLIMITED_SCAN i tak ogranicza Cię czas)
 ABSOLUTE_MAX_SEC_PER_GMINA = 10**9
 MAX_SEC_PER_GMINA = 10**9
 
-REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=None, sock_connect=12, sock_read=35)
+REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=None, sock_connect=8, sock_read=20)
 
-START_TIMEOUT_FAST = aiohttp.ClientTimeout(total=None, sock_connect=10, sock_read=18)
-START_TIMEOUT_LONG = aiohttp.ClientTimeout(total=None, sock_connect=18, sock_read=45)
+START_TIMEOUT_FAST = aiohttp.ClientTimeout(total=None, sock_connect=8, sock_read=15)
+START_TIMEOUT_LONG = aiohttp.ClientTimeout(total=None, sock_connect=12, sock_read=30)
 START_MAX_TRIES = 16
 START_AUX_HINTS = ["/robots.txt", "/sitemap.xml", "/sitemap_index.xml"]
 START_TOTAL_TIMEOUT_SEC = 120
@@ -1516,20 +1516,20 @@ async def fetch_with_retry(session: aiohttp.ClientSession, url: str, timeout: ai
                 if status in (403, 429):
                     rate_limiter.report_403(domain)
                 if status in (403, 429) and attempt < max_retries - 1:
-                    await asyncio.sleep((2 ** attempt) * random.uniform(1.0, 2.0))
+                    await asyncio.sleep((2 ** attempt) * random.uniform(0.5, 1.0))
                     continue
                 if status >= 500 and attempt < max_retries - 1:
-                    await asyncio.sleep((2 ** attempt) * random.uniform(0.5, 1.5))
+                    await asyncio.sleep((2 ** attempt) * random.uniform(0.3, 0.7))
                     continue
                 return final, status, ctype, text, ms
         except asyncio.TimeoutError:
             if attempt < max_retries - 1:
-                await asyncio.sleep(1.0 * (attempt + 1))
+                await asyncio.sleep(0.5 * (attempt + 1))
                 continue
             raise
         except Exception:
             if attempt < max_retries - 1:
-                await asyncio.sleep(0.5 * (attempt + 1))
+                await asyncio.sleep(0.3 * (attempt + 1))
                 continue
             raise
     return url, None, "", "", None
@@ -2008,24 +2008,49 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
     for u in existing_retry:
         retry_seen.add(sha1(_canon(u)))
 
-    # ---- najpierw retry (priorytet) ----
+    # ---- najpierw frontier z poprzedniego runu (kontynuacja) ----
+    saved_frontier = (state.gmina_frontiers or {}).get(gkey, []) or []
+    if saved_frontier:
+        print(f"  ↩️  Kontynuacja: {len(saved_frontier)} URL z poprzedniego runu ({gmina})", flush=True)
+        for item in saved_frontier:
+            try:
+                fu, fd = item[0], int(item[1])
+            except Exception:
+                continue
+            cu = _canon(fu)
+            if cu and cu not in visited and cu not in dead_set:
+                visited.add(cu)
+                q.append((cu, fd))
+        # wyczyść — będzie nadpisany na końcu phase2
+        state.gmina_frontiers.pop(gkey, None)
+
+    # ---- potem retry (priorytet nad seeds) ----
+    # Cap retry do 200 — więcej nie ma sensu, WAF zablokuje i tak
+    # TTL jest sprawdzany w głównej pętli przez prev_pre, ale tu filtrujemy
+    # ewidentnie martwe domeny żeby nie mielić ich w kółko
     retry_list = (state.gmina_retry or {}).get(gkey, []) or []
-    for u in retry_list[:3000]:
+    retry_added = 0
+    for u in retry_list[:200]:
         cu = _canon(u)
         if cu and cu not in visited and cu not in dead_set:
             visited.add(cu)
             q.appendleft((cu, 0))
+            retry_added += 1
+    if retry_added:
+        print(f"  🔁 Retry: {retry_added} URL ({gmina})", flush=True)
 
     # wyczyść retry w pamięci (zostawimy tylko nowe dopiski przez retry_add)
     if isinstance(state.gmina_retry, dict):
         state.gmina_retry[gkey] = []
 
-    # ---- potem seeds ----
-    for su in seed_urls:
-        cu = _canon(su)
-        if cu and cu not in visited and cu not in dead_set:
-            visited.add(cu)
-            q.append((cu, 0))
+    # ---- seeds tylko gdy brak frontieru z poprzedniego runu ----
+    # jeśli mamy frontier to seeds są zbędne — gmina jest w trakcie skanowania
+    if not saved_frontier:
+        for su in seed_urls:
+            cu = _canon(su)
+            if cu and cu not in visited and cu not in dead_set:
+                visited.add(cu)
+                q.append((cu, 0))
 
     def allow_url(u: str) -> bool:
         return same_base_domain(urlparse(u).netloc.lower(), allowed_host)
@@ -2183,18 +2208,22 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             continue
 
         title, h1, h2, meta_blob = extract_title_h1_h2(soup)
+
+        # WAŻNE: att_set PRZED _soup_fast_text — fast_text używa decompose()
+        # który niszczy drzewo DOM i usuwa linki do plików z soup
+        att_set = attachments_signature(soup, final_c)
+
         fast_text = _soup_fast_text(soup)
         blob = f"{title} {h1} {h2} {fast_text}"
 
         ok_any, kw_any = keyword_match_in_blob(blob)
         fp = page_fingerprint(title, h1, fast_text)
-        att_set = attachments_signature(soup, final_c)
 
         # ================= STATUS LOGIC =================
-        # NOWE:   URL nigdy wcześniej nie widziany
-        # ZMIANA: na stronie pojawiły się NOWE pliki (których wcześniej nie było)
-        #         — porównujemy zbiory, nie hashe; każda strona bez wyjątków
-        # Filtry listingów usunięte — każda strona gdzie dodano załącznik = ZMIANA
+        # NOWE:   URL nigdy wcześniej nie widziany + zawiera keyword
+        # ZMIANA: strona zawiera keyword I pojawiły się na niej nowe pliki
+        #         — porównujemy zbiory URL-i plików, nie hashe
+        # Strony bez keywordów (ok_any=False) nigdy nie dają NOWE ani ZMIANA
         if prev is None:
             status_new = "NOWE" if ok_any else "NO_MATCH"
         else:
@@ -2202,7 +2231,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
 
             prev_att_set = att_sig_deserialize(prev.get("att_sig") or "")
             added_files = att_set - prev_att_set   # pliki których wcześniej nie było
-            if added_files:
+            if added_files and ok_any:
                 status_new = "ZMIANA"
                 diag["counts"]["att_added"] += len(added_files)
 
@@ -2282,6 +2311,13 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             if cu not in visited and cu not in dead_set:
                 visited.add(cu)
                 q.append((cu, depth + 1))
+
+    # ✅ zapisz frontier do cache — następny run kontynuuje od tego miejsca
+    # zamiast zaczynać od nowa od seedów Phase1
+    if q:
+        state.gmina_frontiers[gkey] = [[url, depth] for url, depth in list(q)]
+    else:
+        state.gmina_frontiers.pop(gkey, None)  # gmina skończona - wyczyść frontier
 
     # ✅ realny frontier_len (co zostało w kolejce)
     return found, {
@@ -2501,6 +2537,23 @@ async def worker(name: str,
 
 # ===================== MAIN =====================
 async def main():
+    # ===================== RESET CACHE (jednorazowy) =====================
+    # Uruchom z RESET_CACHE=1 żeby wyczyścić cache i zacząć od zera:
+    #   RESET_CACHE=1 python bip_watcher.py
+    # lub w GitHub Actions: dodaj env: RESET_CACHE: "1" do workflow (tylko raz!)
+    if os.getenv("RESET_CACHE", "0").strip() == "1":
+        print("🗑️  RESET_CACHE=1 — czyszczę cache i zaczynam od zera...")
+        if CACHE_FILE.exists():
+            CACHE_FILE.unlink()
+            print(f"   ✅ Usunięto: {CACHE_FILE}")
+        # usuń też shardy jeśli istnieją
+        for shard_file in BASE_DIR.glob("cache_shard_*.json"):
+            shard_file.unlink()
+            print(f"   ✅ Usunięto: {shard_file}")
+        print("   ✅ Cache wyczyszczony. Ten run zbiera wszystko od zera.")
+        print("   ⚠️  Pamiętaj żeby usunąć RESET_CACHE=1 przed następnym runem!")
+        print()
+
     # cache load – teraz zwraca 8 wartości (dodane dead_urls)
     state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints, state.gmina_frontiers, state.gmina_retry, state.dead_urls = load_cache_v2()
     migrate_content_seen_to_url_dedup(state.content_seen)
