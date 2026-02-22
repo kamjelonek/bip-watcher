@@ -274,6 +274,7 @@ jobs:
           CHECKPOINT_EVERY_SEC: "300"
           # Opcjonalnie: jeśli chcemy przy resecie również zresetować lokalny cache w skrypcie
           # można dodać RESET_CACHE: "1", ale to jest osobna sprawa
+          RESET_CACHE: ${{ github.event.inputs.reset_cache == 'true' && '1' || '0' }}
         run: |
           python bip_watcher.py
 
