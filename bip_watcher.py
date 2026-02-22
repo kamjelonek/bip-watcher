@@ -341,6 +341,9 @@ def sha1(s: str) -> str:
     return hashlib.sha1(s.encode("utf-8", errors="ignore")).hexdigest()
 
 def retry_add(gkey: str, retry_seen: set, url: str):
+    # nie dodawaj załączników do retry
+    if any((url or "").lower().endswith(ext) for ext in ATT_EXT):
+        return
     cu = _canon(url)
     if not cu:
         return
@@ -2227,4 +2230,5 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
