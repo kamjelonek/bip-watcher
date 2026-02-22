@@ -375,19 +375,13 @@ def dead_add(dead_key: str, dead_set: set, url: str):
 
 def pick_rows_for_shard(rows, shard_index: int, shard_total: int):
     """
-    Stabilny podział: ten sam wiersz zawsze trafi do tego samego sharda.
-    Dzielimy po hash(name|url) % shard_total.
+    Index-based sharding: shard N = wiersz N z CSV.
+    Każda gmina ma swój własny shard — brak pustych shardów i brak przeciążonych.
+    shard_total jest ignorowane (używane tylko do logowania).
     """
-    if shard_total <= 1:
-        return rows
-
-    out = []
-    for (name, url) in rows:
-        key = f"{(name or '').strip().lower()}|{canonical_url(url)}"
-        h = int(hashlib.sha1(key.encode("utf-8", errors="ignore")).hexdigest(), 16)
-        if (h % shard_total) == shard_index:
-            out.append((name, url))
-    return out
+    if shard_index < 0 or shard_index >= len(rows):
+        return []
+    return [rows[shard_index]]
 
 def should_recheck_hit(prev: dict) -> bool:
     if not prev or not isinstance(prev, dict):
@@ -2535,9 +2529,6 @@ async def worker(name: str,
                     await save_shard_cache_and_commit(asyncio.get_event_loop())
                 queue.task_done()
 
-import os
-os.environ['RESET_CACHE'] = '1'
-
 # ===================== MAIN =====================
 async def main():
     # ===================== RESET CACHE (jednorazowy) =====================
@@ -2697,4 +2688,3 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
-
