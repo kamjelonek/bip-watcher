@@ -228,7 +228,7 @@ PAGINATION_CAP_LOW  = 1200 if UNLIMITED_SCAN else 300
 
 CACHE_CHECKPOINT_EVERY_N_GMINY = 3
 SEED_CACHE_TTL_DAYS = 30
-FAST_TEXT_MAX_CHARS = 3500
+FAST_TEXT_MAX_CHARS = 999999
 HIT_RECHECK_TTL_HOURS = 24   # HIT/NOWE/ZMIANA: recheck co 24h
 NO_MATCH_RECHECK_TTL_HOURS = 24  # NO_MATCH: recheck co 24 godziny (żeby złapać późniejsze publikacje)
 BLOCKED_RECHECK_TTL_MIN = env_int("BLOCKED_RECHECK_TTL_MIN", 180)  # 60–360
@@ -2720,4 +2720,5 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
