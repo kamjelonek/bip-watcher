@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.3 (CELL + VS Code / Windows) - PRODUCTION
-... (komentarz bez zmian) ...
+BIP WATCHER v2.4 (CELL + VS Code / Windows) - PRODUCTION
+Zmiany v2.4:
+- _soup_fast_text: usuwa TYLKO script/style/noscript, bierze cały tekst strony
+- Usunięty page_fingerprint i fp z cache (niepotrzebne, att_sig wystarczy)
+- ENABLE_LINK_HITS=True: łapie ogłoszenia z anchor textu linków na stronach listingowych
+- blob do matchowania = title + h1 + h2 + CAŁY tekst strony
 """
 
 import os, csv, json, hashlib, asyncio, re, time, smtplib, warnings, socket, random, signal
@@ -39,14 +43,9 @@ def get_shard_index():
         return -1
 
 def _git_commit_file(filepath, message):
-    """Git add, commit, push a single file (synchronous)."""
-    # Sprawdź, czy jesteśmy w GitHub Actions
     if os.getenv("GITHUB_ACTIONS"):
-        # W GitHub Actions NIE wykonujemy commitów – tylko informujemy
         print(f"📁 Plik zapisany lokalnie (bez commita): {filepath}")
         return
-        
-    # Poniższy kod wykonuje się TYLKO poza GitHub Actions (np. lokalnie)
     try:
         print(f"📤 Git commit: {filepath} with message: {message}")
         subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=False)
@@ -59,7 +58,6 @@ def _git_commit_file(filepath, message):
         print(f"⚠️ git error: {e}")
 
 async def save_shard_cache_and_commit(loop=None):
-    """Zapisuje stan do pliku cache_shard_X.json, a jeśli nie jesteśmy w GHA, wykonuje git commit/push."""
     shard = get_shard_index()
     if shard < 0:
         return
@@ -71,7 +69,6 @@ async def save_shard_cache_and_commit(loop=None):
         out["urls_seen"][h] = old_urls.get(h, now_iso())
     out["content_seen"] = state.content_seen or {}
     out["gmina_seeds"] = state.gmina_seeds or {}
-    out["page_fprints"] = state.page_fprints or {}
     out["gmina_frontiers"] = state.gmina_frontiers or {}
     out["gmina_retry"] = state.gmina_retry or {}
     out["dead_urls"] = getattr(state, 'dead_urls', {})
@@ -85,7 +82,6 @@ async def save_shard_cache_and_commit(loop=None):
         print(f"⚠️ Failed to write shard cache: {e}")
         return
 
-    # Jeśli nie jesteśmy w GitHub Actions, wykonaj commit (np. lokalnie)
     if not os.getenv("GITHUB_ACTIONS"):
         if loop is None:
             loop = asyncio.get_event_loop()
@@ -93,7 +89,7 @@ async def save_shard_cache_and_commit(loop=None):
     else:
         print("📌 W GHA – plik zapisany lokalnie, commit pominięty")
 
-# ===================== PATHS (VS CODE / WINDOWS) =====================
+# ===================== PATHS =====================
 BASE_DIR = Path(__file__).resolve().parent / "data"
 BASE_DIR.mkdir(parents=True, exist_ok=True)
 CSV_FILE = BASE_DIR / "bipy1.csv"
@@ -102,32 +98,30 @@ LOG_FILE = BASE_DIR / "log.csv"
 DIAG_GMINY_CSV = BASE_DIR / "diag_gminy.csv"
 DIAG_ERRORS_CSV = BASE_DIR / "diag_errors.csv"
 SUMMARY_FILE = BASE_DIR / "summary_report.txt"
-# ======= ONE DRIVE EXPORT (Power Automate trigger) =======
 ONEDRIVE_EXPORT_DIR = Path(r"P:\WORKSPACE\PP_ALL")
 
 # ===================== USER SWITCHES =====================
 UNLIMITED_SCAN = True
 USE_CACHE = True
-ONLY_GMINA = None  # np. "Gmina X"
-CRAWL_ALL_INTERNAL_LINKS = True  # ✅ bierz wszystko z domeny, poza ignorowanymi
+ONLY_GMINA = None
+CRAWL_ALL_INTERNAL_LINKS = True
 BOOTSTRAP_MODE = False
-FORCE_PHASE1_REDISCOVERY = True   # ✅ Phase1 zawsze robi discovery, seed_cache tylko jako dodatek
+FORCE_PHASE1_REDISCOVERY = True
 
-# ===================== REPORTING RULES (NEW) =====================
-REAL_NEW_ONLY = True           # NOWE tylko gdy nie ma rekordu w cache (content_seen)
-CHANGE_ONLY_ATTACHMENTS = True # ZMIANA tylko gdy zmieniły się załączniki (att_sig)
-ENABLE_LINK_HITS = False       # WYŁĄCZA "NOWE (LINK)" z samych anchorów (zalecane)
-ALIAS_FINAL_AND_SOURCE_KEYS = True  # zapisuj meta pod kluczem final i źródłowym (anti-redirect duplicates)
-
+# ===================== REPORTING RULES =====================
+REAL_NEW_ONLY = True
+CHANGE_ONLY_ATTACHMENTS = True
+ENABLE_LINK_HITS = True        # ✅ WŁĄCZONE — łapie ogłoszenia z anchor textu na listingach
+ALIAS_FINAL_AND_SOURCE_KEYS = True
 
 # ===================== EMAIL =====================
 EMAIL_TO = "planowanie@wpd-polska.pl"
 ENABLE_EMAIL = False
 
-# ===================== KEYWORDS (NAGŁÓWKI-ONLY / MINIMAL) =====================
+# ===================== KEYWORDS =====================
 KEYWORDS = [
     # mpzp / plany
-    "mpzp", "miejscowy plan", "plan miejscowy", "miejscowego", "miejscowy plan zagospodarowania przestrzennego", 
+    "mpzp", "miejscowy plan", "plan miejscowy", "miejscowego", "miejscowy plan zagospodarowania przestrzennego",
     "projekt mpzp", "miejscowego planu zagospodarowania przestrzennego",
     # plan ogólny
     "plan ogólny", "plan ogolny", "planu ogólnego",
@@ -144,17 +138,11 @@ KEYWORDS = [
     "fotowolta", "farma fotowoltaiczna", "magazyn energii",
 ]
 
-# ===================== KEYWORD MATCH CONFIG (PATCH SAFETY) =====================
 STRICT_ONLY = {
     "wz", "mpzp", "oze"
 }
 
 def keyword_match_in_blob(blob: str):
-    """
-    Dopasowanie pod nagłówki/krótkie bloby.
-    - dla krótkich tokenów (<=3) i STRICT_ONLY: match jako osobne słowo (regex boundary)
-    - dla reszty: zwykłe "substring in text"
-    """
     t = re.sub(r"\s+", " ", (blob or "")).strip().lower()
     if not t:
         return (False, None)
@@ -165,7 +153,6 @@ def keyword_match_in_blob(blob: str):
         k = (kw or "").strip().lower()
         if not k:
             continue
-
         if (k in strict_only) or (len(k) <= 3):
             if re.search(rf"(?<!\w){re.escape(k)}(?!\w)", t):
                 return (True, kw)
@@ -203,15 +190,15 @@ CONCURRENT_GMINY = env_int("CONCURRENT_GMINY", 8)
 CONCURRENT_REQUESTS = env_int("CONCURRENT_REQUESTS", 30)
 LIMIT_PER_HOST = env_int("LIMIT_PER_HOST", 4)
 
-PHASE1_MAX_PAGES = 1000      # było 5000 (120 było za mało, 5000 za dużo — 600 to dobry kompromis)
-PHASE1_MAX_SEEDS = 12000     # było 100000 (2000 było za mało, 100k absurd — 8000 wystarczy)
-PHASE2_MAX_DEPTH = 4       # było 4 (często BIPy mają głębiej)
-PHASE2_MAX_PAGES = 1000000   # było 5000 (przy UNLIMITED_SCAN i tak ogranicza Cię czas)
+PHASE1_MAX_PAGES = 1000
+PHASE1_MAX_SEEDS = 12000
+PHASE2_MAX_DEPTH = 4           # ✅ zwiększone z 4 — BIPy często mają głębszą strukturę
+PHASE2_MAX_PAGES = 1000000
+
 ABSOLUTE_MAX_SEC_PER_GMINA = 10**9
 MAX_SEC_PER_GMINA = 10**9
 
 REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=None, sock_connect=8, sock_read=20)
-
 START_TIMEOUT_FAST = aiohttp.ClientTimeout(total=None, sock_connect=8, sock_read=15)
 START_TIMEOUT_LONG = aiohttp.ClientTimeout(total=None, sock_connect=12, sock_read=30)
 START_MAX_TRIES = 16
@@ -228,14 +215,16 @@ PAGINATION_CAP_LOW  = 1200 if UNLIMITED_SCAN else 300
 
 CACHE_CHECKPOINT_EVERY_N_GMINY = 3
 SEED_CACHE_TTL_DAYS = 30
-FAST_TEXT_MAX_CHARS = 999999
-HIT_RECHECK_TTL_HOURS = 24   # HIT/NOWE/ZMIANA: recheck co 24h
-NO_MATCH_RECHECK_TTL_HOURS = 24  # NO_MATCH: recheck co 24 godziny (żeby złapać późniejsze publikacje)
-BLOCKED_RECHECK_TTL_MIN = env_int("BLOCKED_RECHECK_TTL_MIN", 180)  # 60–360
-FAILED_RECHECK_TTL_MIN  = env_int("FAILED_RECHECK_TTL_MIN", 120)   # opcjonalnie
-FAST_FPRINT_MAX_CHARS = 6000
 
-# ===================== USER AGENTS ROTATION =====================
+# ✅ Brak limitu tekstu — skanujemy całą stronę
+FAST_TEXT_MAX_CHARS = 999_999
+
+HIT_RECHECK_TTL_HOURS = 24
+NO_MATCH_RECHECK_TTL_HOURS = 24
+BLOCKED_RECHECK_TTL_MIN = env_int("BLOCKED_RECHECK_TTL_MIN", 180)
+FAILED_RECHECK_TTL_MIN  = env_int("FAILED_RECHECK_TTL_MIN", 120)
+
+# ===================== USER AGENTS =====================
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
@@ -249,7 +238,7 @@ def get_random_headers():
     return {
         "User-Agent": random.choice(USER_AGENTS),
         "Accept-Language": "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
         "Accept-Encoding": "gzip, deflate",
         "Connection": "keep-alive",
         "Upgrade-Insecure-Requests": "1",
@@ -264,7 +253,7 @@ def get_random_headers():
         "sec-ch-ua-platform": '"Windows"',
     }
 
-# ===================== RATE LIMITING PER DOMAIN =====================
+# ===================== RATE LIMITING =====================
 class DomainRateLimiter:
     def __init__(self, min_delay=0.5, max_delay=1.5):
         self.min_delay = min_delay
@@ -278,15 +267,12 @@ class DomainRateLimiter:
             last = self.last_request.get(domain, 0)
             now = time.time()
             elapsed = now - last
-
             base_delay = self.min_delay
             if self.problem_domains.get(domain, 0) > 3:
                 base_delay = 2.0
-
             delay = random.uniform(base_delay, base_delay * 2)
             if elapsed < delay:
                 await asyncio.sleep(delay - elapsed)
-
             self.last_request[domain] = time.time()
 
     def report_403(self, domain: str):
@@ -303,20 +289,16 @@ class GlobalState:
         self.shutdown_requested = False
         self.new_items_for_mail = []
         self.raw_cache = {}
-        self.urls_seen = set()      # set(sha1(url))
-        self.content_seen = {}      # sha1 -> metadata
-        self.gmina_seeds = {}       # gmina_key -> {allowed_host, seeds, start_final, ts}
-        self.page_fprints = {}      # url_hash -> {"fp": "...", "ts": "...", "url": "..."}
+        self.urls_seen = set()
+        self.content_seen = {}
+        self.gmina_seeds = {}
         self.diag_rows = []
         self.diag_errors = []
-        self.gmina_frontiers = {}   # gmina_cache_key -> list[[url, depth], ...]
-        self.gmina_retry = {}       # gmina_cache_key -> list[url, ...]
-        # NOWE: słownik na martwe strony (404/410)
-        self.dead_urls = {}          # klucz: dead_{gkey}, wartość: lista url-i
-
-        # PATCH: ochrona przed race-condition (wiele workerów) + dedup maili per-run
+        self.gmina_frontiers = {}
+        self.gmina_retry = {}
+        self.dead_urls = {}
         self.cache_lock = asyncio.Lock()
-        self.mail_dedup = set()   # set((url_dedup, "NOWE"/"ZMIANA"))
+        self.mail_dedup = set()
 
     def request_shutdown(self):
         self.shutdown_requested = True
@@ -347,10 +329,6 @@ def _canon(u: str) -> str:
     return canonical_url(normalize_url(u or ""))
 
 def retry_add(gkey: str, retry_seen: set, url: str):
-    """
-    Deduplikowany retry (po canonical_url).
-    retry_seen trzyma hashe canonical URL, żeby lista nie puchła.
-    """
     cu = _canon(url)
     if not cu:
         return
@@ -361,10 +339,6 @@ def retry_add(gkey: str, retry_seen: set, url: str):
     state.gmina_retry.setdefault(gkey, []).append(cu)
 
 def dead_add(dead_key: str, dead_set: set, url: str):
-    """
-    Dodaje URL do dead_urls i aktualizuje dead_set w trakcie runu,
-    żeby nie mielić 404/410 wielokrotnie.
-    """
     cu = _canon(url)
     if not cu:
         return
@@ -374,11 +348,6 @@ def dead_add(dead_key: str, dead_set: set, url: str):
     state.dead_urls.setdefault(dead_key, []).append(cu)
 
 def pick_rows_for_shard(rows, shard_index: int, shard_total: int):
-    """
-    Index-based sharding: shard N = wiersz N z CSV.
-    Każda gmina ma swój własny shard — brak pustych shardów i brak przeciążonych.
-    shard_total jest ignorowane (używane tylko do logowania).
-    """
     if shard_index < 0 or shard_index >= len(rows):
         return []
     return [rows[shard_index]]
@@ -402,9 +371,6 @@ def should_recheck_no_match(prev: dict) -> bool:
     return (iso_now() - dt) >= timedelta(hours=NO_MATCH_RECHECK_TTL_HOURS)
 
 def should_recheck_block(prev: dict, ttl_min: int) -> bool:
-    """
-    TTL dla statusów BLOCKED/FAILED (żeby nie mielić w pętli).
-    """
     if not prev or not isinstance(prev, dict):
         return True
     last = prev.get("last_checked") or prev.get("found_at") or ""
@@ -421,7 +387,7 @@ def is_monitored_hit(prev: dict) -> bool:
 def export_summary_to_onedrive():
     try:
         if not ONEDRIVE_EXPORT_DIR or str(ONEDRIVE_EXPORT_DIR).strip() == "":
-            print("ℹ️ OneDrive export: pominięty (BIP_EXPORT_DIR nie ustawione).")
+            print("ℹ️ OneDrive export: pominięty.")
             return
         if not ONEDRIVE_EXPORT_DIR.exists():
             print(f"ℹ️ OneDrive export: folder nie istnieje: {ONEDRIVE_EXPORT_DIR}")
@@ -443,8 +409,6 @@ def now_iso():
     return datetime.now().isoformat(timespec="seconds")
 
 # ===================== BLOCK PAGE DETECTOR =====================
-
-# Wzorce pewne (substring wystarczy — bardzo charakterystyczne dla WAF/blokad)
 _BLOCK_PATTERNS_SURE = [
     "#13",
     "zbyt dużo jednoczesnych połączeń",
@@ -461,34 +425,19 @@ _BLOCK_PATTERNS_SURE = [
     "access denied",
 ]
 
-# Wzorce wymagające kontekstu — fraza musi pojawić się jako samodzielne wyrażenie
-# w krótkim obszarze strony (<4000 znaków), a strona musi mieć mało treści.
-# "service unavailable", "firewall", "waf" są zbyt ogólne — mogą być w normalnej
-# treści BIP-ów (stopki, informacje serwisowe, treści o przepisach).
 _BLOCK_PATTERNS_CONTEXT = [
-    # tylko gdy jest to główny komunikat strony (< 800 znaków tekstu widocznego)
     r"\bservice unavailable\b",
     r"\btemporarily unavailable\b",
     r"\bsite is unavailable\b",
 ]
 
 def is_block_page(text: str) -> bool:
-    """
-    Heurystyczne wykrywanie stron blokujących (HTTP 200, ale treść = blokada WAF).
-    Poprawka: usunięto 'firewall', 'waf', 'service unavailable' jako zwykłe substrings
-    — były przyczyną false positives na normalnych stronach BIP.
-    """
     if not text:
         return False
     low = text.lower()
-
-    # 1. Wzorce pewne — zawsze blokada
     for p in _BLOCK_PATTERNS_SURE:
         if p.lower() in low:
             return True
-
-    # 2. Wzorce kontekstowe — tylko gdy strona ma mało widocznej treści
-    # (prawdziwa blokada WAF to zazwyczaj 1-3 zdania, nie pełna strona BIP)
     import re as _re
     try:
         from bs4 import BeautifulSoup as _BS
@@ -496,14 +445,11 @@ def is_block_page(text: str) -> bool:
         visible = _re.sub(r"\s+", " ", _soup.get_text(" ", strip=True)).strip()
     except Exception:
         visible = _re.sub(r"<[^>]+>", " ", text[:4000]).strip()
-
     if len(visible) < 600:
         for pattern in _BLOCK_PATTERNS_CONTEXT:
             if _re.search(pattern, low[:4000]):
                 return True
-
     return False
-
 
 def sha1(s: str) -> str:
     return hashlib.sha1(s.encode("utf-8", errors="ignore")).hexdigest()
@@ -612,12 +558,11 @@ def migrate_content_seen_to_url_dedup(content_seen: dict):
             "title": (meta.get("title") or "")[:240],
             "url": url,
             "keywords": kws,
-            "fp": meta.get("fp", ""),
             "status": meta.get("status", "SEEN"),
         }
         added += 1
     if added:
-        print(f"🔁 Migrated content_seen to url-dedup: added {added} url-keys (compat mode)")
+        print(f"🔁 Migrated content_seen: added {added} url-keys")
 
 def is_valid_url(url: str) -> bool:
     try:
@@ -654,9 +599,6 @@ def should_skip_href(abs_href: str) -> bool:
         return True
     return False
 
-def is_wz_or_dus_keyword(kw: str) -> bool:
-    return False
-
 def base_domain(host: str) -> str:
     h = (host or "").lower().strip()
     if h.startswith("www."):
@@ -683,7 +625,7 @@ def safe_soup(html: str):
     if not html:
         return None
     try:
-        return BeautifulSoup(html, "lxml")   # zamiast "html.parser"
+        return BeautifulSoup(html, "lxml")
     except Exception:
         return None
 
@@ -868,61 +810,12 @@ async def collect_sitemap_urls(session: aiohttp.ClientSession, base_site_url: st
             out_urls = tmp[:max_urls]
     return out_urls[:max_urls]
 
-def looks_like_search_url(u: str) -> bool:
-    low = (u or "").lower()
-    if any(x in low for x in ["wyszuk", "szukaj", "search", "query", "filter", "filtr"]):
-        return True
-    if any(x in low for x in ["?q=", "&q=", "?search=", "&search=", "?szukaj=", "&szukaj=", "?query=", "&query="]):
-        return True
-    return False
-
-def build_search_fuzz_urls(base_url: str) -> list:
-    base_url = normalize_url(base_url)
-    parsed = urlparse(base_url)
-    qs = dict(parse_qsl(parsed.query, keep_blank_values=True))
-    param_candidates = ["q", "search", "szukaj", "query"]
-    queries = [
-        "mpzp",
-        "oze",
-        "wiatr",
-        "fotowolta",
-        "plan ogólny",
-        "plan miejscowy",
-    ]
-    out = []
-    for param in param_candidates:
-        for q in queries:
-            qs2 = dict(qs)
-            qs2[param] = q
-            new_q = urlencode(list(qs2.items()), doseq=True)
-            u2 = urlunparse(parsed._replace(query=new_q, fragment=""))
-            out.append(normalize_url(u2))
-    uniq = []
-    seen = set()
-    for u in out:
-        cu = canonical_url(u)
-        if cu in seen:
-            continue
-        seen.add(cu)
-        uniq.append(u)
-        if len(uniq) >= 12:
-            break
-    return uniq
-
 def extract_title_h1_h2(soup: BeautifulSoup):
-    """
-    Zwraca:
-      - title: zawartość <title>
-      - h1t: pierwszy sensowny H1 (z fallbackami po selektorach)
-      - h2t: pierwszy sensowny H2
-      - blob: zlepka (title+h1+h2+h3+meta desc) do szybkiego matchowania
-    """
     if not soup:
         return "", "", "", ""
 
     def _clean(s: str) -> str:
-        s = re.sub(r"\s+", " ", (s or "")).strip()
-        return s
+        return re.sub(r"\s+", " ", (s or "")).strip()
 
     title = _clean(soup.title.get_text(" ", strip=True) if soup.title else "")
 
@@ -934,7 +827,6 @@ def extract_title_h1_h2(soup: BeautifulSoup):
     h2t = _clean(h2.get_text(" ", strip=True) if h2 else "")
     h3t = _clean(h3.get_text(" ", strip=True) if h3 else "")
 
-    # fallback: jeśli nie ma sensownych H1/H2/H3
     if not (h1t or h2t or h3t):
         fallback_selectors = [
             "#page-title", "#pagetitle", "#content-title", "#title",
@@ -968,18 +860,17 @@ def print_hit(tag: str, gmina: str, kw: str, title: str):
     shown = re.sub(r"\s+", " ", (title or "").strip())
     print(f"{tag} {gmina}: [{kw}] -> {shown[:180]}", flush=True)
 
-# ===================== LISTING URL BONUS (SITEMAP) =====================
+# ===================== LISTING URL HINTS =====================
 LISTING_URL_HINTS = [
     "ogloszenia", "ogłoszenia", "obwieszc", "komunikat", "zawiadom",
     "konsultac", "wylozen", "wyłożen", "przystap", "przystąp",
     "prawo-miejscowe", "prawo_miejscowe", "uchwaly", "uchwał",
     "rejestr-urbanist", "rejestr_urbanist", "urbanist",
-    "mpzp", "plan-ogolny", "plan_ogolny", "studium", "planowanie", 
+    "mpzp", "plan-ogolny", "plan_ogolny", "studium", "planowanie",
     "warunki-zabudowy", "warunki_zabudowy", "wz",
     "ochrona-srodowiska", "ochrona_srodowiska",
     "srodowisko", "środowisko", "pv", "fotowolta", "fotowoltaika", "slonecz", "słonecz",
     "oze", "energia", "energetyka", "decyzje-srodowisk", "decyzje_srodowisk", "ooś", "oos",
-    # DODANE:
     "archiwum-ogloszen", "archiwum_ogloszen", "bip-archiwum",
     "kategoria", "kategorie", "lista-ogloszen", "lista_ogloszen",
     "decyzje", "decyzja", "postanowienie", "obwieszczenie",
@@ -992,7 +883,6 @@ JS_EXTRA_SEED_PATHS = [
     "/rss", "/feed", "/rss.xml", "/feed.xml",
     "/wp-json", "/wp-json/wp/v2/posts",
     "/api", "/api/ogloszenia", "/api/announcements",
-    # DODANE:
     "/sitemap.xml.gz", "/sitemap_index.xml.gz", "/sitemap.php",
     "/sitemap.xml?page=1", "/sitemap.xml?page=2",
     "/ogloszenia.xml", "/ogloszenia.rss",
@@ -1000,21 +890,50 @@ JS_EXTRA_SEED_PATHS = [
     "/bip-sitemap.xml", "/bip-sitemap_index.xml",
 ]
 
-# ===================== FAST TEXT + FINGERPRINT =====================
-# ===================== GENERIC / TEMPLATE PAGES FILTER =====================
+# ===================== FAST TEXT =====================
+# ✅ KLUCZOWA ZMIANA v2.4:
+# Usuwa TYLKO script/style/noscript — bierze CAŁY tekst strony.
+# Nie filtrujemy nav/footer/header/aside ani klas UI.
+# Keyword może być gdziekolwiek na stronie — w tytule dokumentu,
+# w treści tabeli, w stopce kategorii, w metatagu — wszędzie.
+def _soup_fast_text(soup: BeautifulSoup, max_chars: int = FAST_TEXT_MAX_CHARS) -> str:
+    try:
+        if not soup:
+            return ""
+        # Usuń tylko kod i style — nic więcej
+        for tag in soup(["script", "style", "noscript"]):
+            tag.decompose()
+        # Weź CAŁY widoczny tekst strony
+        txt = soup.get_text(" ", strip=True)
+        txt = re.sub(r"\s+", " ", (txt or "")).strip()
+        txt = _strip_dynamic_noise(txt)
+        return txt
+    except Exception:
+        return ""
 
+def _strip_dynamic_noise(txt: str) -> str:
+    if not txt:
+        return ""
+    txt = re.sub(
+        r"wygenerowano:\s*\d{1,2}\s+[a-ząćęłńóśźż]+\s+\d{4}\s*r?\.?\s*\d{1,2}:\d{2}:\d{2}",
+        "", txt, flags=re.IGNORECASE
+    )
+    txt = re.sub(
+        r"wygenerowano:\s*\d{4}[-/.]\d{1,2}[-/.]\d{1,2}\s+\d{1,2}:\d{2}:\d{2}",
+        "", txt, flags=re.IGNORECASE
+    )
+    txt = re.sub(r"(wyświetleń|wyswietlen|odsłon|odslon|pobrań|pobran)\s*:\s*\d+", "", txt, flags=re.IGNORECASE)
+    txt = re.sub(r"odsłony:\s*\d+", "", txt, flags=re.IGNORECASE)
+    txt = re.sub(r"\s+", " ", txt).strip()
+    return txt
+
+# ===================== GENERIC BIP PAGE FILTER =====================
 SITEWIDE_TITLES_RE = re.compile(
     r"(biuletyn informacji publicznej|\bbip\b|gmina|urząd gminy|urzad gminy|"
     r"miasto|urząd miasta|urzad miasta|starostwo|powiat|województwo|wojewodztwo)",
     re.IGNORECASE
 )
 
-# ===================== FIX 1: Regex do wykrywania stron-list BIPu =====================
-# Strony, których tytuł/H1 to wyłącznie generyczna etykieta kategorii BIP
-# (np. "Warunki zabudowy", "Miejscowy plan zagospodarowania przestrzennego")
-# bez żadnego numeru sprawy / lokalizacji — są LISTINGAMI, nie pojedynczymi ogłoszeniami.
-# Takie strony mają zmieniający się att_sig (nowe wpisy na liście) i nie powinny
-# generować ZMIANA przy każdym uruchomieniu.
 GENERIC_CATEGORY_TITLES_RE = re.compile(
     r"^(warunki zabudowy|decyzje? (o |środowiskow|srodowiskow)|"
     r"miejscowy plan|plan miejscowy|plan ogólny|plan ogolny|"
@@ -1030,165 +949,34 @@ GENERIC_CATEGORY_TITLES_RE = re.compile(
 
 def is_generic_bip_page(title: str, h1: str, url: str, fast_text: str = "") -> bool:
     """
-    Zwraca True jeśli strona wygląda na:
-    - home / landing BIP (krótka treść, głównie menu)
-    - listing/archiwum/wyszukiwarka
-    - stronę-szablon z tytułem typu "Gmina X Biuletyn Informacji Publicznej"
-    - stronę-listę kategorii (np. "Warunki zabudowy") — FIX 2
-    UWAGA: nie blokujemy crawl'u, tylko nie raportujemy jej jako NOWE/ZMIANA.
+    Zwraca True dla stron-listingów kategorii BIP.
+    Nie blokuje crawlowania — tylko nie raportujemy jej jako NOWE/ZMIANA strony jako całości.
+    Linki NA tej stronie nadal są analizowane przez ENABLE_LINK_HITS.
     """
     t = (title or "").strip().lower()
     h = (h1 or "").strip().lower()
-    u = (url or "").strip().lower()
     txt = (fast_text or "").strip()
 
-    # 1) Listing / archiwum / wyszukiwarka — prawie zawsze nie jest pojedynczą treścią ogłoszenia
     if is_listing_url(url):
         return True
 
-    # 2) Home wycinamy TYLKO jeśli nie ma „mięsa" w treści (żeby nie zgubić ogłoszeń wklejonych na home)
     if is_home_url(url) and len(txt) < 600:
         return True
 
-    # 3) Typowe brandowe tytuły/H1 ("... BIP ...") + krótka treść
     blob = re.sub(r"\s+", " ", f"{t} {h}").strip()
     if not blob:
         return False
 
-    # krótkie, typowo szablonowe nagłówki
     if len(blob) <= 90 and SITEWIDE_TITLES_RE.search(blob) and len(txt) < 300:
         return True
 
-    # ===================== FIX 2: Strony-listy kategorii =====================
-    # Jeśli H1 (lub title gdy brak H1) to DOKŁADNIE generyczna nazwa kategorii
-    # (bez żadnych dodatkowych słów jak numer działki, lokalizacja, data itp.)
-    # to jest to strona listingowa — att_sig będzie się zmieniać przy każdym
-    # nowym wpisie, więc nie raportujemy jej jako ZMIANA.
     check_label = (h or t or "").strip()
     if check_label and GENERIC_CATEGORY_TITLES_RE.match(check_label):
         return True
 
     return False
 
-_KILL_UI_RE = re.compile(
-    r"(^menu$|^nav$|navbar|^sidebar$|breadcrumbs|okruszk|^stopka$|^footer$|^header$|"
-    r"cookie|rodo|deklaracja|dostepn|dostępn|wyszuk|search|login|logowan|"
-    r"share|udostepn|udostępn|drukuj|print|rss|"
-    r"skroty|skróty|szybkie|quick|shortcut|przydatne|polecane|na-skróty|na-skroty)",
-    re.IGNORECASE
-)
-
-def _pick_main_container(soup: BeautifulSoup):
-    selectors = [
-        "main", "article",
-        "#content", "#main", "#page", "#primary",
-        ".content", ".main", ".page-content", ".entry-content",
-        ".article", ".post", ".news", ".text", ".tresc", ".treść",
-        ".bip-content", ".content-area"
-    ]
-    for sel in selectors:
-        try:
-            node = soup.select_one(sel)
-            if node:
-                t = node.get_text(" ", strip=True)
-                if t and len(t) > 80:
-                    return node
-        except Exception:
-            pass
-    return soup
-
-def _strip_dynamic_noise(txt: str) -> str:
-    if not txt:
-        return ""
-    txt = re.sub(
-        r"wygenerowano:\s*\d{1,2}\s+[a-ząćęłńóśźż]+\s+\d{4}\s*r?\.?\s*\d{1,2}:\d{2}:\d{2}",
-        "", txt, flags=re.IGNORECASE
-    )
-    txt = re.sub(
-        r"wygenerowano:\s*\d{4}[-/.]\d{1,2}[-/.]\d{1,2}\s+\d{1,2}:\d{2}:\d{2}",
-        "", txt, flags=re.IGNORECASE
-    )
-    txt = re.sub(r"(wyświetleń|wyswietlen|odsłon|odslon|pobrań|pobran)\s*:\s*\d+", "", txt, flags=re.IGNORECASE)
-    txt = re.sub(r"odsłony:\s*\d+", "", txt, flags=re.IGNORECASE)
-    txt = re.sub(
-        r"data\s+(publikacji|modyfikacji|utworzenia|aktualizacji)\s*:\s*[\d\-\.:/ ]{6,}",
-        "", txt, flags=re.IGNORECASE
-    )
-    txt = re.sub(
-        r"rejestr\s+zmian.*?(?=(załączniki|zalaczniki|dokumenty|pliki|$))",
-        "", txt, flags=re.IGNORECASE | re.DOTALL
-    )
-    txt = re.sub(r"nowe zasady dotyczące cookies.*?(?=$)", "", txt, flags=re.IGNORECASE)
-    txt = re.sub(r"polityka prywatności.*?(?=$)", "", txt, flags=re.IGNORECASE)
-    txt = re.sub(r"deklaracja dostępności.*?(?=$)", "", txt, flags=re.IGNORECASE)
-    txt = re.sub(r"(udostępniający|udostepniajacy)\s*:\s*.*?(?=\s{2,}|$)", "", txt, flags=re.IGNORECASE)
-    txt = re.sub(r"(wytworzył|wytworzyl|wytworzone\s+przez)\s*:\s*.*?(?=\s{2,}|$)", "", txt, flags=re.IGNORECASE)
-    txt = re.sub(r"(odpowiedzialny|odpowiedzialna)\s*:\s*.*?(?=\s{2,}|$)", "", txt, flags=re.IGNORECASE)
-    txt = re.sub(r"(data\s+wytworzenia|data\s+utworzenia|data\s+publikacji)\s*:\s*.*?(?=\s{2,}|$)", "", txt, flags=re.IGNORECASE)
-    txt = re.sub(r"(data\s+zmiany|data\s+modyfikacji|ostatnia\s+modyfikacja)\s*:\s*.*?(?=\s{2,}|$)", "", txt, flags=re.IGNORECASE)
-    txt = re.sub(r"(rejestr\s+zmian|historia\s+zmian)\s*:\s*.*?(?=$)", "", txt, flags=re.IGNORECASE)
-    txt = re.sub(r"\s+", " ", txt).strip()
-    return txt
-
-def _soup_fast_text(soup: BeautifulSoup, max_chars: int = FAST_TEXT_MAX_CHARS) -> str:
-    try:
-        if not soup:
-            return ""
-        for tag in soup(["script", "style", "noscript"]):
-            tag.decompose()
-        for tag in soup.find_all(["nav", "footer", "header", "aside"]):
-            tag.decompose()
-        for el in list(soup.find_all(True, attrs={"class": True})):
-            try:
-                cls = " ".join(el.get("class") or [])
-                if cls and _KILL_UI_RE.search(cls):
-                    el.decompose()
-            except Exception:
-                continue
-        for el in list(soup.find_all(True, attrs={"id": True})):
-            try:
-                _id = (el.get("id") or "")
-                if _id and _KILL_UI_RE.search(_id):
-                    el.decompose()
-            except Exception:
-                continue
-        for hdr in soup.find_all(["h2", "h3", "h4"]):
-            try:
-                t = (hdr.get_text(" ", strip=True) or "").lower()
-                if any(x in t for x in ["metryka", "rejestr zmian", "historia zmian", 
-                                        "skróty", "skroty", "na skróty", "na skroty", 
-                                        "przydatne linki", "szybkie linki", "polecane"]):
-                    parent = hdr.find_parent(["section", "div", "article", "table"]) or hdr.parent
-                    if parent:
-                        parent.decompose()
-            except Exception:
-                pass
-        main = _pick_main_container(soup)
-        txt = main.get_text(" ", strip=True)
-        txt = re.sub(r"\s+", " ", (txt or "")).strip()
-        txt = _strip_dynamic_noise(txt)
-        if len(txt) > max_chars:
-            txt = txt[:max_chars]
-        return txt
-    except Exception:
-        return ""
-
-def page_fingerprint(title: str, h1: str, fast_text: str) -> str:
-    base = f"{(title or '')[:180]}|{(h1 or '')[:180]}|{(fast_text or '')}"
-    return sha1(base)
-
-def cache_mark_url(u: str):
-    if not USE_CACHE:
-        return
-    if is_phase1_listing(u):
-        return
-    h = url_key(u)
-    state.urls_seen.add(h)
-    if isinstance(state.raw_cache, dict):
-        d = state.raw_cache.setdefault("urls_seen", {})
-        if isinstance(d, dict):
-            d[h] = now_iso()
-
+# ===================== ATT_EXT + ATTACHMENTS =====================
 ATT_EXT = (
     ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".odt", ".rtf",
     ".gml", ".xml", ".gpx", ".kml", ".kmz", ".geojson", ".json",
@@ -1198,11 +986,6 @@ ATT_EXT = (
 )
 
 def attachments_signature(soup: BeautifulSoup, base_url: str) -> set:
-    """
-    Zwraca ZBIÓR (set) canonicznych URL-i załączników na stronie.
-    Porównanie zbiorów (nowe - stare) pozwala wykryć DODANE pliki
-    niezależnie od tego czy strona to listing czy pojedyncze ogłoszenie.
-    """
     if not soup:
         return set()
     result = set()
@@ -1215,7 +998,6 @@ def attachments_signature(soup: BeautifulSoup, base_url: str) -> set:
         if not any(low.endswith(ext) for ext in ATT_EXT):
             continue
         p = urlparse(abs_u)
-        # FIX 1: lstrip("www.") -> startswith (lstrip niszczyło np. "wroclaw.bip.pl")
         netloc = p.netloc.lower()
         if netloc.startswith("www."):
             netloc = netloc[4:]
@@ -1223,14 +1005,10 @@ def attachments_signature(soup: BeautifulSoup, base_url: str) -> set:
         result.add(clean_url)
     return result
 
-
 def att_sig_serialize(att_set: set) -> str:
-    """Serializuje zbiór załączników do JSON (do zapisu w cache)."""
     return json.dumps(sorted(att_set), ensure_ascii=False)
 
-
 def att_sig_deserialize(stored) -> set:
-    """Deserializuje zbiór załączników z cache (obsługuje stary format hash i nowy JSON)."""
     if not stored:
         return set()
     if isinstance(stored, set):
@@ -1238,16 +1016,26 @@ def att_sig_deserialize(stored) -> set:
     if isinstance(stored, list):
         return set(stored)
     if isinstance(stored, str):
-        # nowy format: JSON lista
         try:
             data = json.loads(stored)
             if isinstance(data, list):
                 return set(data)
         except Exception:
             pass
-        # stary format: hash sha1 — nie da się odtworzyć zbioru, traktuj jako pusty
         return set()
     return set()
+
+def cache_mark_url(u: str):
+    if not USE_CACHE:
+        return
+    if is_phase1_listing(u):
+        return
+    h = url_key(u)
+    state.urls_seen.add(h)
+    if isinstance(state.raw_cache, dict):
+        d = state.raw_cache.setdefault("urls_seen", {})
+        if isinstance(d, dict):
+            d[h] = now_iso()
 
 # ===================== START URL VARIANTS =====================
 def _www_variants(netloc: str):
@@ -1302,8 +1090,8 @@ def candidate_start_urls(start_url: str):
                     yielded.add(auxu)
                     yield auxu
 
-# ===================== CACHE V2/V3 =====================
-CACHE_SCHEMA = 10
+# ===================== CACHE =====================
+CACHE_SCHEMA = 11  # ✅ bump — usunięto page_fprints i fp
 
 def _empty_cache():
     return {
@@ -1311,42 +1099,42 @@ def _empty_cache():
         "urls_seen": {},
         "content_seen": {},
         "gmina_seeds": {},
-        "page_fprints": {},
         "gmina_frontiers": {},
         "gmina_retry": {},
-        "dead_urls": {},   # DODANE
+        "dead_urls": {},
     }
 
 def load_cache_v2():
     if not USE_CACHE:
         c = _empty_cache()
-        return c, set(), {}, {}, {}, {}, {}, {}
+        return c, set(), {}, {}, {}, {}, {}
 
     if not CACHE_FILE.exists():
         c = _empty_cache()
-        return c, set(), {}, {}, {}, {}, {}, {}
+        return c, set(), {}, {}, {}, {}, {}
 
     try:
         with open(CACHE_FILE, "r", encoding="utf-8") as f:
             c = json.load(f) or {}
 
         if "schema" not in c and "found_items" in c:
-            print("🔄 Legacy cache detected (found_items). Upgrading to schema 9.")
+            print("🔄 Legacy cache detected. Upgrading...")
             c = _empty_cache()
 
         if not isinstance(c.get("schema"), int):
             c["schema"] = CACHE_SCHEMA
 
         if c.get("schema", 0) < CACHE_SCHEMA:
-            print(f"🔄 Migrating cache schema {c.get('schema')} -> {CACHE_SCHEMA} (keeping data).")
+            print(f"🔄 Migrating cache schema {c.get('schema')} -> {CACHE_SCHEMA}")
             c["schema"] = CACHE_SCHEMA
             c.setdefault("urls_seen", {})
             c.setdefault("content_seen", {})
             c.setdefault("gmina_seeds", {})
-            c.setdefault("page_fprints", {})
             c.setdefault("gmina_frontiers", {})
             c.setdefault("gmina_retry", {})
             c.setdefault("dead_urls", {})
+            # usuń stare page_fprints jeśli istnieją
+            c.pop("page_fprints", None)
 
         urls = c.get("urls_seen", {})
         if not isinstance(urls, dict):
@@ -1363,11 +1151,6 @@ def load_cache_v2():
             gseeds = {}
             c["gmina_seeds"] = gseeds
 
-        pf = c.get("page_fprints", {})
-        if not isinstance(pf, dict):
-            pf = {}
-            c["page_fprints"] = pf
-
         gf = c.get("gmina_frontiers", {})
         if not isinstance(gf, dict):
             gf = {}
@@ -1383,14 +1166,15 @@ def load_cache_v2():
             dead = {}
             c["dead_urls"] = dead
 
-        print(f"📦 Cache loaded: {len(urls)} URLs, {len(content)} content, {len(gseeds)} gmina seeds, {len(pf)} page_fprints, {len(dead)} dead entries")
-        return c, set(urls.keys()), content, gseeds, pf, gf, gr, dead
+        print(f"📦 Cache loaded: {len(urls)} URLs, {len(content)} content, {len(gseeds)} gmina seeds, {len(dead)} dead entries")
+        return c, set(urls.keys()), content, gseeds, gf, gr, dead
 
     except Exception as e:
         print(f"⚠️  Cache load error: {e}")
         c = _empty_cache()
-        return c, set(), {}, {}, {}, {}, {}, {}
+        return c, set(), {}, {}, {}, {}, {}
 
+def save_cache_v2(raw_cache, urls_seen_set, content_seen, gmina_seeds):
     out = {"schema": CACHE_SCHEMA}
     out["urls_seen"] = {}
     old_urls = (raw_cache or {}).get("urls_seen", {}) if isinstance(raw_cache, dict) else {}
@@ -1398,10 +1182,9 @@ def load_cache_v2():
         out["urls_seen"][h] = old_urls.get(h, now_iso())
     out["content_seen"] = content_seen or {}
     out["gmina_seeds"] = gmina_seeds or {}
-    out["page_fprints"] = page_fprints or {}
     out["gmina_frontiers"] = (state.gmina_frontiers or {}) if isinstance(state.gmina_frontiers, dict) else {}
     out["gmina_retry"] = (state.gmina_retry or {}) if isinstance(state.gmina_retry, dict) else {}
-    out["dead_urls"] = getattr(state, 'dead_urls', {})   # DODANE
+    out["dead_urls"] = getattr(state, 'dead_urls', {})
 
     tmp = str(CACHE_FILE) + ".tmp"
     def _do_save():
@@ -1409,9 +1192,9 @@ def load_cache_v2():
             json.dump(out, f, indent=2, ensure_ascii=False)
         os.replace(tmp, CACHE_FILE)
     retry_io(_do_save, tries=6, base_sleep=0.7)
-    print(f"💾 Cache saved: {len(urls_seen_set)} URLs, {len(out['content_seen'])} content, {len(out['gmina_seeds'])} seeds, {len(out['page_fprints'])} fprints, {len(out['dead_urls'])} dead")
+    print(f"💾 Cache saved: {len(urls_seen_set)} URLs, {len(out['content_seen'])} content, {len(out['gmina_seeds'])} seeds, {len(out['dead_urls'])} dead")
 
-def purge_old_cache(raw_cache: dict, urls_seen_set: set, content_seen: dict, gmina_seeds: dict, page_fprints: dict, dead_urls: dict):
+def purge_old_cache(raw_cache: dict, urls_seen_set: set, content_seen: dict, gmina_seeds: dict, dead_urls: dict):
     cutoff = datetime.now() - timedelta(days=SCANNED_TTL_DAYS)
     urls_dict = raw_cache.get("urls_seen", {}) if isinstance(raw_cache, dict) else {}
     to_del = []
@@ -1437,27 +1220,10 @@ def purge_old_cache(raw_cache: dict, urls_seen_set: set, content_seen: dict, gmi
     for k in to_del_seeds:
         gmina_seeds.pop(k, None)
 
-    to_del_pf = []
-    for k, meta in list((page_fprints or {}).items()):
-        try:
-            ts = (meta or {}).get("ts", "")
-            if ts and datetime.fromisoformat(ts) < cutoff:
-                to_del_pf.append(k)
-        except Exception:
-            to_del_pf.append(k)
-    for k in to_del_pf:
-        page_fprints.pop(k, None)
+    if to_del or to_del_seeds:
+        print(f"🧹 Purged: {len(to_del)} URL, {len(to_del_seeds)} seeds")
 
-    # Martwe strony też mają TTL (możemy je trzymać, np. 30 dni)
-    dead_cutoff = datetime.now() - timedelta(days=30)
-    for gkey, urls in list(dead_urls.items()):
-        # nie mamy timestampów dla martwych, więc na razie nie usuwamy – można dodać później
-        pass
-
-    if to_del or to_del_seeds or to_del_pf:
-        print(f"🧹 Purged: {len(to_del)} URL, {len(to_del_seeds)} seeds, {len(to_del_pf)} fprints (content_seen kept)")
-
-# ===================== LOG + EMAIL =====================
+# ===================== LOG =====================
 def log_new_item(gmina: str, title: str, url: str, kw: str):
     new_file = not LOG_FILE.exists()
     with open(LOG_FILE, "a", encoding="utf-8", newline="") as f:
@@ -1518,7 +1284,7 @@ def print_start_fail_report(diag, gmina: str, start_url: str):
     for i, x in enumerate(sa[:8], 1):
         print(f"   {i:02d}) kind={x.get('kind')} status={x.get('status')} ms={x.get('ms')} url={x.get('try_url')[:100]}")
 
-# ===================== RETRY WITH BACKOFF =====================
+# ===================== FETCH WITH RETRY =====================
 async def fetch_with_retry(session: aiohttp.ClientSession, url: str, timeout: aiohttp.ClientTimeout,
                            ssl_mode, max_retries=3, method="GET"):
     url = normalize_url(url)
@@ -1560,7 +1326,7 @@ async def fetch_with_retry(session: aiohttp.ClientSession, url: str, timeout: ai
             raise
     return url, None, "", "", None
 
-async def _aio_fetch_raw(session: aiohttp.ClientSession, url: str, timeout: aiohttp.ClientTimeout, ssl_mode, method="GET"):
+async def _aio_fetch_raw(session, url, timeout, ssl_mode, method="GET"):
     return await fetch_with_retry(session, url, timeout, ssl_mode, max_retries=3, method=method)
 
 async def _probe_with_requests(url: str, timeout_sec: float, verify: bool):
@@ -1571,15 +1337,12 @@ async def _probe_with_requests(url: str, timeout_sec: float, verify: bool):
             r = requests.get(url, timeout=timeout_sec, verify=verify, headers=headers, allow_redirects=True)
             ms = round((time.time() - t0) * 1000)
             return str(r.url), r.status_code, r.headers.get("Content-Type",""), (r.text or "")[:20000], ms
-        except Exception as e:
+        except Exception:
             ms = round((time.time() - t0) * 1000)
             return url, None, "", "", ms
     return await asyncio.to_thread(run)
 
-async def fetch_start_matrix(session_default: aiohttp.ClientSession,
-                             session_ipv4: aiohttp.ClientSession,
-                             url: str,
-                             diag):
+async def fetch_start_matrix(session_default, session_ipv4, url, diag):
     url = normalize_url(url)
     def looks_html(ctype: str, text: str) -> bool:
         low = (text or "").lower()
@@ -1617,38 +1380,23 @@ async def fetch_start_matrix(session_default: aiohttp.ClientSession,
             lu = url.lower()
             if any(ax in lu for ax in ("/robots.txt", "sitemap")):
                 ok = (status is not None) and (200 <= int(status) < 400) and bool(text)
-                diag["start_matrix"].append({
-                    "ok": ok, "strategy": strategy_name, "url": url,
-                    "status": status, "kind": ("aux_ok" if ok else "aux_fail")
-                })
+                diag["start_matrix"].append({"ok": ok, "strategy": strategy_name, "url": url, "status": status, "kind": ("aux_ok" if ok else "aux_fail")})
                 continue
             if status is None or int(status) != 200:
-                diag["start_matrix"].append({
-                    "ok": False, "strategy": strategy_name, "url": url,
-                    "status": status, "kind": "http_err"
-                })
+                diag["start_matrix"].append({"ok": False, "strategy": strategy_name, "url": url, "status": status, "kind": "http_err"})
                 last_fail = (None, final, "http_err", status, ctype, f"HTTP {status}", ms)
                 continue
             if looks_html(ctype, text) and text:
-                diag["start_matrix"].append({
-                    "ok": True, "strategy": strategy_name, "url": url,
-                    "status": status, "kind": "html"
-                })
+                diag["start_matrix"].append({"ok": True, "strategy": strategy_name, "url": url, "status": status, "kind": "html"})
                 return text, final, "html", status, ctype, None, ms
-            diag["start_matrix"].append({
-                "ok": False, "strategy": strategy_name, "url": url,
-                "status": status, "kind": "non_html"
-            })
+            diag["start_matrix"].append({"ok": False, "strategy": strategy_name, "url": url, "status": status, "kind": "non_html"})
             last_fail = (None, final, "non_html", status, ctype, "start_non_html", ms)
         except Exception as e:
             msg = str(e)
             kind = "exc"
             if "ssl" in msg.lower() or "certificate" in msg.lower():
                 kind = "ssl"
-            diag["start_matrix"].append({
-                "ok": False, "strategy": strategy_name, "url": url,
-                "status": None, "kind": kind
-            })
+            diag["start_matrix"].append({"ok": False, "strategy": strategy_name, "url": url, "status": None, "kind": kind})
             last_fail = (None, url, kind, None, "", msg, None)
     return last_fail if last_fail else (None, url, "fail", None, "", "no_strategy_worked", None)
 
@@ -1656,58 +1404,37 @@ async def fetch_start_matrix(session_default: aiohttp.ClientSession,
 async def fetch(session: aiohttp.ClientSession, url: str, extra_headers: dict = None):
     url = normalize_url(url)
     domain = urlparse(url).netloc
-
     for ssl_mode in (False, None):
         try:
             await rate_limiter.wait(domain)
-
             headers = get_random_headers()
             if extra_headers:
                 headers.update(extra_headers)
-
             t0 = time.time()
-            async with session.get(
-                url,
-                timeout=REQUEST_TIMEOUT,
-                ssl=ssl_mode,
-                allow_redirects=True,
-                headers=headers
-            ) as resp:
+            async with session.get(url, timeout=REQUEST_TIMEOUT, ssl=ssl_mode, allow_redirects=True, headers=headers) as resp:
                 final = normalize_url(str(resp.url))
                 status = resp.status
                 ctype = (resp.headers.get("Content-Type", "") or "").lower()
-
                 data = await resp.read()
                 try:
                     text = data.decode("utf-8", errors="ignore")
                 except Exception:
                     text = data.decode("latin-1", errors="ignore")
-
                 ms = round((time.time() - t0) * 1000)
-
-                # standardowe kary dla 403/429
                 if status in (403, 429):
                     rate_limiter.report_403(domain)
-
-                # ✅ BLOCK-PAGE (często status=200, ale treść to blokada)
                 if status == 200 and is_block_page(text):
-                    # ważne: kara domeny jak za 429/403, inaczej WAF będzie się nasilał
                     rate_limiter.report_403(domain)
                     return None, final, "blocked", 429, ctype, "block_page_detected", ms
-
                 if "pdf" in ctype or final.lower().endswith(".pdf"):
                     return None, final, "pdf", status, ctype, None, ms
-
                 if status != 200:
                     if ssl_mode is None:
                         return None, final, "http_err", status, ctype, f"HTTP {status}", ms
                     continue
-
                 if text and len(text) > 800 and re.search(r"<[^>]+>", text[:2500]) is None:
                     return None, final, "non_html", status, ctype, None, ms
-
                 return text, final, "html", status, ctype, None, ms
-
         except asyncio.TimeoutError:
             if ssl_mode is None:
                 return None, url, "timeout", None, "", "request_timeout", 0
@@ -1716,7 +1443,6 @@ async def fetch(session: aiohttp.ClientSession, url: str, extra_headers: dict = 
             if ssl_mode is None:
                 return None, url, "exc", None, "", str(e), 0
             continue
-
     return None, url, "exc", None, "", "fetch_failed", 0
 
 # ===================== PAGINATION GUARD =====================
@@ -1738,7 +1464,7 @@ def pagination_pattern(url: str) -> str:
     except Exception:
         return url
 
-# ===================== SEED CACHE HELPERS =====================
+# ===================== SEED CACHE =====================
 def gmina_cache_key(gmina: str, start_url: str) -> str:
     host = urlparse(normalize_url(start_url)).netloc.lower()
     return sha1(f"{gmina.strip().lower()}|{base_domain(host)}")
@@ -1765,25 +1491,22 @@ def seed_cache_put(gmina: str, start_url: str, allowed_host: str, start_final: s
         "ts": now_iso()
     }
 
-# ===================== LINK EXTRACTION (FASTER/CLEANER) =====================
+# ===================== LINK EXTRACTION =====================
 def iter_links_fast(soup: BeautifulSoup, base_url: str):
+    """
+    Iteruje po wszystkich linkach na stronie.
+    Zwraca (abs_url, anchor_text) dla każdego linka który nie jest odfiltrowany.
+    NIE filtrujemy po anchor_is_ignored tutaj dla linków do podstron HTML —
+    to robi phase2 tylko dla crawlowania, nie dla keyword match.
+    """
     yielded = set()
-    priority = []
-    try:
-        breadcrumbs = soup.find_all(["nav", "ol", "ul"], class_=lambda x: x and ("breadcrumb" in x.lower() or "okruszek" in x.lower()))
-        for bc in breadcrumbs:
-            priority.extend(bc.find_all("a", href=True))
-        nav_elements = soup.find_all(["nav", "div"], class_=lambda x: x and ("nav" in x.lower() or "menu" in x.lower()))
-        for nav in nav_elements[:3]:
-            priority.extend(nav.find_all("a", href=True))
-    except Exception:
-        pass
     all_links = []
     try:
         all_links = soup.find_all("a", href=True)
     except Exception:
         all_links = []
-    for a in priority + all_links:
+
+    for a in all_links:
         try:
             href = (a.get("href") or "").strip()
             if not href:
@@ -1795,8 +1518,6 @@ def iter_links_fast(soup: BeautifulSoup, base_url: str):
             is_attachment = any(abs_u.lower().endswith(ext) for ext in ATT_EXT)
             if should_skip_href(abs_u) and not is_attachment:
                 continue
-            if (not is_attachment) and anchor_is_ignored(txt):
-                continue
             if abs_u in yielded:
                 continue
             yielded.add(abs_u)
@@ -1806,12 +1527,11 @@ def iter_links_fast(soup: BeautifulSoup, base_url: str):
 
 # ===================== PHASE 1 =====================
 async def phase1_discover(gmina: str, start_url: str,
-                         session_default: aiohttp.ClientSession,
-                         session_ipv4: aiohttp.ClientSession,
-                         session_crawl: aiohttp.ClientSession,
+                         session_default, session_ipv4, session_crawl,
                          urls_seen: set, diag):
     if state.shutdown_requested:
         return [], {"status": "SHUTDOWN"}
+
     cached = seed_cache_get(gmina, start_url)
     if (not FORCE_PHASE1_REDISCOVERY) and cached and (not CRAWL_ALL_INTERNAL_LINKS):
         diag["notes"].append("PHASE1_SKIP: seed_cache_hit")
@@ -1821,6 +1541,7 @@ async def phase1_discover(gmina: str, start_url: str,
             "start_final": cached.get("start_final", ""),
             "seeds": len(cached.get("seeds", []) or [])
         }
+
     seeds = {}
     visited = set()
     q = deque()
@@ -1828,9 +1549,11 @@ async def phase1_discover(gmina: str, start_url: str,
     kind0 = "fail"
     status0 = None
     allowed_host = ""
+
     trace_set(diag, "PHASE1_START", url=start_url)
     tried = 0
     start_time = time.time()
+
     for su in candidate_start_urls(start_url):
         if (time.time() - start_time) > START_TOTAL_TIMEOUT_SEC:
             diag["notes"].append(f"START_TIMEOUT after {int(time.time()-start_time)}s")
@@ -1866,18 +1589,20 @@ async def phase1_discover(gmina: str, start_url: str,
                             u2 = normalize_url(urljoin(base_site, pth))
                             if same_base_domain(urlparse(u2).netloc.lower(), allowed_host):
                                 seeds[u2] = max(seeds.get(u2, 0), 16)
-                        diag["counts"]["js_extra_seeds_added"] += len(JS_EXTRA_SEED_PATHS)
                     except Exception:
-                        diag["counts"]["js_extra_seeds_failed"] += 1
+                        pass
             except Exception:
                 pass
             break
+
     if kind0 != "html" or not html0:
         diag["notes"].append(f"START_FAIL tried={tried}")
         diag_add_error(diag, gmina, start_url, "phase1_start", kind0, status0, "no_html_start")
         return [], {"status": "START_FAIL"}
+
     def allow_url(u: str) -> bool:
         return same_base_domain(urlparse(u).netloc.lower(), allowed_host)
+
     try:
         base_site = urlunparse((urlparse(final0).scheme, urlparse(final0).netloc, "/", "", "", ""))
         sitemap_urls = await collect_sitemap_urls(session_crawl, base_site, diag, max_urls=4000)
@@ -1897,13 +1622,15 @@ async def phase1_discover(gmina: str, start_url: str,
         if added_sm:
             diag["counts"]["seeds_from_sitemap_added"] += added_sm
             diag["notes"].append(f"SITEMAP_SEEDS_ADDED={added_sm}")
-    except Exception as ex:
+    except Exception:
         diag["counts"]["sitemap_block_exc"] += 1
         diag["notes"].append("SITEMAP_BLOCK_FAILED")
+
     q.append(final0)
     visited.add(final0)
     pages = 0
     trace_set(diag, "PHASE1_DISCOVERY", url=final0)
+
     while q and pages < PHASE1_MAX_PAGES and not state.shutdown_requested:
         url = normalize_url(q.popleft())
         html, final, kind, status, ctype, err, ms = await fetch(session_crawl, url)
@@ -1918,7 +1645,6 @@ async def phase1_discover(gmina: str, start_url: str,
             cache_mark_url(final)
         soup = safe_soup(html)
         if not soup:
-            diag_add_error(diag, gmina, final, "phase1_parse", "parse", status, "soup_failed")
             continue
         for abs_u, txt in iter_links_fast(soup, final):
             if not allow_url(abs_u):
@@ -1933,73 +1659,52 @@ async def phase1_discover(gmina: str, start_url: str,
                 if abs_u not in visited:
                     visited.add(abs_u)
                     q.append(abs_u)
+
     seed_urls = list(seeds.keys())[:PHASE1_MAX_SEEDS]
     seed_cache_put(gmina, start_url, allowed_host, final0, seed_urls)
     return seed_urls, {"status": "OK", "allowed_host": allowed_host, "start_final": final0, "seeds": len(seed_urls)}
 
+# ===================== FETCH CONDITIONAL =====================
 async def fetch_conditional(session: aiohttp.ClientSession, url: str, extra_headers: dict = None):
     url = normalize_url(url)
     domain = urlparse(url).netloc
-
     for ssl_mode in (False, None):
         try:
             await rate_limiter.wait(domain)
-
             headers = get_random_headers()
             if extra_headers:
                 headers.update(extra_headers)
-
             t0 = time.time()
-            async with session.get(
-                url,
-                timeout=REQUEST_TIMEOUT,
-                ssl=ssl_mode,
-                allow_redirects=True,
-                headers=headers
-            ) as resp:
+            async with session.get(url, timeout=REQUEST_TIMEOUT, ssl=ssl_mode, allow_redirects=True, headers=headers) as resp:
                 final = normalize_url(str(resp.url))
                 status = resp.status
                 ctype = (resp.headers.get("Content-Type", "") or "").lower()
-
                 etag = resp.headers.get("ETag", "") or resp.headers.get("Etag", "") or ""
                 last_mod = resp.headers.get("Last-Modified", "") or resp.headers.get("last-modified", "") or ""
                 resp_meta = {"etag": etag, "last_modified": last_mod}
-
                 if status == 304:
                     ms = round((time.time() - t0) * 1000)
                     return None, final, "not_modified", status, ctype, None, ms, resp_meta
-
                 data = await resp.read()
                 try:
                     text = data.decode("utf-8", errors="ignore")
                 except Exception:
                     text = data.decode("latin-1", errors="ignore")
-
                 ms = round((time.time() - t0) * 1000)
-
-                # standardowe kary dla 403/429
                 if status in (403, 429):
                     rate_limiter.report_403(domain)
-
-                # ✅ BLOCK-PAGE (często status=200, ale treść to blokada)
                 if status == 200 and is_block_page(text):
-                    # ważne: kara domeny jak za 429/403
                     rate_limiter.report_403(domain)
                     return None, final, "blocked", 429, ctype, "block_page_detected", ms, resp_meta
-
                 if "pdf" in ctype or final.lower().endswith(".pdf"):
                     return None, final, "pdf", status, ctype, None, ms, resp_meta
-
                 if status != 200:
                     if ssl_mode is None:
                         return None, final, "http_err", status, ctype, f"HTTP {status}", ms, resp_meta
                     continue
-
                 if text and len(text) > 800 and re.search(r"<[^>]+>", text[:2500]) is None:
                     return None, final, "non_html", status, ctype, None, ms, resp_meta
-
                 return text, final, "html", status, ctype, None, ms, resp_meta
-
         except asyncio.TimeoutError:
             if ssl_mode is None:
                 return None, url, "timeout", None, "", "request_timeout", 0, {}
@@ -2008,7 +1713,6 @@ async def fetch_conditional(session: aiohttp.ClientSession, url: str, extra_head
             if ssl_mode is None:
                 return None, url, "exc", None, "", str(e), 0, {}
             continue
-
     return None, url, "exc", None, "", "fetch_failed", 0, {}
 
 # ===================== PHASE 2 =====================
@@ -2024,17 +1728,14 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
 
     gkey = gmina_cache_key(gmina, "https://" + allowed_host)
     dead_key = f"dead_{gkey}"
-
-    # ✅ dead_set aktualizowany w locie
     dead_set = set(state.dead_urls.get(dead_key, []) or [])
 
-    # ✅ dedup retry (po canonical_url)
     retry_seen = set()
     existing_retry = (state.gmina_retry or {}).get(gkey, []) or []
     for u in existing_retry:
         retry_seen.add(sha1(_canon(u)))
 
-    # ---- najpierw frontier z poprzedniego runu (kontynuacja) ----
+    # frontier z poprzedniego runu
     saved_frontier = (state.gmina_frontiers or {}).get(gkey, []) or []
     if saved_frontier:
         print(f"  ↩️  Kontynuacja: {len(saved_frontier)} URL z poprzedniego runu ({gmina})", flush=True)
@@ -2047,13 +1748,9 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             if cu and cu not in visited and cu not in dead_set:
                 visited.add(cu)
                 q.append((cu, fd))
-        # wyczyść — będzie nadpisany na końcu phase2
         state.gmina_frontiers.pop(gkey, None)
 
-    # ---- potem retry (priorytet nad seeds) ----
-    # Cap retry do 200 — więcej nie ma sensu, WAF zablokuje i tak
-    # TTL jest sprawdzany w głównej pętli przez prev_pre, ale tu filtrujemy
-    # ewidentnie martwe domeny żeby nie mielić ich w kółko
+    # retry
     retry_list = (state.gmina_retry or {}).get(gkey, []) or []
     retry_added = 0
     for u in retry_list[:200]:
@@ -2064,13 +1761,10 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             retry_added += 1
     if retry_added:
         print(f"  🔁 Retry: {retry_added} URL ({gmina})", flush=True)
-
-    # wyczyść retry w pamięci (zostawimy tylko nowe dopiski przez retry_add)
     if isinstance(state.gmina_retry, dict):
         state.gmina_retry[gkey] = []
 
-    # ---- seeds tylko gdy brak frontieru z poprzedniego runu ----
-    # jeśli mamy frontier to seeds są zbędne — gmina jest w trakcie skanowania
+    # seeds
     if not saved_frontier:
         for su in seed_urls:
             cu = _canon(su)
@@ -2095,40 +1789,30 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
 
         url_hash = url_key(url)
         is_listing = is_listing_url(url) or is_home_url(url)
-
-        # --- klucze cache ---
         url_dedup = sha1(canonical_url(url))
-
-        # ✅ IMPORTANT: prev weźmiemy docelowo po final_c (po redirectach)
         prev_pre = content_seen.get(url_dedup)
 
-        # ================= TTL LOGIC (na bazie prev_pre; doprecyzujemy po final) =================
+        # TTL logic
         if USE_CACHE and prev_pre and not is_listing:
             status_prev = prev_pre.get("status")
-
             if status_prev in {"NOWE", "ZMIANA", "HIT"}:
                 if not should_recheck_hit(prev_pre):
                     diag["counts"]["hit_ttl_skip"] += 1
                     continue
-
             elif status_prev == "NO_MATCH":
                 if not should_recheck_no_match(prev_pre):
                     diag["counts"]["no_match_ttl_skip"] += 1
                     continue
-
             elif status_prev == "BLOCKED":
                 if not should_recheck_block(prev_pre, BLOCKED_RECHECK_TTL_MIN):
                     diag["counts"]["blocked_ttl_skip"] += 1
                     continue
-
             elif status_prev == "FAILED":
                 if not should_recheck_block(prev_pre, FAILED_RECHECK_TTL_MIN):
                     diag["counts"]["failed_ttl_skip"] += 1
                     continue
 
-        # ================= CONDITIONAL HEADERS =================
         extra_headers = {}
-        # (tu używamy prev_pre, bo jeszcze nie znamy final; po fetch przemapujemy)
         if prev_pre and prev_pre.get("etag"):
             extra_headers["If-None-Match"] = prev_pre.get("etag")
         if prev_pre and prev_pre.get("last_modified"):
@@ -2140,24 +1824,17 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
 
         final_c = _canon(final or url)
         url_dedup_final = sha1(canonical_url(final_c))
-
-        # ✅ kluczowe: prev po FINAL (redirect-proof) + fallback
         prev = content_seen.get(url_dedup_final) or prev_pre
 
-        # debug redirect count (opcjonalne)
-        try:
-            if final_c and final_c != url:
-                diag["counts"]["redirected"] += 1
-        except Exception:
-            pass
+        if final_c and final_c != url:
+            diag["counts"]["redirected"] += 1
 
-        # ================= 304 =================
+        # 304
         if kind == "not_modified":
             async with state.cache_lock:
                 if url_dedup_final in content_seen:
                     content_seen[url_dedup_final]["last_checked"] = now_iso()
                     content_seen[url_dedup_final]["status"] = "HIT"
-                # ✅ aliasuj też klucz wejściowy, żeby kolejne runy nie robiły duplikatów po redirect
                 if ALIAS_FINAL_AND_SOURCE_KEYS and (url_dedup != url_dedup_final):
                     if url_dedup in content_seen:
                         content_seen[url_dedup]["last_checked"] = now_iso()
@@ -2166,65 +1843,51 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                         content_seen[url_dedup] = content_seen.get(url_dedup_final, {}).copy()
             continue
 
-        # ================= BLOCKED =================
+        # BLOCKED
         if kind == "blocked":
             diag["counts"]["blocked_13"] += 1
-
             async with state.cache_lock:
                 prevb = content_seen.get(url_dedup_final) or prev_pre
                 content_seen[url_dedup_final] = {
                     "found_at": (prevb.get("found_at") if prevb else now_iso()),
                     "last_checked": now_iso(),
-                    "etag": "",
-                    "last_modified": "",
+                    "etag": "", "last_modified": "",
                     "gmina": gmina,
                     "title": (prevb.get("title") if prevb else ""),
                     "url": final_c,
                     "keywords": (prevb.get("keywords") if prevb else []),
                     "att_sig": (prevb.get("att_sig") if prevb else ""),
-                    "fp": (prevb.get("fp") if prevb else ""),
                     "status": "BLOCKED",
                 }
                 if ALIAS_FINAL_AND_SOURCE_KEYS and (url_dedup != url_dedup_final):
                     content_seen[url_dedup] = content_seen[url_dedup_final]
-
-            # ✅ dedup retry
             retry_add(gkey, retry_seen, final_c)
             urls_seen.discard(url_hash)
             continue
 
-        # ================= FAILED / NON-HTML =================
+        # FAILED
         if kind != "html" or not html:
-
-            # martwe: nie retry'ujemy
             if status in (404, 410):
                 dead_add(dead_key, dead_set, final_c)
                 continue
-
-            # retry tylko dla problemów sieci/WAF/5xx
             if status in (403, 429) or kind in {"timeout", "exc"} or (status and int(status) >= 500):
                 async with state.cache_lock:
                     prevf = content_seen.get(url_dedup_final) or prev_pre
                     content_seen[url_dedup_final] = {
                         "found_at": (prevf.get("found_at") if prevf else now_iso()),
                         "last_checked": now_iso(),
-                        "etag": "",
-                        "last_modified": "",
+                        "etag": "", "last_modified": "",
                         "gmina": gmina,
                         "title": (prevf.get("title") if prevf else ""),
                         "url": final_c,
                         "keywords": (prevf.get("keywords") if prevf else []),
                         "att_sig": (prevf.get("att_sig") if prevf else ""),
-                        "fp": (prevf.get("fp") if prevf else ""),
                         "status": "FAILED",
                     }
                     if ALIAS_FINAL_AND_SOURCE_KEYS and (url_dedup != url_dedup_final):
                         content_seen[url_dedup] = content_seen[url_dedup_final]
-
-                # ✅ dedup retry
                 retry_add(gkey, retry_seen, final_c)
                 urls_seen.discard(url_hash)
-
             continue
 
         # ================= HTML =================
@@ -2235,28 +1898,30 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
 
         title, h1, h2, meta_blob = extract_title_h1_h2(soup)
 
-        # WAŻNE: att_set PRZED _soup_fast_text — fast_text używa decompose()
-        # który niszczy drzewo DOM i usuwa linki do plików z soup
+        # ✅ att_set PRZED _soup_fast_text (bo fast_text robi decompose na script/style)
         att_set = attachments_signature(soup, final_c)
 
+        # ✅ CAŁY tekst strony — bez żadnego filtrowania poza script/style
         fast_text = _soup_fast_text(soup)
-        blob = f"{title} {h1} {h2} {fast_text}"
 
+        # ✅ blob = wszystko: tytuł + nagłówki + CAŁY tekst strony
+        blob = f"{title} {h1} {h2} {fast_text}"
         ok_any, kw_any = keyword_match_in_blob(blob)
-        fp = page_fingerprint(title, h1, fast_text)
 
         # ================= STATUS LOGIC =================
-        # NOWE:   URL nigdy wcześniej nie widziany + zawiera keyword
-        # ZMIANA: strona zawiera keyword I pojawiły się na niej nowe pliki
-        #         — porównujemy zbiory URL-i plików, nie hashe
-        # Strony bez keywordów (ok_any=False) nigdy nie dają NOWE ani ZMIANA
-        if prev is None:
+        # Nie raportujemy samej strony listingowej jako NOWE/ZMIANA —
+        # ale jej linki analizujemy przez ENABLE_LINK_HITS poniżej.
+        is_generic = is_generic_bip_page(title, h1, final_c, fast_text)
+
+        if is_generic:
+            # Strona-listing: nie raportuj jej samej, ale crawluj dalej
+            status_new = "NO_MATCH"
+        elif prev is None:
             status_new = "NOWE" if ok_any else "NO_MATCH"
         else:
             status_new = "HIT" if ok_any else "NO_MATCH"
-
             prev_att_set = att_sig_deserialize(prev.get("att_sig") or "")
-            added_files = att_set - prev_att_set   # pliki których wcześniej nie było
+            added_files = att_set - prev_att_set
             if added_files and ok_any:
                 status_new = "ZMIANA"
                 diag["counts"]["att_added"] += len(added_files)
@@ -2274,14 +1939,12 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             "title": page_title[:240],
             "url": final_c,
             "keywords": [kw_any] if ok_any else [],
-            "fp": fp,
             "att_sig": att_sig_serialize(att_set),
             "status": status_new,
         }
 
         async with state.cache_lock:
             content_seen[url_dedup_final] = meta
-            # ✅ alias na klucz wejściowy (anti-redirect duplicates)
             if ALIAS_FINAL_AND_SOURCE_KEYS and (url_dedup != url_dedup_final):
                 content_seen[url_dedup] = meta
 
@@ -2289,63 +1952,72 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             print_hit(f"🟢 {status_new}", gmina, kw_any, page_title)
             found.append((gmina, kw_any, page_title, final_c, status_new))
 
-        # ================= LINK DETECTION =================
+        # ================= LINK HITS =================
+        # ✅ Analizuj KAŻDY link na stronie (w tym na listingach kategorii).
+        # Jeśli anchor text linka zawiera keyword → zapisz URL linka jako NOWE.
+        # To łapie ogłoszenia typu:
+        #   "Plan ogólny Gminy X - Projekt" → link do document_id=2259580
+        #   "Decyzja środowiskowa dla farmy wiatrowej" → link do document_id=...
         for abs_u, txt in iter_links_fast(soup, final_c):
-
             cu = _canon(abs_u)
-            if not cu:
+            if not cu or not allow_url(cu):
                 continue
-
-            if not allow_url(cu):
-                continue
-
             if cu in dead_set:
                 continue
 
+            # Matchuj keyword w anchor text + nazwie pliku
             filename = urlparse(cu).path.split("/")[-1]
+            # ✅ Użyj SAMEGO anchor textu do matchowania (nie crawlowanej treści)
             blob_link = f"{txt} {filename}"
             ok_link, kw_link = keyword_match_in_blob(blob_link)
 
-            # ✅ WYŁĄCZAMY "NOWE (LINK)" (zalecane)
-            if ENABLE_LINK_HITS and ok_link:
-                link_title = (txt or "").strip()
-                if not link_title:
-                    link_title = filename or cu
+            if ENABLE_LINK_HITS and ok_link and txt:
+                link_title = txt.strip()
 
+                # Filtruj generyczne etykiety nawigacyjne
                 lt = link_title.lower()
-                if ("biuletyn informacji publicznej" in lt) or (lt == "bip") or (len(lt) <= 6 and "bip" in lt):
-                    diag["counts"]["generic_link_skipped"] += 1
-                else:
+                skip_generic = (
+                    "biuletyn informacji publicznej" in lt
+                    or lt == "bip"
+                    or (len(lt) <= 6 and "bip" in lt)
+                    or anchor_is_ignored(lt)
+                )
+
+                if not skip_generic:
                     key = sha1(canonical_url(cu))
-                    if key not in content_seen:
-                        content_seen[key] = {
-                            "found_at": now_iso(),
-                            "last_checked": now_iso(),
-                            "etag": "",
-                            "last_modified": "",
-                            "gmina": gmina,
-                            "title": link_title[:240],
-                            "url": cu,
-                            "keywords": [kw_link],
-                            "fp": "",
-                            "att_sig": "",
-                            "status": "NOWE",
-                        }
+                    prev_link = content_seen.get(key)
+
+                    if prev_link is None:
+                        # Pierwszy raz widzimy ten link z keywordem — NOWE
+                        async with state.cache_lock:
+                            content_seen[key] = {
+                                "found_at": now_iso(),
+                                "last_checked": now_iso(),
+                                "etag": "",
+                                "last_modified": "",
+                                "gmina": gmina,
+                                "title": link_title[:240],
+                                "url": cu,
+                                "keywords": [kw_link],
+                                "att_sig": "",
+                                "status": "NOWE",
+                            }
                         print_hit("🟢 NOWE (LINK)", gmina, kw_link, link_title)
                         found.append((gmina, kw_link, link_title, cu, "NOWE"))
+                        diag["counts"]["link_hits_new"] += 1
+                    # jeśli prev_link istnieje — już widzieliśmy, nie duplikuj
 
+            # Dodaj do kolejki crawlowania (niezależnie od keyword match)
             if cu not in visited and cu not in dead_set:
                 visited.add(cu)
                 q.append((cu, depth + 1))
 
-    # ✅ zapisz frontier do cache — następny run kontynuuje od tego miejsca
-    # zamiast zaczynać od nowa od seedów Phase1
+    # Zapisz frontier
     if q:
         state.gmina_frontiers[gkey] = [[url, depth] for url, depth in list(q)]
     else:
-        state.gmina_frontiers.pop(gkey, None)  # gmina skończona - wyczyść frontier
+        state.gmina_frontiers.pop(gkey, None)
 
-    # ✅ realny frontier_len (co zostało w kolejce)
     return found, {
         "status": "OK",
         "pages_ok": pages_ok,
@@ -2353,7 +2025,6 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
         "frontier_len": len(q),
         "retry_len": len((state.gmina_retry or {}).get(gkey, []) or []),
     }
-
 
 # ===================== DIAG SAVE + SUMMARY =====================
 def save_diag(diag_rows, diag_errors):
@@ -2363,19 +2034,11 @@ def save_diag(diag_rows, diag_errors):
             with open(DIAG_GMINY_CSV, "a", encoding="utf-8", newline="") as f:
                 w = csv.writer(f)
                 if new_file:
-                    w.writerow([
-                        "datetime", "gmina", "start_url", "status",
-                        "phase1_seeds", "phase2_pages_ok",
-                        "notes", "counts_json"
-                    ])
+                    w.writerow(["datetime", "gmina", "start_url", "status", "phase1_seeds", "phase2_pages_ok", "notes", "counts_json"])
                 for r in (diag_rows or []):
                     w.writerow([
-                        r.get("datetime"),
-                        r.get("gmina"),
-                        r.get("start_url"),
-                        r.get("status"),
-                        r.get("phase1_seeds"),
-                        r.get("phase2_pages_ok"),
+                        r.get("datetime"), r.get("gmina"), r.get("start_url"), r.get("status"),
+                        r.get("phase1_seeds"), r.get("phase2_pages_ok"),
                         " | ".join(r.get("notes", []) or [])[:900],
                         json.dumps(r.get("counts", {}), ensure_ascii=False)[:5000],
                     ])
@@ -2386,13 +2049,8 @@ def save_diag(diag_rows, diag_errors):
                     w.writerow(["datetime", "gmina", "stage", "kind", "status", "url", "err"])
                 for e in (diag_errors or []):
                     w.writerow([
-                        now_iso(),
-                        e.get("gmina"),
-                        e.get("stage"),
-                        e.get("kind"),
-                        e.get("status"),
-                        (e.get("url") or "")[:400],
-                        (e.get("err") or "")[:300],
+                        now_iso(), e.get("gmina"), e.get("stage"), e.get("kind"),
+                        e.get("status"), (e.get("url") or "")[:400], (e.get("err") or "")[:300],
                     ])
         retry_io(_do, tries=6, base_sleep=0.7)
     except Exception as ex:
@@ -2403,19 +2061,12 @@ def write_summary(diag_rows, new_items_for_mail):
         total = len(diag_rows or [])
         ok = sum(1 for r in (diag_rows or []) if r.get("status") == "OK")
         start_fail = sum(1 for r in (diag_rows or []) if r.get("status") == "START_FAIL")
-        hits_new = 0
-        hits_change = 0
-        for r in (diag_rows or []):
-            c = r.get("counts", {}) or {}
-            hits_new += int(c.get("hit_new", 0) or 0)
-            hits_change += int(c.get("hit_change", 0) or 0)
         lines = []
         lines.append(f"BIP WATCHER SUMMARY @ {now_iso()}")
         lines.append(f"gminy_total={total} ok={ok} start_fail={start_fail}")
-        lines.append(f"hits_new={hits_new} hits_change={hits_change}")
         lines.append(f"mail_items={len(new_items_for_mail or [])}")
         lines.append("")
-        lines.append("TOP 50 mail items:")
+        lines.append("TOP 500 mail items:")
         for x in (new_items_for_mail or [])[:500]:
             lines.append("- " + re.sub(r"\s+", " ", x).strip())
         def _do():
@@ -2427,14 +2078,9 @@ def write_summary(diag_rows, new_items_for_mail):
         print(f"⚠️ write_summary failed: {ex}")
 
 # ===================== WORKER =====================
-async def worker(name: str,
-                 queue: asyncio.Queue,
-                 session_default: aiohttp.ClientSession,
-                 session_ipv4: aiohttp.ClientSession,
-                 session_crawl: aiohttp.ClientSession,
-                 urls_seen: set,
-                 content_seen: dict,
-                 checkpoint_counter: dict):
+async def worker(name: str, queue: asyncio.Queue,
+                 session_default, session_ipv4, session_crawl,
+                 urls_seen: set, content_seen: dict, checkpoint_counter: dict):
     while True:
         got_item = False
         gmina = start_url = None
@@ -2452,22 +2098,17 @@ async def worker(name: str,
                 return
             if ONLY_GMINA and ONLY_GMINA.strip().lower() != (gmina or "").strip().lower():
                 return
+
             print(f"\n🔎 [{name}] START: {gmina} -> {start_url}", flush=True)
             seed_urls, p1meta = await phase1_discover(
-                gmina=gmina,
-                start_url=start_url,
-                session_default=session_default,
-                session_ipv4=session_ipv4,
-                session_crawl=session_crawl,
-                urls_seen=urls_seen,
-                diag=diag
+                gmina=gmina, start_url=start_url,
+                session_default=session_default, session_ipv4=session_ipv4,
+                session_crawl=session_crawl, urls_seen=urls_seen, diag=diag
             )
             if (p1meta or {}).get("status") != "OK":
                 print_start_fail_report(diag, gmina, start_url)
                 state.diag_rows.append({
-                    "datetime": now_iso(),
-                    "gmina": gmina,
-                    "start_url": start_url,
+                    "datetime": now_iso(), "gmina": gmina, "start_url": start_url,
                     "status": "START_FAIL",
                     "phase1_seeds": int((p1meta or {}).get("seeds", 0) or 0),
                     "phase2_pages_ok": 0,
@@ -2478,26 +2119,21 @@ async def worker(name: str,
                     state.diag_errors.append(e)
                 print(f"✅ [{name}] DONE: {gmina} (found 0)", flush=True)
                 continue
+
             allowed_host = (p1meta or {}).get("allowed_host", "")
             found, p2meta = await phase2_focus(
-                gmina=gmina,
-                seed_urls=seed_urls,
-                session_crawl=session_crawl,
-                allowed_host=allowed_host,
-                urls_seen=urls_seen,
-                content_seen=content_seen,
-                diag=diag
+                gmina=gmina, seed_urls=seed_urls, session_crawl=session_crawl,
+                allowed_host=allowed_host, urls_seen=urls_seen,
+                content_seen=content_seen, diag=diag
             )
+
             stop_reason = ((p2meta or {}).get("stop_reason") or "")
             frontier_len = int((p2meta or {}).get("frontier_len", 0) or 0)
             retry_len = int((p2meta or {}).get("retry_len", 0) or 0)
-            status = "OK"
-            if stop_reason and stop_reason != "QUEUE_EMPTY":
-                status = "INCOMPLETE"
+            status = "OK" if (not stop_reason or stop_reason == "QUEUE_EMPTY") else "INCOMPLETE"
+
             state.diag_rows.append({
-                "datetime": now_iso(),
-                "gmina": gmina,
-                "start_url": start_url,
+                "datetime": now_iso(), "gmina": gmina, "start_url": start_url,
                 "status": status,
                 "phase1_seeds": int((p1meta or {}).get("seeds", 0) or 0),
                 "phase2_pages_ok": int((p2meta or {}).get("pages_ok", 0) or 0),
@@ -2510,22 +2146,21 @@ async def worker(name: str,
             })
             for e in diag.get("errors", []):
                 state.diag_errors.append(e)
+
             checkpoint_counter["done"] = int(checkpoint_counter.get("done", 0) or 0) + 1
             if USE_CACHE and (checkpoint_counter["done"] % CACHE_CHECKPOINT_EVERY_N_GMINY == 0):
                 try:
                     if os.getenv("GITHUB_ACTIONS") and get_shard_index() >= 0:
                         await save_shard_cache_and_commit(asyncio.get_event_loop())
                     else:
-                        save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints)
-                        purge_old_cache(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints, state.dead_urls)
+                        save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds)
+                        purge_old_cache(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.dead_urls)
                 except Exception as ex:
                     print(f"⚠️ checkpoint save failed: {ex}", flush=True)
-            frontier_len = int((p2meta or {}).get("frontier_len", 0) or 0)
-            retry_len = int((p2meta or {}).get("retry_len", 0) or 0)
+
             print(f"✅ [{name}] DONE: {gmina} (found {len(found)}, frontier={frontier_len}, retry={retry_len})", flush=True)
-            
             if frontier_len == 0 and retry_len == 0:
-                print(f"   ✅ Gmina {gmina} – pełne przeskanowanie (frontier i retry puste)")
+                print(f"   ✅ Gmina {gmina} – pełne przeskanowanie")
 
         except asyncio.CancelledError:
             return
@@ -2539,12 +2174,8 @@ async def worker(name: str,
                 pass
             try:
                 state.diag_rows.append({
-                    "datetime": now_iso(),
-                    "gmina": gmina or "",
-                    "start_url": start_url or "",
-                    "status": "WORKER_ERROR",
-                    "phase1_seeds": 0,
-                    "phase2_pages_ok": 0,
+                    "datetime": now_iso(), "gmina": gmina or "", "start_url": start_url or "",
+                    "status": "WORKER_ERROR", "phase1_seeds": 0, "phase2_pages_ok": 0,
                     "notes": (diag.get("notes", []) or []) + [f"worker_exc={str(e)[:160]}"],
                     "counts": dict(diag.get("counts", {})),
                 })
@@ -2563,27 +2194,24 @@ async def worker(name: str,
 
 # ===================== MAIN =====================
 async def main():
-    # ===================== RESET CACHE (jednorazowy) =====================
-    # Uruchom z RESET_CACHE=1 żeby wyczyścić cache i zacząć od zera:
-    #   RESET_CACHE=1 python bip_watcher.py
-    # lub w GitHub Actions: dodaj env: RESET_CACHE: "1" do workflow (tylko raz!)
     if os.getenv("RESET_CACHE", "0").strip() == "1":
-        print("🗑️  RESET_CACHE=1 — czyszczę cache i zaczynam od zera...")
+        print("🗑️  RESET_CACHE=1 — czyszczę cache...")
         if CACHE_FILE.exists():
             CACHE_FILE.unlink()
             print(f"   ✅ Usunięto: {CACHE_FILE}")
-        # usuń też shardy jeśli istnieją
         for shard_file in BASE_DIR.glob("cache_shard_*.json"):
             shard_file.unlink()
             print(f"   ✅ Usunięto: {shard_file}")
-        print("   ✅ Cache wyczyszczony. Ten run zbiera wszystko od zera.")
-        print("   ⚠️  Pamiętaj żeby usunąć RESET_CACHE=1 przed następnym runem!")
+        print("   ✅ Cache wyczyszczony.")
         print()
 
-    # cache load – teraz zwraca 8 wartości (dodane dead_urls)
-    state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints, state.gmina_frontiers, state.gmina_retry, state.dead_urls = load_cache_v2()
+    # ✅ load_cache_v2 zwraca 7 wartości (usunięto page_fprints)
+    (state.raw_cache, state.urls_seen, state.content_seen,
+     state.gmina_seeds, state.gmina_frontiers,
+     state.gmina_retry, state.dead_urls) = load_cache_v2()
+
     migrate_content_seen_to_url_dedup(state.content_seen)
-    purge_old_cache(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints, state.dead_urls)
+    purge_old_cache(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.dead_urls)
 
     if not CSV_FILE.exists():
         print(f"❌ Brak pliku CSV: {CSV_FILE}")
@@ -2592,6 +2220,7 @@ async def main():
     if not rows:
         print("❌ CSV pusty / brak poprawnych rekordów.")
         return
+
     shard_total = int(os.getenv("SHARD_TOTAL", "1"))
     shard_index = int(os.getenv("SHARD_INDEX", "0"))
     rows_all = rows
@@ -2601,28 +2230,9 @@ async def main():
         print("ℹ️ Brak gmin w tym shardzie.")
         return
 
-    conn_default = aiohttp.TCPConnector(
-        limit=CONCURRENT_REQUESTS,
-        limit_per_host=LIMIT_PER_HOST,
-        ttl_dns_cache=600,
-        enable_cleanup_closed=True,
-        ssl=False
-    )
-    conn_ipv4 = aiohttp.TCPConnector(
-        family=socket.AF_INET,
-        limit=CONCURRENT_REQUESTS,
-        limit_per_host=LIMIT_PER_HOST,
-        ttl_dns_cache=600,
-        enable_cleanup_closed=True,
-        ssl=False
-    )
-    conn_crawl = aiohttp.TCPConnector(
-        limit=CONCURRENT_REQUESTS,
-        limit_per_host=LIMIT_PER_HOST,
-        ttl_dns_cache=600,
-        enable_cleanup_closed=True,
-        ssl=False
-    )
+    conn_default = aiohttp.TCPConnector(limit=CONCURRENT_REQUESTS, limit_per_host=LIMIT_PER_HOST, ttl_dns_cache=600, enable_cleanup_closed=True, ssl=False)
+    conn_ipv4 = aiohttp.TCPConnector(family=socket.AF_INET, limit=CONCURRENT_REQUESTS, limit_per_host=LIMIT_PER_HOST, ttl_dns_cache=600, enable_cleanup_closed=True, ssl=False)
+    conn_crawl = aiohttp.TCPConnector(limit=CONCURRENT_REQUESTS, limit_per_host=LIMIT_PER_HOST, ttl_dns_cache=600, enable_cleanup_closed=True, ssl=False)
     timeout_quick = aiohttp.ClientTimeout(total=None, sock_connect=12, sock_read=35)
 
     async with aiohttp.ClientSession(connector=conn_default, timeout=timeout_quick) as s_default, \
@@ -2634,7 +2244,6 @@ async def main():
             await queue.put((gmina, start_url))
         checkpoint_counter = {"done": 0}
 
-        # ========== DEFINICJA FUNKCJI OKRESOWEJ ==========
         async def periodic_checkpoint():
             every = env_int("CHECKPOINT_EVERY_SEC", 60)
             while True:
@@ -2644,24 +2253,18 @@ async def main():
                         if os.getenv("GITHUB_ACTIONS") and get_shard_index() >= 0:
                             await save_shard_cache_and_commit(asyncio.get_event_loop())
                         else:
-                            save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints)
+                            save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds)
                     save_diag(state.diag_rows, state.diag_errors)
                 except Exception as ex:
                     print(f"⚠️ periodic checkpoint failed: {ex}", flush=True)
 
         workers = [
-            asyncio.create_task(
-                worker(
-                    name=f"W{i+1}",
-                    queue=queue,
-                    session_default=s_default,
-                    session_ipv4=s_ipv4,
-                    session_crawl=s_crawl,
-                    urls_seen=state.urls_seen,
-                    content_seen=state.content_seen,
-                    checkpoint_counter=checkpoint_counter
-                )
-            )
+            asyncio.create_task(worker(
+                name=f"W{i+1}", queue=queue,
+                session_default=s_default, session_ipv4=s_ipv4, session_crawl=s_crawl,
+                urls_seen=state.urls_seen, content_seen=state.content_seen,
+                checkpoint_counter=checkpoint_counter
+            ))
             for i in range(CONCURRENT_GMINY)
         ]
         checkpoint_task = asyncio.create_task(periodic_checkpoint())
@@ -2677,36 +2280,41 @@ async def main():
                 t.cancel()
             await asyncio.gather(*workers, return_exceptions=True)
 
-    # ===================== FINAL SAVE =====================
+    # FINAL SAVE
     try:
         if USE_CACHE:
             if os.getenv("GITHUB_ACTIONS") and get_shard_index() >= 0:
                 await save_shard_cache_and_commit(asyncio.get_event_loop())
             else:
-                save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds, state.page_fprints)
+                save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds)
         save_diag(state.diag_rows, state.diag_errors)
         write_summary(state.diag_rows, state.new_items_for_mail)
         export_summary_to_onedrive()
     except Exception as e:
         print(f"⚠️  Final save failed: {e}")
 
-    # ===================== EMAIL =====================
+    # EMAIL
     try:
         if ENABLE_EMAIL and state.new_items_for_mail and not state.shutdown_requested:
             subject = f"BIP WATCHER: {len(state.new_items_for_mail)} nowych/zmienionych wpisów ({datetime.now().strftime('%Y-%m-%d %H:%M')})"
             body = "\n\n".join(state.new_items_for_mail[:1200])
             if len(state.new_items_for_mail) > 1200:
                 body += f"\n\n... truncated ({len(state.new_items_for_mail)} total)"
-            ok = send_email(subject, body)
-            print("📨 Email:", "SENT ✅" if ok else "NOT SENT ❌")
+            msg = MIMEText(body, "plain", "utf-8")
+            msg["Subject"] = subject
+            msg["From"] = EMAIL_TO
+            msg["To"] = EMAIL_TO
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as srv:
+                srv.send_message(msg)
+            print("📨 Email: SENT ✅")
         else:
-            print("📨 Email: pominięty (brak nowych wpisów albo shutdown).")
+            print("📨 Email: pominięty.")
     except Exception as e:
         print(f"⚠️  Email failed: {e}")
 
     print("✅ SKAN ZAKOŃCZONY")
 
-# ===================== RUNNER (VS CODE / CELL) =====================
+# ===================== RUNNER =====================
 def run_main_vscode_style():
     try:
         loop = asyncio.get_event_loop()
@@ -2720,5 +2328,3 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
-
-
