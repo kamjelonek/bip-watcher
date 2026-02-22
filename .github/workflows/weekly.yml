@@ -4,13 +4,7 @@ on:
   schedule:
     - cron: "0 6 * * 1"   # poniedziałek 6:00 UTC
     - cron: "0 6 * * 4"   # czwartek 6:00 UTC
-  workflow_dispatch:
-    inputs:
-      reset_cache:
-        description: 'Reset remote cache (delete cache-store branch and start fresh)'
-        required: false
-        default: false
-        type: boolean
+  workflow_dispatch: {}
 
 concurrency:
   group: bip-watcher
@@ -21,34 +15,10 @@ permissions:
   issues: write
 
 jobs:
-  # ===================== KROK RESET: opcjonalne czyszczenie cache-store =====================
-  reset_cache:
-    name: Reset remote cache (if requested)
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.reset_cache == 'true'
-    timeout-minutes: 5
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Delete remote cache-store branch if exists
-        shell: bash
-        run: |
-          if git ls-remote --exit-code --heads origin cache-store; then
-            echo "🗑️ Usuwanie gałęzi cache-store..."
-            git push origin --delete cache-store
-            echo "✅ Gałąź cache-store usunięta."
-          else
-            echo "ℹ️ Gałąź cache-store nie istnieje – nic do usunięcia."
-          fi
-
   # ===================== KROK 0: Init cache-store branch =====================
   init_cache_store:
     name: Init cache-store branch (single)
     runs-on: ubuntu-latest
-    needs: [reset_cache]   # reset_cache może być puste, ale jeśli było, to już po usunięciu
     timeout-minutes: 10
     steps:
       - name: Checkout repo (main)
@@ -138,12 +108,18 @@ jobs:
     name: Scan shard ${{ matrix.shard }}
     runs-on: ubuntu-latest
     continue-on-error: true
+    # ── TIMEOUT ──────────────────────────────────────────────────────────────
+    # Job timeout:        355 min  (GHA limit)
+    # Krok Python:        325 min  (step timeout)
+    # RUN_DEADLINE_MIN:   315 min  (Python sam kończy po tym czasie)
+    # Zostaje 30 min zapasu na commit sharda przed ubiciem joba
+    # ─────────────────────────────────────────────────────────────────────────
     timeout-minutes: 355
     needs: [setup]
 
     strategy:
       fail-fast: false
-      max-parallel: 10
+      max-parallel: 10       # ← max 10 gmin równolegle
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
 
     steps:
@@ -264,17 +240,17 @@ jobs:
         timeout-minutes: 325
         env:
           PYTHONUNBUFFERED: "1"
+          # SHARD_TOTAL = liczba gmin (z poprzedniego joba)
           SHARD_TOTAL: ${{ needs.setup.outputs.total }}
+          # SHARD_INDEX = numer wiersza w CSV (= numer tej gminy)
           SHARD_INDEX: "${{ matrix.shard }}"
           RUN_DEADLINE_MIN: "315"
+          # Jedna gmina = jeden worker, nie ma sensu więcej
           CONCURRENT_GMINY: "1"
           CONCURRENT_REQUESTS: "30"
           LIMIT_PER_HOST: "4"
           RATE_MIN_DELAY: "0.3"
-          CHECKPOINT_EVERY_SEC: "300"
-          # Opcjonalnie: jeśli chcemy przy resecie również zresetować lokalny cache w skrypcie
-          # można dodać RESET_CACHE: "1", ale to jest osobna sprawa
-          RESET_CACHE: ${{ github.event.inputs.reset_cache == 'true' && '1' || '0' }}
+          CHECKPOINT_EVERY_SEC: "300"   # checkpoint co 5 min (jedna gmina)
         run: |
           python bip_watcher.py
 
