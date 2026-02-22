@@ -2041,6 +2041,17 @@ async def worker(name: str, queue: asyncio.Queue,
             if frontier_len == 0 and retry_len == 0:
                 print(f"   ✅ Gmina {gmina} – pełne przeskanowanie")
 
+            # DEBUG: pokaż wszystkie URL-e w retry wraz z ostatnim statusem z cache
+            retry_debug = (state.gmina_retry or {}).get(gkey, []) or []
+            if retry_debug:
+                print("\n🔴 RETRY DEBUG [" + gmina + "] — " + str(len(retry_debug)) + " URL-i nie udalo sie pobrac:", flush=True)
+                for retry_url in retry_debug:
+                    key = sha1(canonical_url(retry_url))
+                    meta = state.content_seen.get(key) or {}
+                    status_c = meta.get("status", "BRAK W CACHE")
+                    print(f"   {status_c:10s} | {retry_url[:120]}", flush=True)
+                print(flush=True)
+
         except asyncio.CancelledError:
             return
         except Exception as e:
