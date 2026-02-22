@@ -2535,6 +2535,9 @@ async def worker(name: str,
                     await save_shard_cache_and_commit(asyncio.get_event_loop())
                 queue.task_done()
 
+import os
+os.environ['RESET_CACHE'] = '1'
+
 # ===================== MAIN =====================
 async def main():
     # ===================== RESET CACHE (jednorazowy) =====================
@@ -2694,3 +2697,4 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
