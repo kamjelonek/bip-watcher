@@ -359,17 +359,11 @@ def dead_add(dead_key: str, dead_set: set, url: str):
     dead_set.add(cu)
     state.dead_urls.setdefault(dead_key, []).append(cu)
 
-# ✅ FIX #5: Przywrócony stabilny podział hash-based z v2.3
+# 1 shard = 1 gmina przez bezpośredni indeks (tyle shardów co gmin)
 def pick_rows_for_shard(rows, shard_index: int, shard_total: int):
-    if shard_total <= 1:
-        return rows
-    out = []
-    for (name, url) in rows:
-        key = f"{(name or '').strip().lower()}|{canonical_url(url)}"
-        h = int(hashlib.sha1(key.encode("utf-8", errors="ignore")).hexdigest(), 16)
-        if (h % shard_total) == shard_index:
-            out.append((name, url))
-    return out
+    if shard_index < 0 or shard_index >= len(rows):
+        return []
+    return [rows[shard_index]]
 
 def should_recheck_hit(prev: dict) -> bool:
     if not prev or not isinstance(prev, dict):
