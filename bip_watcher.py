@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.11 (CELL + VS Code / Windows) - PRODUCTION
+BIP WATCHER v2.12 (CELL + VS Code / Windows) - PRODUCTION
 Zmiany v2.10 vs v2.9:
 - FIX #1: is_download_url() — dodano /file_add/, /file_add/download/, wzorzec końcówki "pdf" bez kropki
            (bip.miastonowydwor.pl używa /files/file_add/download/XXX_XXXpdf)
@@ -480,6 +480,8 @@ class GlobalState:
         self.cache_lock = asyncio.Lock()
         self.mail_dedup = set()
         self.reported_urls_this_run: set = set()
+        # v2.12: deduplicja kolejnych identycznych tytułów per gmina
+        self.last_printed: dict = {}  # gmina -> ostatni wydrukowany tytuł
 
     def request_shutdown(self):
         self.shutdown_requested = True
@@ -1801,6 +1803,20 @@ async def phase1_discover(gmina: str, start_url: str,
     seed_cache_put(gmina, start_url, allowed_host, final0, seed_urls)
     return seed_urls, {"status": "OK", "allowed_host": allowed_host, "start_final": final0, "seeds": len(seed_urls)}
 
+def _consecutive_dedup_check(gmina: str, title: str) -> bool:
+    """
+    v2.12: Zwraca True jeśli wpis powinien być wydrukowany (nie jest duplikatem poprzedniego).
+    Jeśli tytuł jest identyczny jak ostatni wydrukowany dla tej gminy — skipuj.
+    Pierwsze wystąpienie zawsze przechodzi, kolejne identyczne są pomijane.
+    """
+    title_norm = re.sub(r"\s+", " ", (title or "")).strip()
+    last = state.last_printed.get(gmina, "")
+    if title_norm == last:
+        return False
+    state.last_printed[gmina] = title_norm
+    return True
+
+
 # ===================== PHASE 2 =====================
 async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                        urls_seen: set, content_seen: dict, diag):
@@ -2059,8 +2075,12 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
         if status_new in {"NOWE", "ZMIANA"}:
             if final_c not in state.reported_urls_this_run:
                 state.reported_urls_this_run.add(final_c)
-                print_hit(f"🟢 {status_new}", gmina, kw_any, page_title)
-                found.append((gmina, kw_any, page_title, final_c, status_new))
+                # v2.12: pomiń jeśli identyczny tytuł jak poprzedni dla tej gminy
+                if _consecutive_dedup_check(gmina, page_title):
+                    print_hit(f"🟢 {status_new}", gmina, kw_any, page_title)
+                    found.append((gmina, kw_any, page_title, final_c, status_new))
+                else:
+                    diag["counts"]["consecutive_dedup_skipped"] += 1
             else:
                 diag["counts"]["dedup_skipped"] += 1
 
@@ -2118,9 +2138,13 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                                 "status": "NOWE",
                             }
                         state.reported_urls_this_run.add(cu)
-                        print_hit("🟢 NOWE (LINK)", gmina, kw_link, link_title)
-                        found.append((gmina, kw_link, link_title, cu, "NOWE"))
-                        diag["counts"]["link_hits_new"] += 1
+                        # v2.12: pomiń jeśli identyczny tytuł jak poprzedni dla tej gminy
+                        if _consecutive_dedup_check(gmina, link_title):
+                            print_hit("🟢 NOWE (LINK)", gmina, kw_link, link_title)
+                            found.append((gmina, kw_link, link_title, cu, "NOWE"))
+                            diag["counts"]["link_hits_new"] += 1
+                        else:
+                            diag["counts"]["consecutive_dedup_skipped"] += 1
                     elif prev_link is None:
                         diag["counts"]["link_dedup_skipped"] += 1
 
@@ -2177,7 +2201,7 @@ def write_summary(diag_rows, new_items_for_mail):
         ok = sum(1 for r in (diag_rows or []) if r.get("status") == "OK")
         start_fail = sum(1 for r in (diag_rows or []) if r.get("status") == "START_FAIL")
         lines = [
-            f"BIP WATCHER v2.11 SUMMARY @ {now_iso()}",
+            f"BIP WATCHER v2.12 SUMMARY @ {now_iso()}",
             f"gminy_total={total} ok={ok} start_fail={start_fail}",
             f"mail_items={len(new_items_for_mail or [])}",
             "",
