@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.14 - PRODUCTION
+BIP WATCHER v2.15 - PRODUCTION
 Zmiany v2.14 vs v2.13:
 - Usunięto "mpzp" i "oze" całkowicie — z KEYWORDS, STRICT_ONLY i LISTING_URL_HINTS
 Zmiany v2.13 vs v2.12:
@@ -1771,6 +1771,11 @@ async def phase1_discover(gmina: str, start_url: str,
     trace_set(diag, "PHASE1_DISCOVERY", url=final0)
 
     while q and pages < PHASE1_MAX_PAGES and not state.shutdown_requested:
+        # v2.14: sprawdzaj deadline w każdej iteracji
+        if RUN_DEADLINE_MIN > 0 and (time.time() - GLOBAL_T0) > (RUN_DEADLINE_MIN * 60):
+            state.request_shutdown()
+            break
+
         url = normalize_url(q.popleft())
         html, final, kind, status, ctype, err, ms = await fetch(session_crawl, url)
         trace_set(diag, "PHASE1_DISCOVERY", url=url, kind=kind, status=status, ms=ms)
@@ -1874,6 +1879,11 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
     pages_ok = 0
 
     while q and not state.shutdown_requested:
+        # v2.14: sprawdzaj deadline w każdej iteracji, nie tylko między gminami
+        if RUN_DEADLINE_MIN > 0 and (time.time() - GLOBAL_T0) > (RUN_DEADLINE_MIN * 60):
+            state.request_shutdown()
+            break
+
         url, depth = q.popleft()
         if depth > PHASE2_MAX_DEPTH:
             continue
