@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.8 (CELL + VS Code / Windows) - PRODUCTION
-Zmiany v2.8 vs v2.7:
-- FIX #1: FAST_TEXT_MAX_CHARS 999_999 -> 40_000 (wydajność, bez utraty ogłoszeń)
-- FIX #2: Usunięto COOKIE_CONSENT_HEADER — powodował więcej problemów niż rozwiązywał
-- FIX #3: is_download_url() — blokuje /pobierz/, ?file=, /download/ itp. jako LINK HIT
-- FIX #4: is_generic_page_title() — filtruje śmieciowe tytuły (BIP, Redakcja, Aktualności itp.)
-          zarówno jako tytuł wyniku jak i jako źródło keyword match
-- FIX #5: Zachowane pełne skanowanie treści (_soup_fast_text bez zmian logiki)
+BIP WATCHER v2.9 (CELL + VS Code / Windows) - PRODUCTION
+Zmiany v2.9 vs v2.8:
+- FIX #1: Krzaczki w tytułach — page_title fallback to final_c (URL), nie url_slug
+- FIX #2: Krótkie/śmieciowe LINK HITS — rozszerzone filtry skip_generic:
+          * min długość 12 znaków
+          * blokada wzorców: "344.html", same cyfry, "pobierz 1346", "files download" itp.
+          * anchor text zawierający słowa download/pobierz/files bez treści ogłoszenia
+- FIX #3 (z v2.8): FAST_TEXT_MAX_CHARS = 40_000
+- FIX #4 (z v2.8): Usunięto cookie consent headers
+- FIX #5 (z v2.8): is_download_url() — blokuje /pobierz/, ?file= itp. jako LINK HIT
+- FIX #6 (z v2.8): is_generic_page_title() — filtruje śmieciowe tytuły
 """
 
 import os, csv, json, hashlib, asyncio, re, time, smtplib, warnings, socket, random, signal
@@ -120,19 +123,15 @@ ENABLE_EMAIL = False
 
 # ===================== KEYWORDS =====================
 KEYWORDS = [
-    # mpzp / plany
-    "mpzp", "miejscowy plan", "plan miejscowy", "miejscowego", "miejscowy plan zagospodarowania przestrzennego",
+    "mpzp", "miejscowy plan", "plan miejscowy", "miejscowego",
+    "miejscowy plan zagospodarowania przestrzennego",
     "projekt mpzp", "miejscowego planu zagospodarowania przestrzennego",
-    # plan ogólny
     "plan ogólny", "plan ogolny", "planu ogólnego",
-    # studium
     "studium uwarunkowań", "studium uwarunkowan",
-    # decyzje
     "warunki zabudowy", "decyzja o warunkach zabudowy", "decyzje o warunkach zabudowy",
     "decyzja środowiskowa", "decyzje środowiskowe",
     "decyzja o środowiskowych uwarunkowaniach", "środowiskowych uwarunkowaniach",
     "raport o oddziaływaniu na środowisko",
-    # OZE: wiatr / PV
     "oze",
     "elektrownia wiatrowa", "farma wiatrowa", "wiatr", "wiatrow", "turbina",
     "fotowolta", "farma fotowoltaiczna", "magazyn energii",
@@ -196,9 +195,7 @@ ATT_EXT = (
     ".tif", ".tiff",
 )
 
-# ===================== FIX #3: Download URL patterns =====================
-# URL-e do pobierania plików bez rozszerzenia — traktujemy jak załączniki,
-# nie raportujemy jako LINK HIT (to nie są strony HTML z ogłoszeniami)
+# ===================== FIX #5: Download URL patterns =====================
 DOWNLOAD_URL_SEGMENTS = [
     "/pobierz/", "/download/", "/pobieranie/",
     "/file/", "/files/", "/attachment/", "/attachments/",
@@ -212,10 +209,7 @@ DOWNLOAD_URL_PARAMS = [
 ]
 
 def is_download_url(u: str) -> bool:
-    """
-    FIX #3: Wykrywa URL-e do pobierania plików nawet bez rozszerzenia.
-    np. /pobierz/1234, ?file=19562, /download/abc
-    """
+    """FIX #5: Wykrywa URL-e do pobierania plików nawet bez rozszerzenia."""
     low = (u or "").lower()
     for seg in DOWNLOAD_URL_SEGMENTS:
         if seg in low:
@@ -225,9 +219,7 @@ def is_download_url(u: str) -> bool:
             return True
     return False
 
-# ===================== FIX #4: Generic page title filter =====================
-# Tytuły które są nazwą serwisu/systemu BIP, nie konkretnego ogłoszenia.
-# Jeśli strona ma taki tytuł i brak h1/h2 — nie raportujemy jako hit.
+# ===================== FIX #6: Generic page title filter =====================
 _GENERIC_TITLE_PATTERNS = [
     "biuletyn informacji publicznej",
     "biuletyn informacji",
@@ -251,21 +243,70 @@ _GENERIC_TITLE_PATTERNS = [
 ]
 
 def is_generic_page_title(title: str) -> bool:
-    """
-    FIX #4: Zwraca True jeśli tytuł to nazwa serwisu/systemu, nie ogłoszenia.
-    Używamy do:
-    1) Filtrowania śmieciowych tytułów w wynikach
-    2) Wykluczenia tytułu z keyword match gdy jest generyczny
-    """
+    """FIX #6: True jeśli tytuł to nazwa serwisu/systemu, nie ogłoszenia."""
     t = re.sub(r"\s+", " ", (title or "")).strip().lower()
     if not t or len(t) < 3:
         return True
-    # dokładne dopasowanie do początku lub całości
     for pat in _GENERIC_TITLE_PATTERNS:
         if t == pat:
             return True
         if t.startswith(pat) and len(t) < len(pat) + 60:
             return True
+    return False
+
+# ===================== FIX #2: Link title quality filter =====================
+
+# Wzorce anchor textów które są nazwami plików / ścieżkami URL, nie tytułami ogłoszeń
+_JUNK_LINK_TITLE_RE = re.compile(
+    r"""
+    ^\d+\.html?$                        # "344.html", "19562.htm"
+    | ^[\d\s\.\-/\\]+$                  # same cyfry, spacje, slashe
+    | ^[a-z0-9_\-]+\.[a-z]{2,4}$       # "zarzadzenie_nr14.pdf", "plik.docx"
+    | ^\d+$                             # sama liczba
+    | ^(pobierz|download|files?|add|get|view|open|click|tutaj|here)\s*[\d\.\-/]*$ # "pobierz 1346"
+    """,
+    re.VERBOSE | re.IGNORECASE
+)
+
+# Słowa które w anchor text wskazują na link do pliku, nie do strony
+_DOWNLOAD_WORDS_RE = re.compile(
+    r"\b(pobierz|download|files?|attachment|załącznik|zalacznik|pobieranie)\b",
+    re.IGNORECASE
+)
+
+def is_junk_link_title(title: str, url: str = "") -> bool:
+    """
+    FIX #2: True jeśli anchor text to śmieciowy tytuł (nazwa pliku, ścieżka, krótki token).
+    Używane w sekcji LINK HITS żeby nie raportować śmieciowych ogłoszeń.
+    """
+    t = re.sub(r"\s+", " ", (title or "")).strip()
+    lt = t.lower()
+
+    # za krótkie
+    if len(t) < 12:
+        return True
+
+    # pasuje do wzorców śmieciowych
+    if _JUNK_LINK_TITLE_RE.match(t):
+        return True
+
+    # zawiera słowa download/pobierz i jest krótkie (prawdziwy tytuł ogłoszenia
+    # może zawierać "pobierz" ale będzie długi i zawierać inne słowa)
+    if _DOWNLOAD_WORDS_RE.search(lt) and len(t) < 80:
+        # wyjątek: jeśli zawiera też słowo kluczowe ogłoszenia, zostawiamy
+        ok, _ = keyword_match_in_blob(lt)
+        if not ok:
+            return True
+
+    # URL wskazuje na plik pobierania — tytuł nie ma znaczenia
+    if url and is_download_url(url):
+        return True
+
+    # same znaki nie-alfanumeryczne (krzaczki)
+    alnum = re.sub(r"[^a-zA-Z0-9\u00C0-\u024F\u0400-\u04FF]", "", t)
+    if len(alnum) < 6:
+        return True
+
     return False
 
 # ===================== PERFORMANCE =====================
@@ -291,8 +332,7 @@ MAX_ERROR_SAMPLES_PER_GMINA = 60
 
 CACHE_CHECKPOINT_EVERY_N_GMINY = 3
 SEED_CACHE_TTL_DAYS = 30
-# FIX #1: 40_000 zamiast 999_999 — wystarczy na każde ogłoszenie BIP,
-# eliminuje przetwarzanie gigantycznych stron archiwalnych
+# FIX #3: 40_000 zamiast 999_999 — wystarczy na każde ogłoszenie BIP
 FAST_TEXT_MAX_CHARS = 40_000
 
 HIT_RECHECK_TTL_HOURS = 24
@@ -310,12 +350,8 @@ USER_AGENTS = [
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15",
 ]
 
-# FIX #2: Usunięto COOKIE_CONSENT_HEADER — powodował problemy z WAF niektórych serwerów
+# FIX #4: Bez cookie consent headers
 def get_random_headers(referer: str = "") -> dict:
-    """
-    FIX #2: Brak cookie consent — standardowe nagłówki przeglądarki.
-    FIX z v2.7 #7: Referer same-origin jeśli podany.
-    """
     sec_fetch_site = "same-origin" if referer else "none"
     headers = {
         "User-Agent": random.choice(USER_AGENTS),
@@ -697,7 +733,7 @@ def cache_mark_url(u: str):
         if isinstance(d, dict):
             d[h] = now_iso()
 
-# ===================== SITEMAP + ROBOTS + JS HEAVY =====================
+# ===================== SITEMAP + ROBOTS =====================
 def detect_js_app(html: str) -> bool:
     if not html:
         return False
@@ -894,7 +930,7 @@ def _strip_dynamic_noise(txt: str) -> str:
     return txt
 
 def _soup_fast_text(soup: BeautifulSoup, max_chars: int = FAST_TEXT_MAX_CHARS) -> str:
-    # FIX #1: limit 40_000 zamiast 999_999 — logika bez zmian
+    # FIX #3: limit 40_000, logika bez zmian
     try:
         if not soup:
             return ""
@@ -1257,7 +1293,7 @@ def print_start_fail_report(diag, gmina: str, start_url: str):
     for i, x in enumerate(sa[:8], 1):
         print(f"   {i:02d}) kind={x.get('kind')} status={x.get('status')} ms={x.get('ms')} url={x.get('try_url')[:100]}")
 
-# ===================== FETCH WITH RETRY =====================
+# ===================== FETCH =====================
 async def fetch_with_retry(session, url, timeout, ssl_mode, max_retries=3, method="GET"):
     url = normalize_url(url)
     domain = urlparse(url).netloc
@@ -1373,7 +1409,6 @@ async def fetch_start_matrix(session_default, session_ipv4, url, diag):
 
     return last_fail if last_fail else (None, url, "fail", None, "", "no_strategy_worked", None)
 
-# ===================== NORMAL FETCH =====================
 async def fetch(session: aiohttp.ClientSession, url: str, extra_headers: dict = None):
     url = normalize_url(url)
     domain = urlparse(url).netloc
@@ -1418,7 +1453,6 @@ async def fetch(session: aiohttp.ClientSession, url: str, extra_headers: dict = 
             continue
     return None, url, "exc", None, "", "fetch_failed", 0
 
-# ===================== FETCH CONDITIONAL =====================
 async def fetch_conditional(session: aiohttp.ClientSession, url: str, extra_headers: dict = None):
     url = normalize_url(url)
     domain = urlparse(url).netloc
@@ -1789,7 +1823,8 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             ok_url, kw_url = keyword_match_in_blob(url_slug)
             if ok_url and final_c not in state.reported_urls_this_run:
                 state.reported_urls_this_run.add(final_c)
-                page_title_blocked = url_slug.strip()[:240] or final_c
+                # FIX #1: użyj final_c jako tytułu, nie url_slug (krzaczki)
+                page_title_blocked = final_c
                 print_hit("🟡 BLOCKED (URL HIT)", gmina, kw_url, final_c)
                 found.append((gmina, kw_url, page_title_blocked, final_c, "NOWE"))
                 diag["counts"]["blocked_url_hits"] += 1
@@ -1863,8 +1898,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
         att_set = attachments_signature(soup, final_c)
         fast_text = _soup_fast_text(soup)
 
-        # FIX #4: jeśli title jest generyczny (np. "BIULETYN INFORMACJI PUBLICZNEJ"),
-        # nie używaj go do keyword match — tylko h1/h2 i fast_text
+        # FIX #6: jeśli title jest generyczny, nie używaj go do keyword match
         if is_generic_page_title(title):
             blob = f"{h1} {h2} {fast_text}"
         else:
@@ -1872,15 +1906,13 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
 
         ok_any, kw_any = keyword_match_in_blob(blob)
 
-        # FIX #4: ustal page_title — nie używaj generycznego tytułu
+        # FIX #1: page_title — nigdy nie używaj url_slug (krzaczki), fallback to final_c
         if h1 or h2:
             page_title = (h1 or h2).strip()
         elif not is_generic_page_title(title):
             page_title = title.strip()
         else:
-            # fallback: wyciągnij z URL-a
-            url_slug = urlparse(final_c).path.replace("-", " ").replace("_", " ").replace("/", " ").strip()
-            page_title = url_slug if url_slug and len(url_slug) > 5 else final_c
+            page_title = final_c  # FIX #1: czysty URL zamiast url_slug
         page_title = page_title or final_c
 
         if prev is None:
@@ -1931,7 +1963,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             if cu in dead_set:
                 continue
 
-            # FIX #3: pomiń download URL-e jako LINK HIT
+            # FIX #5: pomiń download URL-e jako LINK HIT (nadal crawluj)
             if is_download_url(cu):
                 diag["counts"]["link_hit_download_skip"] += 1
                 if cu not in visited and cu not in dead_set:
@@ -1947,16 +1979,20 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                 link_title = txt.strip()
                 lt = link_title.lower()
 
-                # FIX #4: pomiń generyczne tytuły linków
-                skip_generic = (
+                # FIX #6: generyczne tytuły BIP
+                is_generic_bip = (
                     "biuletyn informacji publicznej" in lt
                     or lt == "bip"
                     or (len(lt) <= 6 and "bip" in lt)
-                    or anchor_is_ignored(lt)
-                    or len(link_title) < 8
                     or is_generic_page_title(link_title)
                 )
-                if not skip_generic:
+
+                # FIX #2: śmieciowe anchor texty (nazwy plików, krótkie tokeny, krzaczki)
+                is_junk = is_junk_link_title(link_title, cu)
+
+                skip = is_generic_bip or is_junk or anchor_is_ignored(lt)
+
+                if not skip:
                     key = sha1(canonical_url(cu))
                     prev_link = content_seen.get(key)
                     if prev_link is None and cu not in state.reported_urls_this_run:
@@ -2032,7 +2068,7 @@ def write_summary(diag_rows, new_items_for_mail):
         ok = sum(1 for r in (diag_rows or []) if r.get("status") == "OK")
         start_fail = sum(1 for r in (diag_rows or []) if r.get("status") == "START_FAIL")
         lines = [
-            f"BIP WATCHER v2.8 SUMMARY @ {now_iso()}",
+            f"BIP WATCHER v2.9 SUMMARY @ {now_iso()}",
             f"gminy_total={total} ok={ok} start_fail={start_fail}",
             f"mail_items={len(new_items_for_mail or [])}",
             "",
@@ -2145,7 +2181,6 @@ async def worker(name: str, queue: asyncio.Queue,
             if frontier_len == 0 and retry_len == 0:
                 print(f"   ✅ Gmina {gmina} – pełne przeskanowanie")
 
-            # FIX #1 z v2.7: gkey zdefiniowany przed blokiem RETRY DEBUG
             gkey = gmina_cache_key(gmina, start_url)
             retry_debug = (state.gmina_retry or {}).get(gkey, []) or []
             if retry_debug:
