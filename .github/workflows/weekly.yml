@@ -35,7 +35,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1  # FIX: była wartość 0, wystarczy ostatni commit
 
       - name: Create cache-store branch if missing
         shell: bash
@@ -73,7 +73,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: cache-store
-          fetch-depth: 0
+          fetch-depth: 1  # FIX: była wartość 0, wystarczy ostatni commit
 
       - name: Wipe all shards and master
         shell: bash
@@ -110,6 +110,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
       - name: Count gminy and build matrix
         id: build
@@ -169,13 +171,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - uses: actions/checkout@v4
         with:
           ref: cache-store
           path: cache-store
-          fetch-depth: 0
+          fetch-depth: 1  # FIX: była wartość 0 — główna przyczyna wolnego startu
 
       - uses: actions/setup-python@v5
         with:
@@ -318,7 +320,7 @@ jobs:
         with:
           ref: cache-store
           path: cache-store
-          fetch-depth: 0
+          fetch-depth: 1  # FIX: była wartość 0
 
       - uses: actions/setup-python@v5
         with:
