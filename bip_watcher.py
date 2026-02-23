@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.6 (CELL + VS Code / Windows) - PRODUCTION
-Zmiany v2.6 vs v2.5:
-- FIX #1: Usunięto is_generic_bip_page — filtr blokował prawdziwe ogłoszenia.
-           Cache sprawia że fałszywe pozytywy z pierwszego runu nigdy nie wracają.
-- FIX #2: Retry ładuje WSZYSTKIE URL-e (nie tylko [:200]) — poprzednio 318/518 bylo gubione.
-- FIX #3: Logika statusu uproszczona: NOWE / ZMIANA (nowe załączniki) / HIT / NO_MATCH.
-           fp (fingerprint tekstu) usunięty — nie był używany do raportowania.
-- FIX #4: Timeouty zwiększone do wartości z v2.3 (sock_read=35s) dla wolnych BIPów.
-- FIX #5: pick_rows_for_shard przywrócony do stabilnego podziału hash-based (v2.3).
-- CACHE_SCHEMA bump do 13.
+BIP WATCHER v2.7 (CELL + VS Code / Windows) - PRODUCTION
+Zmiany v2.7 vs v2.6:
+- FIX #1: gkey zdefiniowany w worker() przed blokiem RETRY DEBUG — koniec nieskończonej pętli.
+- FIX #2: retry_add ignoruje załączniki (ATT_EXT) — PDFy i inne pliki nie trafiają do retry.
+- FIX #3: is_block_page uproszczony — usunięto _BLOCK_PATTERNS_CONTEXT (fałszywe pozytywy).
+- FIX #4: phase2_focus pomija załączniki na początku pętli — nie fetchujemy PDF/GML jako HTML.
+- FIX #5: BLOCKED URL HIT — wyciągamy słowa kluczowe z URL-a zablokowanej strony → NOWE.
+- FIX #6: Cookie consent headers domyślnie we wszystkich requestach — mniej blokad WAF.
+- FIX #7: Referer header (same-origin) — fetch_conditional przekazuje referer ze strony głównej.
 """
 
 import os, csv, json, hashlib, asyncio, re, time, smtplib, warnings, socket, random, signal
@@ -208,7 +207,6 @@ PHASE1_MAX_SEEDS = 12000
 PHASE2_MAX_DEPTH = 4
 PHASE2_MAX_PAGES = 1000000
 
-# ✅ FIX #4: Timeouty przywrócone do v2.3 (35s read) — dla wolnych BIPów
 REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=None, sock_connect=12, sock_read=35)
 START_TIMEOUT_FAST = aiohttp.ClientTimeout(total=None, sock_connect=10, sock_read=18)
 START_TIMEOUT_LONG = aiohttp.ClientTimeout(total=None, sock_connect=18, sock_read=45)
@@ -239,8 +237,27 @@ USER_AGENTS = [
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15",
 ]
 
-def get_random_headers():
-    return {
+# ===================== FIX #6: Cookie consent headers =====================
+# Domyślnie wysyłamy cookie akceptacji RODO/cookies — serwery polskich BIPów
+# często wymagają tej akceptacji zanim pokażą treść.
+COOKIE_CONSENT_HEADER = (
+    "cookieconsent=accepted; "
+    "cookie_consent=1; "
+    "cookies_accepted=1; "
+    "consent=accepted; "
+    "CONSENT=YES; "
+    "gdpr=1; "
+    "gdpr_consent=1; "
+    "cookies=accepted"
+)
+
+def get_random_headers(referer: str = "") -> dict:
+    """
+    FIX #6: Cookie consent domyślnie.
+    FIX #7: Referer same-origin jeśli podany — serwer myśli że request przyszedł z innej podstrony BIP-u.
+    """
+    sec_fetch_site = "same-origin" if referer else "none"
+    headers = {
         "User-Agent": random.choice(USER_AGENTS),
         "Accept-Language": "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
@@ -249,14 +266,18 @@ def get_random_headers():
         "Upgrade-Insecure-Requests": "1",
         "Sec-Fetch-Dest": "document",
         "Sec-Fetch-Mode": "navigate",
-        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-Site": sec_fetch_site,
         "Sec-Fetch-User": "?1",
         "Cache-Control": "max-age=0",
         "DNT": "1",
         "sec-ch-ua": '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
         "sec-ch-ua-mobile": "?0",
         "sec-ch-ua-platform": '"Windows"',
+        "Cookie": COOKIE_CONSENT_HEADER,
     }
+    if referer:
+        headers["Referer"] = referer
+    return headers
 
 # ===================== RATE LIMITING =====================
 class DomainRateLimiter:
@@ -341,7 +362,7 @@ def sha1(s: str) -> str:
     return hashlib.sha1(s.encode("utf-8", errors="ignore")).hexdigest()
 
 def retry_add(gkey: str, retry_seen: set, url: str):
-    # nie dodawaj załączników do retry
+    # FIX #2: nie dodawaj załączników do retry
     if any((url or "").lower().endswith(ext) for ext in ATT_EXT):
         return
     cu = _canon(url)
@@ -362,7 +383,6 @@ def dead_add(dead_key: str, dead_set: set, url: str):
     dead_set.add(cu)
     state.dead_urls.setdefault(dead_key, []).append(cu)
 
-# 1 shard = 1 gmina przez bezpośredni indeks (tyle shardów co gmin)
 def pick_rows_for_shard(rows, shard_index: int, shard_total: int):
     if shard_index < 0 or shard_index >= len(rows):
         return []
@@ -416,7 +436,7 @@ def export_summary_to_onedrive():
     except Exception as e:
         print(f"⚠️ OneDrive export failed: {e}")
 
-# ===================== BLOCK PAGE DETECTOR =====================
+# ===================== FIX #3: Block page detector — tylko pewne wzorce =====================
 _BLOCK_PATTERNS_SURE = [
     "#13",
     "zbyt dużo jednoczesnych połączeń",
@@ -431,12 +451,6 @@ _BLOCK_PATTERNS_SURE = [
     "request blocked",
     "403 forbidden",
     "access denied",
-]
-
-_BLOCK_PATTERNS_CONTEXT = [
-    r"\bservice unavailable\b",
-    r"\btemporarily unavailable\b",
-    r"\bsite is unavailable\b",
 ]
 
 def is_block_page(text: str) -> bool:
@@ -1020,7 +1034,7 @@ def candidate_start_urls(start_url: str):
                     yield auxu
 
 # ===================== CACHE =====================
-CACHE_SCHEMA = 13  # bump v2.6
+CACHE_SCHEMA = 13
 
 def _empty_cache():
     return {
@@ -1062,7 +1076,7 @@ def load_cache_v2():
             c.setdefault("gmina_frontiers", {})
             c.setdefault("gmina_retry", {})
             c.setdefault("dead_urls", {})
-            c.pop("page_fprints", None)  # usunięty w v2.5, już nie potrzebny
+            c.pop("page_fprints", None)
 
         def _ensure_dict(key):
             if not isinstance(c.get(key), dict):
@@ -1348,12 +1362,19 @@ async def fetch(session: aiohttp.ClientSession, url: str, extra_headers: dict = 
 
 # ===================== FETCH CONDITIONAL =====================
 async def fetch_conditional(session: aiohttp.ClientSession, url: str, extra_headers: dict = None):
+    """
+    FIX #7: Przekazuje Referer ze strony głównej domeny (same-origin trick).
+    Serwer widzi request jakby użytkownik klikał link wewnątrz BIP-u.
+    """
     url = normalize_url(url)
     domain = urlparse(url).netloc
+    parsed = urlparse(url)
+    referer = urlunparse((parsed.scheme, parsed.netloc, "/", "", "", ""))
+
     for ssl_mode in (False, None):
         try:
             await rate_limiter.wait(domain)
-            headers = get_random_headers()
+            headers = get_random_headers(referer=referer)
             if extra_headers:
                 headers.update(extra_headers)
             t0 = time.time()
@@ -1616,10 +1637,10 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                 q.append((cu, fd))
         state.gmina_frontiers.pop(gkey, None)
 
-    # ✅ FIX #2: Retry ładuje WSZYSTKIE URL-e, nie tylko [:200]
+    # Retry ładuje WSZYSTKIE URL-e
     retry_list = (state.gmina_retry or {}).get(gkey, []) or []
     retry_added = 0
-    for u in retry_list:  # bez limitu
+    for u in retry_list:
         cu = _canon(u)
         if cu and cu not in visited and cu not in dead_set:
             visited.add(cu)
@@ -1629,11 +1650,9 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
     if retry_added:
         print(f"  🔁 Retry: {retry_added} URL ({gmina})", flush=True)
 
-    # Wyczyść retry dopiero po załadowaniu wszystkich
     if isinstance(state.gmina_retry, dict):
         state.gmina_retry[gkey] = []
 
-    # Seeds (tylko jeśli nie mamy frontieru)
     if not saved_frontier:
         for su in seed_urls:
             cu = _canon(su)
@@ -1655,7 +1674,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
         if not url:
             continue
 
-        # pomiń załączniki — obsługiwane przez attachments_signature()
+        # FIX #4: pomiń załączniki — obsługiwane przez attachments_signature()
         if any(url.lower().endswith(ext) for ext in ATT_EXT):
             continue
 
@@ -1718,23 +1737,48 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
         # BLOCKED
         if kind == "blocked":
             diag["counts"]["blocked_13"] += 1
-            async with state.cache_lock:
-                prevb = content_seen.get(url_dedup_final) or prev_pre
-                entry = {
-                    "found_at": (prevb.get("found_at") if prevb else now_iso()),
-                    "last_checked": now_iso(),
-                    "etag": "", "last_modified": "",
-                    "gmina": gmina,
-                    "title": (prevb.get("title") if prevb else ""),
-                    "url": final_c,
-                    "keywords": (prevb.get("keywords") if prevb else []),
-                    "att_sig": (prevb.get("att_sig") if prevb else ""),
-                    "status": "BLOCKED",
-                }
-                content_seen[url_dedup_final] = entry
-                if ALIAS_FINAL_AND_SOURCE_KEYS and url_dedup != url_dedup_final:
-                    content_seen[url_dedup] = entry
-            retry_add(gkey, retry_seen, final_c)
+
+            # FIX #5: wyciągnij słowa kluczowe z URL-a zablokowanej strony
+            url_slug = urlparse(final_c).path.replace("-", " ").replace("_", " ").replace("/", " ")
+            ok_url, kw_url = keyword_match_in_blob(url_slug)
+            if ok_url and final_c not in state.reported_urls_this_run:
+                state.reported_urls_this_run.add(final_c)
+                page_title_blocked = url_slug.strip()[:240] or final_c
+                print_hit("🟡 BLOCKED (URL HIT)", gmina, kw_url, final_c)
+                found.append((gmina, kw_url, page_title_blocked, final_c, "NOWE"))
+                diag["counts"]["blocked_url_hits"] += 1
+                async with state.cache_lock:
+                    content_seen[url_dedup_final] = {
+                        "found_at": now_iso(),
+                        "last_checked": now_iso(),
+                        "etag": "", "last_modified": "",
+                        "gmina": gmina,
+                        "title": page_title_blocked,
+                        "url": final_c,
+                        "keywords": [kw_url],
+                        "att_sig": "",
+                        "status": "NOWE",
+                    }
+                    if ALIAS_FINAL_AND_SOURCE_KEYS and url_dedup != url_dedup_final:
+                        content_seen[url_dedup] = content_seen[url_dedup_final]
+            else:
+                async with state.cache_lock:
+                    prevb = content_seen.get(url_dedup_final) or prev_pre
+                    entry = {
+                        "found_at": (prevb.get("found_at") if prevb else now_iso()),
+                        "last_checked": now_iso(),
+                        "etag": "", "last_modified": "",
+                        "gmina": gmina,
+                        "title": (prevb.get("title") if prevb else ""),
+                        "url": final_c,
+                        "keywords": (prevb.get("keywords") if prevb else []),
+                        "att_sig": (prevb.get("att_sig") if prevb else ""),
+                        "status": "BLOCKED",
+                    }
+                    content_seen[url_dedup_final] = entry
+                    if ALIAS_FINAL_AND_SOURCE_KEYS and url_dedup != url_dedup_final:
+                        content_seen[url_dedup] = entry
+                retry_add(gkey, retry_seen, final_c)
             urls_seen.discard(url_hash)
             continue
 
@@ -1771,17 +1815,12 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             continue
 
         title, h1, h2, meta_blob = extract_title_h1_h2(soup)
-
-        # att_set PRZED _soup_fast_text (decompose modyfikuje soup in-place)
         att_set = attachments_signature(soup, final_c)
         fast_text = _soup_fast_text(soup)
 
         blob = f"{title} {h1} {h2} {fast_text}"
         ok_any, kw_any = keyword_match_in_blob(blob)
 
-        # ✅ FIX #1 + FIX #3: Prosta logika bez is_generic_bip_page
-        # Pierwszy run: NOWE jeśli jest keyword, NO_MATCH jeśli nie ma
-        # Kolejne runy: ZMIANA jeśli są nowe załączniki, HIT jeśli keyword ale bez zmian, NO_MATCH jeśli brak keywordu
         if prev is None:
             status_new = "NOWE" if ok_any else "NO_MATCH"
         else:
@@ -1816,7 +1855,6 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             if ALIAS_FINAL_AND_SOURCE_KEYS and url_dedup != url_dedup_final:
                 content_seen[url_dedup] = meta
 
-        # Raportuj tylko NOWE i ZMIANA, z deduplikacją w obrębie runu
         if status_new in {"NOWE", "ZMIANA"}:
             if final_c not in state.reported_urls_this_run:
                 state.reported_urls_this_run.add(final_c)
@@ -1874,7 +1912,6 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                 visited.add(cu)
                 q.append((cu, depth + 1))
 
-    # Zapisz frontier jeśli queue niepusta (np. shutdown)
     if q:
         state.gmina_frontiers[gkey] = [[url, depth] for url, depth in list(q)]
     else:
@@ -1924,7 +1961,7 @@ def write_summary(diag_rows, new_items_for_mail):
         ok = sum(1 for r in (diag_rows or []) if r.get("status") == "OK")
         start_fail = sum(1 for r in (diag_rows or []) if r.get("status") == "START_FAIL")
         lines = [
-            f"BIP WATCHER v2.6 SUMMARY @ {now_iso()}",
+            f"BIP WATCHER v2.7 SUMMARY @ {now_iso()}",
             f"gminy_total={total} ok={ok} start_fail={start_fail}",
             f"mail_items={len(new_items_for_mail or [])}",
             "",
@@ -2015,7 +2052,6 @@ async def worker(name: str, queue: asyncio.Queue,
             for e in diag.get("errors", []):
                 state.diag_errors.append(e)
 
-            # Dodaj wyniki do maila
             for (g, kw, t, u, st) in found:
                 mail_line = f"[{st}] {g} | {kw} | {t} | {u}"
                 if mail_line not in state.mail_dedup:
@@ -2038,8 +2074,7 @@ async def worker(name: str, queue: asyncio.Queue,
             if frontier_len == 0 and retry_len == 0:
                 print(f"   ✅ Gmina {gmina} – pełne przeskanowanie")
 
-            # DEBUG: pokaż wszystkie URL-e w retry wraz z ostatnim statusem z cache
-            # DEBUG: pokaż wszystkie URL-e w retry wraz z ostatnim statusem z cache
+            # FIX #1: gkey zdefiniowany tutaj w worker() — poprzednio NameError powodował nieskończoną pętlę
             gkey = gmina_cache_key(gmina, start_url)
             retry_debug = (state.gmina_retry or {}).get(gkey, []) or []
             if retry_debug:
@@ -2224,6 +2259,3 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
-
-
-
