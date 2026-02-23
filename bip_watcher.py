@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.7 (CELL + VS Code / Windows) - PRODUCTION
-Zmiany v2.7 vs v2.6:
-- FIX #1: gkey zdefiniowany w worker() przed blokiem RETRY DEBUG — koniec nieskończonej pętli.
-- FIX #2: retry_add ignoruje załączniki (ATT_EXT) — PDFy i inne pliki nie trafiają do retry.
-- FIX #3: is_block_page uproszczony — usunięto _BLOCK_PATTERNS_CONTEXT (fałszywe pozytywy).
-- FIX #4: phase2_focus pomija załączniki na początku pętli — nie fetchujemy PDF/GML jako HTML.
-- FIX #5: BLOCKED URL HIT — wyciągamy słowa kluczowe z URL-a zablokowanej strony → NOWE.
-- FIX #6: Cookie consent headers domyślnie we wszystkich requestach — mniej blokad WAF.
-- FIX #7: Referer header (same-origin) — fetch_conditional przekazuje referer ze strony głównej.
+BIP WATCHER v2.8 (CELL + VS Code / Windows) - PRODUCTION
+Zmiany v2.8 vs v2.7:
+- FIX #1: FAST_TEXT_MAX_CHARS 999_999 -> 40_000 (wydajność, bez utraty ogłoszeń)
+- FIX #2: Usunięto COOKIE_CONSENT_HEADER — powodował więcej problemów niż rozwiązywał
+- FIX #3: is_download_url() — blokuje /pobierz/, ?file=, /download/ itp. jako LINK HIT
+- FIX #4: is_generic_page_title() — filtruje śmieciowe tytuły (BIP, Redakcja, Aktualności itp.)
+          zarówno jako tytuł wyniku jak i jako źródło keyword match
+- FIX #5: Zachowane pełne skanowanie treści (_soup_fast_text bez zmian logiki)
 """
 
 import os, csv, json, hashlib, asyncio, re, time, smtplib, warnings, socket, random, signal
@@ -197,6 +196,78 @@ ATT_EXT = (
     ".tif", ".tiff",
 )
 
+# ===================== FIX #3: Download URL patterns =====================
+# URL-e do pobierania plików bez rozszerzenia — traktujemy jak załączniki,
+# nie raportujemy jako LINK HIT (to nie są strony HTML z ogłoszeniami)
+DOWNLOAD_URL_SEGMENTS = [
+    "/pobierz/", "/download/", "/pobieranie/",
+    "/file/", "/files/", "/attachment/", "/attachments/",
+    "/getfile/", "/get-file/",
+    "/dokumenty/pobierz/",
+    "/media/", "/uploads/",
+]
+
+DOWNLOAD_URL_PARAMS = [
+    "file=", "pobierz=", "download=", "attachment=", "getfile=",
+]
+
+def is_download_url(u: str) -> bool:
+    """
+    FIX #3: Wykrywa URL-e do pobierania plików nawet bez rozszerzenia.
+    np. /pobierz/1234, ?file=19562, /download/abc
+    """
+    low = (u or "").lower()
+    for seg in DOWNLOAD_URL_SEGMENTS:
+        if seg in low:
+            return True
+    for param in DOWNLOAD_URL_PARAMS:
+        if param in low:
+            return True
+    return False
+
+# ===================== FIX #4: Generic page title filter =====================
+# Tytuły które są nazwą serwisu/systemu BIP, nie konkretnego ogłoszenia.
+# Jeśli strona ma taki tytuł i brak h1/h2 — nie raportujemy jako hit.
+_GENERIC_TITLE_PATTERNS = [
+    "biuletyn informacji publicznej",
+    "biuletyn informacji",
+    "archiwum bip",
+    "bip archiwum",
+    "strona główna",
+    "strona glowna",
+    "aktualności",
+    "aktualnosci",
+    "ogłoszenia",
+    "ogloszenia",
+    "redakcja",
+    "rejestr zmian",
+    "mapa strony",
+    "mapa serwisu",
+    "szukaj",
+    "wyszukiwarka",
+    "kontakt",
+    "start",
+    "home",
+]
+
+def is_generic_page_title(title: str) -> bool:
+    """
+    FIX #4: Zwraca True jeśli tytuł to nazwa serwisu/systemu, nie ogłoszenia.
+    Używamy do:
+    1) Filtrowania śmieciowych tytułów w wynikach
+    2) Wykluczenia tytułu z keyword match gdy jest generyczny
+    """
+    t = re.sub(r"\s+", " ", (title or "")).strip().lower()
+    if not t or len(t) < 3:
+        return True
+    # dokładne dopasowanie do początku lub całości
+    for pat in _GENERIC_TITLE_PATTERNS:
+        if t == pat:
+            return True
+        if t.startswith(pat) and len(t) < len(pat) + 60:
+            return True
+    return False
+
 # ===================== PERFORMANCE =====================
 CONCURRENT_GMINY = env_int("CONCURRENT_GMINY", 8)
 CONCURRENT_REQUESTS = env_int("CONCURRENT_REQUESTS", 30)
@@ -220,7 +291,9 @@ MAX_ERROR_SAMPLES_PER_GMINA = 60
 
 CACHE_CHECKPOINT_EVERY_N_GMINY = 3
 SEED_CACHE_TTL_DAYS = 30
-FAST_TEXT_MAX_CHARS = 999_999
+# FIX #1: 40_000 zamiast 999_999 — wystarczy na każde ogłoszenie BIP,
+# eliminuje przetwarzanie gigantycznych stron archiwalnych
+FAST_TEXT_MAX_CHARS = 40_000
 
 HIT_RECHECK_TTL_HOURS = 24
 NO_MATCH_RECHECK_TTL_HOURS = 24
@@ -237,24 +310,11 @@ USER_AGENTS = [
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15",
 ]
 
-# ===================== FIX #6: Cookie consent headers =====================
-# Domyślnie wysyłamy cookie akceptacji RODO/cookies — serwery polskich BIPów
-# często wymagają tej akceptacji zanim pokażą treść.
-COOKIE_CONSENT_HEADER = (
-    "cookieconsent=accepted; "
-    "cookie_consent=1; "
-    "cookies_accepted=1; "
-    "consent=accepted; "
-    "CONSENT=YES; "
-    "gdpr=1; "
-    "gdpr_consent=1; "
-    "cookies=accepted"
-)
-
+# FIX #2: Usunięto COOKIE_CONSENT_HEADER — powodował problemy z WAF niektórych serwerów
 def get_random_headers(referer: str = "") -> dict:
     """
-    FIX #6: Cookie consent domyślnie.
-    FIX #7: Referer same-origin jeśli podany — serwer myśli że request przyszedł z innej podstrony BIP-u.
+    FIX #2: Brak cookie consent — standardowe nagłówki przeglądarki.
+    FIX z v2.7 #7: Referer same-origin jeśli podany.
     """
     sec_fetch_site = "same-origin" if referer else "none"
     headers = {
@@ -273,7 +333,6 @@ def get_random_headers(referer: str = "") -> dict:
         "sec-ch-ua": '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
         "sec-ch-ua-mobile": "?0",
         "sec-ch-ua-platform": '"Windows"',
-        "Cookie": COOKIE_CONSENT_HEADER,
     }
     if referer:
         headers["Referer"] = referer
@@ -362,7 +421,6 @@ def sha1(s: str) -> str:
     return hashlib.sha1(s.encode("utf-8", errors="ignore")).hexdigest()
 
 def retry_add(gkey: str, retry_seen: set, url: str):
-    # FIX #2: nie dodawaj załączników do retry
     if any((url or "").lower().endswith(ext) for ext in ATT_EXT):
         return
     cu = _canon(url)
@@ -384,9 +442,9 @@ def dead_add(dead_key: str, dead_set: set, url: str):
     state.dead_urls.setdefault(dead_key, []).append(cu)
 
 def pick_rows_for_shard(rows, shard_index: int, shard_total: int):
-    if shard_index < 0 or shard_index >= len(rows):
-        return []
-    return [rows[shard_index]]
+    if shard_index < 0 or shard_total <= 0:
+        return rows
+    return rows[shard_index::shard_total]
 
 def should_recheck_hit(prev: dict) -> bool:
     if not prev or not isinstance(prev, dict):
@@ -436,9 +494,8 @@ def export_summary_to_onedrive():
     except Exception as e:
         print(f"⚠️ OneDrive export failed: {e}")
 
-# ===================== FIX #3: Block page detector — tylko pewne wzorce =====================
+# ===================== BLOCK PAGE DETECTOR =====================
 _BLOCK_PATTERNS_SURE = [
-    "#13",
     "zbyt dużo jednoczesnych połączeń",
     "zbyt wiele jednoczesnych połączeń",
     "spróbuj za moment",
@@ -837,6 +894,7 @@ def _strip_dynamic_noise(txt: str) -> str:
     return txt
 
 def _soup_fast_text(soup: BeautifulSoup, max_chars: int = FAST_TEXT_MAX_CHARS) -> str:
+    # FIX #1: limit 40_000 zamiast 999_999 — logika bez zmian
     try:
         if not soup:
             return ""
@@ -1034,7 +1092,7 @@ def candidate_start_urls(start_url: str):
                     yield auxu
 
 # ===================== CACHE =====================
-CACHE_SCHEMA = 13
+CACHE_SCHEMA = 14
 
 def _empty_cache():
     return {
@@ -1362,10 +1420,6 @@ async def fetch(session: aiohttp.ClientSession, url: str, extra_headers: dict = 
 
 # ===================== FETCH CONDITIONAL =====================
 async def fetch_conditional(session: aiohttp.ClientSession, url: str, extra_headers: dict = None):
-    """
-    FIX #7: Przekazuje Referer ze strony głównej domeny (same-origin trick).
-    Serwer widzi request jakby użytkownik klikał link wewnątrz BIP-u.
-    """
     url = normalize_url(url)
     domain = urlparse(url).netloc
     parsed = urlparse(url)
@@ -1622,7 +1676,6 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
 
     retry_seen = set()
 
-    # Frontier z poprzedniego runu
     saved_frontier = (state.gmina_frontiers or {}).get(gkey, []) or []
     if saved_frontier:
         print(f"  ↩️  Kontynuacja: {len(saved_frontier)} URL z poprzedniego runu ({gmina})", flush=True)
@@ -1637,7 +1690,6 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                 q.append((cu, fd))
         state.gmina_frontiers.pop(gkey, None)
 
-    # Retry ładuje WSZYSTKIE URL-e
     retry_list = (state.gmina_retry or {}).get(gkey, []) or []
     retry_added = 0
     for u in retry_list:
@@ -1674,7 +1726,6 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
         if not url:
             continue
 
-        # FIX #4: pomiń załączniki — obsługiwane przez attachments_signature()
         if any(url.lower().endswith(ext) for ext in ATT_EXT):
             continue
 
@@ -1683,7 +1734,6 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
         url_dedup = sha1(canonical_url(url))
         prev_pre = content_seen.get(url_dedup)
 
-        # TTL logic
         if USE_CACHE and prev_pre and not is_listing:
             status_prev = prev_pre.get("status")
             if status_prev in {"NOWE", "ZMIANA", "HIT"}:
@@ -1720,7 +1770,6 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
         if final_c and final_c != url:
             diag["counts"]["redirected"] += 1
 
-        # 304 Not Modified
         if kind == "not_modified":
             async with state.cache_lock:
                 if url_dedup_final in content_seen:
@@ -1734,11 +1783,8 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                         content_seen[url_dedup] = content_seen.get(url_dedup_final, {}).copy()
             continue
 
-        # BLOCKED
         if kind == "blocked":
             diag["counts"]["blocked_13"] += 1
-
-            # FIX #5: wyciągnij słowa kluczowe z URL-a zablokowanej strony
             url_slug = urlparse(final_c).path.replace("-", " ").replace("_", " ").replace("/", " ")
             ok_url, kw_url = keyword_match_in_blob(url_slug)
             if ok_url and final_c not in state.reported_urls_this_run:
@@ -1782,7 +1828,6 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             urls_seen.discard(url_hash)
             continue
 
-        # FAILED / NON-HTML
         if kind != "html" or not html:
             if status in (404, 410):
                 dead_add(dead_key, dead_set, final_c)
@@ -1818,8 +1863,25 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
         att_set = attachments_signature(soup, final_c)
         fast_text = _soup_fast_text(soup)
 
-        blob = f"{title} {h1} {h2} {fast_text}"
+        # FIX #4: jeśli title jest generyczny (np. "BIULETYN INFORMACJI PUBLICZNEJ"),
+        # nie używaj go do keyword match — tylko h1/h2 i fast_text
+        if is_generic_page_title(title):
+            blob = f"{h1} {h2} {fast_text}"
+        else:
+            blob = f"{title} {h1} {h2} {fast_text}"
+
         ok_any, kw_any = keyword_match_in_blob(blob)
+
+        # FIX #4: ustal page_title — nie używaj generycznego tytułu
+        if h1 or h2:
+            page_title = (h1 or h2).strip()
+        elif not is_generic_page_title(title):
+            page_title = title.strip()
+        else:
+            # fallback: wyciągnij z URL-a
+            url_slug = urlparse(final_c).path.replace("-", " ").replace("_", " ").replace("/", " ").strip()
+            page_title = url_slug if url_slug and len(url_slug) > 5 else final_c
+        page_title = page_title or final_c
 
         if prev is None:
             status_new = "NOWE" if ok_any else "NO_MATCH"
@@ -1834,8 +1896,6 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                     status_new = "HIT"
             else:
                 status_new = "NO_MATCH"
-
-        page_title = (h1 or h2 or title or "").strip() or final_c
 
         meta = {
             "found_at": (prev.get("found_at") if prev else now_iso()),
@@ -1871,6 +1931,14 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             if cu in dead_set:
                 continue
 
+            # FIX #3: pomiń download URL-e jako LINK HIT
+            if is_download_url(cu):
+                diag["counts"]["link_hit_download_skip"] += 1
+                if cu not in visited and cu not in dead_set:
+                    visited.add(cu)
+                    q.append((cu, depth + 1))
+                continue
+
             filename = urlparse(cu).path.split("/")[-1]
             blob_link = f"{txt} {filename}"
             ok_link, kw_link = keyword_match_in_blob(blob_link)
@@ -1878,12 +1946,15 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             if ENABLE_LINK_HITS and ok_link and txt:
                 link_title = txt.strip()
                 lt = link_title.lower()
+
+                # FIX #4: pomiń generyczne tytuły linków
                 skip_generic = (
                     "biuletyn informacji publicznej" in lt
                     or lt == "bip"
                     or (len(lt) <= 6 and "bip" in lt)
                     or anchor_is_ignored(lt)
                     or len(link_title) < 8
+                    or is_generic_page_title(link_title)
                 )
                 if not skip_generic:
                     key = sha1(canonical_url(cu))
@@ -1961,7 +2032,7 @@ def write_summary(diag_rows, new_items_for_mail):
         ok = sum(1 for r in (diag_rows or []) if r.get("status") == "OK")
         start_fail = sum(1 for r in (diag_rows or []) if r.get("status") == "START_FAIL")
         lines = [
-            f"BIP WATCHER v2.7 SUMMARY @ {now_iso()}",
+            f"BIP WATCHER v2.8 SUMMARY @ {now_iso()}",
             f"gminy_total={total} ok={ok} start_fail={start_fail}",
             f"mail_items={len(new_items_for_mail or [])}",
             "",
@@ -2074,16 +2145,18 @@ async def worker(name: str, queue: asyncio.Queue,
             if frontier_len == 0 and retry_len == 0:
                 print(f"   ✅ Gmina {gmina} – pełne przeskanowanie")
 
-            # FIX #1: gkey zdefiniowany tutaj w worker() — poprzednio NameError powodował nieskończoną pętlę
+            # FIX #1 z v2.7: gkey zdefiniowany przed blokiem RETRY DEBUG
             gkey = gmina_cache_key(gmina, start_url)
             retry_debug = (state.gmina_retry or {}).get(gkey, []) or []
             if retry_debug:
                 print("\n🔴 RETRY DEBUG [" + gmina + "] — " + str(len(retry_debug)) + " URL-i nie udalo sie pobrac:", flush=True)
-                for retry_url in retry_debug:
+                for retry_url in retry_debug[:20]:
                     key = sha1(canonical_url(retry_url))
                     meta = state.content_seen.get(key) or {}
                     status_c = meta.get("status", "BRAK W CACHE")
                     print(f"   {status_c:10s} | {retry_url[:120]}", flush=True)
+                if len(retry_debug) > 20:
+                    print(f"   ... i {len(retry_debug) - 20} więcej", flush=True)
                 print(flush=True)
 
         except asyncio.CancelledError:
@@ -2177,7 +2250,7 @@ async def main():
 
         async def periodic_checkpoint():
             every = env_int("CHECKPOINT_EVERY_SEC", 60)
-            while True:
+            while not state.shutdown_requested:
                 await asyncio.sleep(every)
                 try:
                     if USE_CACHE:
@@ -2211,7 +2284,6 @@ async def main():
                 t.cancel()
             await asyncio.gather(*workers, return_exceptions=True)
 
-    # FINAL SAVE
     try:
         if USE_CACHE:
             if os.getenv("GITHUB_ACTIONS") and get_shard_index() >= 0:
@@ -2224,7 +2296,6 @@ async def main():
     except Exception as e:
         print(f"⚠️  Final save failed: {e}")
 
-    # EMAIL
     try:
         if ENABLE_EMAIL and state.new_items_for_mail and not state.shutdown_requested:
             subject = f"BIP WATCHER: {len(state.new_items_for_mail)} nowych/zmienionych wpisów ({datetime.now().strftime('%Y-%m-%d %H:%M')})"
