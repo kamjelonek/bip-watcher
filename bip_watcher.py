@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.10 (CELL + VS Code / Windows) - PRODUCTION
+BIP WATCHER v2.11 (CELL + VS Code / Windows) - PRODUCTION
 Zmiany v2.10 vs v2.9:
 - FIX #1: is_download_url() — dodano /file_add/, /file_add/download/, wzorzec końcówki "pdf" bez kropki
            (bip.miastonowydwor.pl używa /files/file_add/download/XXX_XXXpdf)
@@ -2013,14 +2013,16 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
 
         ok_any, kw_any = keyword_match_in_blob(blob)
 
-        # FIX #1: page_title — nigdy nie używaj url_slug (krzaczki), fallback to final_c
-        if h1 or h2:
-            page_title = (h1 or h2).strip()
-        elif not is_generic_page_title(title):
-            page_title = title.strip()
-        else:
-            page_title = final_c  # FIX #1: czysty URL zamiast url_slug
-        page_title = page_title or final_c
+        # FIX v2.11: sprawdź każdy kandydat przez is_generic_page_title
+        # — h1/h2 mogą też brzmieć "Biuletyn Informacji Publicznej"
+        page_title = ""
+        for candidate in [h1, h2, title]:
+            c = (candidate or "").strip()
+            if c and not is_generic_page_title(c):
+                page_title = c
+                break
+        if not page_title:
+            page_title = final_c  # fallback: czysty URL
 
         if prev is None:
             status_new = "NOWE" if ok_any else "NO_MATCH"
@@ -2175,7 +2177,7 @@ def write_summary(diag_rows, new_items_for_mail):
         ok = sum(1 for r in (diag_rows or []) if r.get("status") == "OK")
         start_fail = sum(1 for r in (diag_rows or []) if r.get("status") == "START_FAIL")
         lines = [
-            f"BIP WATCHER v2.10 SUMMARY @ {now_iso()}",
+            f"BIP WATCHER v2.11 SUMMARY @ {now_iso()}",
             f"gminy_total={total} ok={ok} start_fail={start_fail}",
             f"mail_items={len(new_items_for_mail or [])}",
             "",
