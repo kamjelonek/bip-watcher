@@ -1,19 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.12 (CELL + VS Code / Windows) - PRODUCTION
-Zmiany v2.10 vs v2.9:
-- FIX #1: is_download_url() — dodano /file_add/, /file_add/download/, wzorzec końcówki "pdf" bez kropki
-           (bip.miastonowydwor.pl używa /files/file_add/download/XXX_XXXpdf)
-- FIX #2: fetch_conditional / fetch — weryfikacja ctype przed parsowaniem jako HTML;
-           binarny PDF który przeszedł jako "html" powodował krzaczki (Debrzno)
-- FIX #3: is_junk_link_title() — integracja z is_generic_page_title():
-           "Biuletyn Informacji Publicznej", "Redakcja", "Biznes", "Aktualności" blokowane
-- FIX #4: Rozszerzone _GENERIC_TITLE_PATTERNS — "biznes", "aktualności", "informacje"
-Zachowane z v2.9:
-- FAST_TEXT_MAX_CHARS = 40_000
-- Brak cookie consent headers
-- is_download_url() blokuje /pobierz/, ?file= itp.
-- is_generic_page_title() filtruje śmieciowe tytuły stron
+BIP WATCHER v2.9 (CELL + VS Code / Windows) - PRODUCTION
+Zmiany v2.9 vs v2.8:
+- FIX #1: Krzaczki w tytułach — page_title fallback to final_c (URL), nie url_slug
+- FIX #2: Krótkie/śmieciowe LINK HITS — rozszerzone filtry skip_generic:
+          * min długość 12 znaków
+          * blokada wzorców: "344.html", same cyfry, "pobierz 1346", "files download" itp.
+          * anchor text zawierający słowa download/pobierz/files bez treści ogłoszenia
+- FIX #3 (z v2.8): FAST_TEXT_MAX_CHARS = 40_000
+- FIX #4 (z v2.8): Usunięto cookie consent headers
+- FIX #5 (z v2.8): is_download_url() — blokuje /pobierz/, ?file= itp. jako LINK HIT
+- FIX #6 (z v2.8): is_generic_page_title() — filtruje śmieciowe tytuły
 """
 
 import os, csv, json, hashlib, asyncio, re, time, smtplib, warnings, socket, random, signal
@@ -205,39 +202,20 @@ DOWNLOAD_URL_SEGMENTS = [
     "/getfile/", "/get-file/",
     "/dokumenty/pobierz/",
     "/media/", "/uploads/",
-    # FIX #1: wzorce z bip.miastonowydwor.pl i podobnych
-    "/file_add/", "/file_add/download/",
-    "/filedownload/", "/file-download/",
-    "/pobierz-plik/", "/get-file/",
 ]
 
 DOWNLOAD_URL_PARAMS = [
     "file=", "pobierz=", "download=", "attachment=", "getfile=",
 ]
 
-# FIX #1: wzorce końcówek URL które wskazują na plik bez rozszerzenia
-# np. "download/2091_informacja-o-wynikach-naborupdf" (brak kropki przed pdf)
-_DOWNLOAD_SUFFIX_RE = re.compile(
-    r"(pdf|docx?|xlsx?|odt|rtf|zip|rar|7z|gml|xml|tiff?|dwg|dxf)$",
-    re.IGNORECASE
-)
-
 def is_download_url(u: str) -> bool:
-    """
-    FIX #1 + FIX #5: Wykrywa URL-e do pobierania plików nawet bez rozszerzenia.
-    Obsługuje: /pobierz/123, ?file=19562, /file_add/download/XXXpdf
-    """
+    """FIX #5: Wykrywa URL-e do pobierania plików nawet bez rozszerzenia."""
     low = (u or "").lower()
     for seg in DOWNLOAD_URL_SEGMENTS:
         if seg in low:
             return True
     for param in DOWNLOAD_URL_PARAMS:
         if param in low:
-            return True
-    # FIX #1: URL kończący się rozszerzeniem bez kropki (np. "XXXpdf")
-    path = urlparse(u).path
-    if path and not path.endswith("/"):
-        if _DOWNLOAD_SUFFIX_RE.search(path.split("/")[-1]):
             return True
     return False
 
@@ -262,40 +240,6 @@ _GENERIC_TITLE_PATTERNS = [
     "kontakt",
     "start",
     "home",
-    # FIX #4: rozszerzone
-    "biznes",
-    "informacje",
-    "informacja",
-    "dla mieszkańców",
-    "dla mieszkancow",
-    "urząd",
-    "urzad",
-    "gmina",
-    "miasto",
-    "powiat",
-    "więcej",
-    "wiecej",
-    "czytaj więcej",
-    "czytaj wiecej",
-    "zobacz więcej",
-    "wszystkie",
-    "kategoria",
-    "tagi",
-    "archiwum",
-    "newsletter",
-    "galeria",
-    "multimedia",
-    "przetargi",
-    "zamówienia",
-    "zamowienia",
-    "rada gminy",
-    "rada miasta",
-    "zarząd",
-    "zarzad",
-    "burmistrz",
-    "wójt",
-    "wojt",
-    "starosta",
 ]
 
 def is_generic_page_title(title: str) -> bool:
@@ -332,36 +276,33 @@ _DOWNLOAD_WORDS_RE = re.compile(
 
 def is_junk_link_title(title: str, url: str = "") -> bool:
     """
-    FIX #2 + FIX #3: True jeśli anchor text to śmieciowy tytuł.
-    Blokuje: nazwy plików, ścieżki, krótkie tokeny, krzaczki,
-             generyczne tytuły BIP (Redakcja, Aktualności, Biuletyn...).
+    FIX #2: True jeśli anchor text to śmieciowy tytuł (nazwa pliku, ścieżka, krótki token).
+    Używane w sekcji LINK HITS żeby nie raportować śmieciowych ogłoszeń.
     """
     t = re.sub(r"\s+", " ", (title or "")).strip()
     lt = t.lower()
-
-    # FIX #3: generyczne tytuły stron/serwisów — sprawdź przed długością
-    if is_generic_page_title(t):
-        return True
 
     # za krótkie
     if len(t) < 12:
         return True
 
-    # pasuje do wzorców śmieciowych (nazwy plików, cyfry itp.)
+    # pasuje do wzorców śmieciowych
     if _JUNK_LINK_TITLE_RE.match(t):
         return True
 
-    # zawiera słowa download/pobierz i jest krótkie
+    # zawiera słowa download/pobierz i jest krótkie (prawdziwy tytuł ogłoszenia
+    # może zawierać "pobierz" ale będzie długi i zawierać inne słowa)
     if _DOWNLOAD_WORDS_RE.search(lt) and len(t) < 80:
+        # wyjątek: jeśli zawiera też słowo kluczowe ogłoszenia, zostawiamy
         ok, _ = keyword_match_in_blob(lt)
         if not ok:
             return True
 
-    # URL wskazuje na plik pobierania
+    # URL wskazuje na plik pobierania — tytuł nie ma znaczenia
     if url and is_download_url(url):
         return True
 
-    # same znaki nie-alfanumeryczne (krzaczki binarne)
+    # same znaki nie-alfanumeryczne (krzaczki)
     alnum = re.sub(r"[^a-zA-Z0-9\u00C0-\u024F\u0400-\u04FF]", "", t)
     if len(alnum) < 6:
         return True
@@ -480,8 +421,6 @@ class GlobalState:
         self.cache_lock = asyncio.Lock()
         self.mail_dedup = set()
         self.reported_urls_this_run: set = set()
-        # v2.12: deduplicja kolejnych identycznych tytułów per gmina
-        self.last_printed: dict = {}  # gmina -> ostatni wydrukowany tytuł
 
     def request_shutdown(self):
         self.shutdown_requested = True
@@ -1470,28 +1409,6 @@ async def fetch_start_matrix(session_default, session_ipv4, url, diag):
 
     return last_fail if last_fail else (None, url, "fail", None, "", "no_strategy_worked", None)
 
-def _is_binary_response(ctype: str, data: bytes, url: str) -> bool:
-    """
-    FIX #2: True jeśli odpowiedź to plik binarny (PDF, DOC, obraz itp.)
-    niezależnie od tego co serwer podał w Content-Type.
-    Sprawdza: ctype, magic bytes, suffix URL.
-    """
-    # 1) Content-Type wskazuje na binarny plik
-    if _BINARY_CTYPE_RE.search(ctype or ""):
-        return True
-    # 2) Magic bytes — pierwsze 8 bajtów jednoznacznie identyfikuje format
-    if data and len(data) >= 4:
-        header = data[:8]
-        for magic in _BINARY_MAGIC:
-            if header.startswith(magic):
-                return True
-    # 3) URL kończy się rozszerzeniem pliku (z lub bez kropki)
-    path = urlparse(url or "").path
-    if path and _BINARY_URL_SUFFIX_RE.search(path.split("/")[-1]):
-        return True
-    return False
-
-
 async def fetch(session: aiohttp.ClientSession, url: str, extra_headers: dict = None):
     url = normalize_url(url)
     domain = urlparse(url).netloc
@@ -1517,8 +1434,7 @@ async def fetch(session: aiohttp.ClientSession, url: str, extra_headers: dict = 
                 if status == 200 and is_block_page(text):
                     rate_limiter.report_403(domain)
                     return None, final, "blocked", 429, ctype, "block_page_detected", ms
-                # FIX #2: wykryj binarną zawartość niezależnie od ctype
-                if _is_binary_response(ctype, data, final):
+                if "pdf" in ctype or final.lower().endswith(".pdf"):
                     return None, final, "pdf", status, ctype, None, ms
                 if status != 200:
                     if ssl_mode is None:
@@ -1537,30 +1453,6 @@ async def fetch(session: aiohttp.ClientSession, url: str, extra_headers: dict = 
             continue
     return None, url, "exc", None, "", "fetch_failed", 0
 
-# FIX #2: Magic bytes dla wykrywania binarnych plików niezależnie od Content-Type
-_BINARY_MAGIC = [
-    b"%PDF",           # PDF
-    b"\xD0\xCF\x11\xE0",  # DOC/XLS/PPT (OLE2)
-    b"PK\x03\x04",    # DOCX/XLSX/ZIP
-    b"\x1F\x8B",      # GZIP
-    b"BM",            # BMP
-    b"\xFF\xD8\xFF",  # JPEG
-    b"\x89PNG",       # PNG
-    b"GIF8",          # GIF
-]
-
-_BINARY_CTYPE_RE = re.compile(
-    r"(application/pdf|application/msword|application/vnd\.|"
-    r"application/octet|application/zip|application/x-|"
-    r"image/|audio/|video/)",
-    re.IGNORECASE
-)
-
-_BINARY_URL_SUFFIX_RE = re.compile(
-    r"\.(pdf|docx?|xlsx?|pptx?|odt|rtf|zip|rar|7z|gml|tiff?|dwg|dxf|jpg|jpeg|png|gif|mp4|mp3)$"
-    r"|pdf$|docx?$|xlsx?$",  # bez kropki (np. "XXXpdf")
-    re.IGNORECASE
-)
 async def fetch_conditional(session: aiohttp.ClientSession, url: str, extra_headers: dict = None):
     url = normalize_url(url)
     domain = urlparse(url).netloc
@@ -1595,8 +1487,7 @@ async def fetch_conditional(session: aiohttp.ClientSession, url: str, extra_head
                 if status == 200 and is_block_page(text):
                     rate_limiter.report_403(domain)
                     return None, final, "blocked", 429, ctype, "block_page_detected", ms, resp_meta
-                # FIX #2: wykryj binarną zawartość (PDF, DOC itp.) nawet gdy ctype jest błędny
-                if _is_binary_response(ctype, data, final):
+                if "pdf" in ctype or final.lower().endswith(".pdf"):
                     return None, final, "pdf", status, ctype, None, ms, resp_meta
                 if status != 200:
                     if ssl_mode is None:
@@ -1802,20 +1693,6 @@ async def phase1_discover(gmina: str, start_url: str,
     seed_urls = list(seeds.keys())[:PHASE1_MAX_SEEDS]
     seed_cache_put(gmina, start_url, allowed_host, final0, seed_urls)
     return seed_urls, {"status": "OK", "allowed_host": allowed_host, "start_final": final0, "seeds": len(seed_urls)}
-
-def _consecutive_dedup_check(gmina: str, title: str) -> bool:
-    """
-    v2.12: Zwraca True jeśli wpis powinien być wydrukowany (nie jest duplikatem poprzedniego).
-    Jeśli tytuł jest identyczny jak ostatni wydrukowany dla tej gminy — skipuj.
-    Pierwsze wystąpienie zawsze przechodzi, kolejne identyczne są pomijane.
-    """
-    title_norm = re.sub(r"\s+", " ", (title or "")).strip()
-    last = state.last_printed.get(gmina, "")
-    if title_norm == last:
-        return False
-    state.last_printed[gmina] = title_norm
-    return True
-
 
 # ===================== PHASE 2 =====================
 async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
@@ -2029,16 +1906,14 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
 
         ok_any, kw_any = keyword_match_in_blob(blob)
 
-        # FIX v2.11: sprawdź każdy kandydat przez is_generic_page_title
-        # — h1/h2 mogą też brzmieć "Biuletyn Informacji Publicznej"
-        page_title = ""
-        for candidate in [h1, h2, title]:
-            c = (candidate or "").strip()
-            if c and not is_generic_page_title(c):
-                page_title = c
-                break
-        if not page_title:
-            page_title = final_c  # fallback: czysty URL
+        # FIX #1: page_title — nigdy nie używaj url_slug (krzaczki), fallback to final_c
+        if h1 or h2:
+            page_title = (h1 or h2).strip()
+        elif not is_generic_page_title(title):
+            page_title = title.strip()
+        else:
+            page_title = final_c  # FIX #1: czysty URL zamiast url_slug
+        page_title = page_title or final_c
 
         if prev is None:
             status_new = "NOWE" if ok_any else "NO_MATCH"
@@ -2075,12 +1950,8 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
         if status_new in {"NOWE", "ZMIANA"}:
             if final_c not in state.reported_urls_this_run:
                 state.reported_urls_this_run.add(final_c)
-                # v2.12: pomiń jeśli identyczny tytuł jak poprzedni dla tej gminy
-                if _consecutive_dedup_check(gmina, page_title):
-                    print_hit(f"🟢 {status_new}", gmina, kw_any, page_title)
-                    found.append((gmina, kw_any, page_title, final_c, status_new))
-                else:
-                    diag["counts"]["consecutive_dedup_skipped"] += 1
+                print_hit(f"🟢 {status_new}", gmina, kw_any, page_title)
+                found.append((gmina, kw_any, page_title, final_c, status_new))
             else:
                 diag["counts"]["dedup_skipped"] += 1
 
@@ -2138,13 +2009,9 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                                 "status": "NOWE",
                             }
                         state.reported_urls_this_run.add(cu)
-                        # v2.12: pomiń jeśli identyczny tytuł jak poprzedni dla tej gminy
-                        if _consecutive_dedup_check(gmina, link_title):
-                            print_hit("🟢 NOWE (LINK)", gmina, kw_link, link_title)
-                            found.append((gmina, kw_link, link_title, cu, "NOWE"))
-                            diag["counts"]["link_hits_new"] += 1
-                        else:
-                            diag["counts"]["consecutive_dedup_skipped"] += 1
+                        print_hit("🟢 NOWE (LINK)", gmina, kw_link, link_title)
+                        found.append((gmina, kw_link, link_title, cu, "NOWE"))
+                        diag["counts"]["link_hits_new"] += 1
                     elif prev_link is None:
                         diag["counts"]["link_dedup_skipped"] += 1
 
@@ -2201,7 +2068,7 @@ def write_summary(diag_rows, new_items_for_mail):
         ok = sum(1 for r in (diag_rows or []) if r.get("status") == "OK")
         start_fail = sum(1 for r in (diag_rows or []) if r.get("status") == "START_FAIL")
         lines = [
-            f"BIP WATCHER v2.12 SUMMARY @ {now_iso()}",
+            f"BIP WATCHER v2.9 SUMMARY @ {now_iso()}",
             f"gminy_total={total} ok={ok} start_fail={start_fail}",
             f"mail_items={len(new_items_for_mail or [])}",
             "",
