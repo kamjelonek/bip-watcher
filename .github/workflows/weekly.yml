@@ -97,17 +97,16 @@ jobs:
 
   # ============================================================
   # KROK 2: Zbuduj dynamic matrix (1 shard = 1 gmina)
+  # FIX: needs tylko init_cache_store — nie reset_cache_store.
+  # reset i setup działają równolegle po init.
+  # scan czeka na OBA (setup + reset) żeby nie startować przed restem.
   # ============================================================
   setup:
     name: Build shard matrix
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [init_cache_store, reset_cache_store]
-    # FIX: setup działa gdy init OK, i reset był albo OK albo skipped (full_reset=false)
-    if: |
-      always() &&
-      needs.init_cache_store.result == 'success' &&
-      (needs.reset_cache_store.result == 'success' || needs.reset_cache_store.result == 'skipped')
+    needs: [init_cache_store]
+    if: needs.init_cache_store.result == 'success'
     outputs:
       matrix: ${{ steps.build.outputs.matrix }}
       total: ${{ steps.build.outputs.total }}
@@ -157,14 +156,16 @@ jobs:
 
   # ============================================================
   # KROK 3: Skan — 1 job = 1 gmina, max 10 równolegle
+  # needs: setup + reset_cache_store — gdy reset jest skipped,
+  # GitHub pozwoli na uruchomienie bo if: always() + sprawdzamy explicite
   # ============================================================
   scan:
     name: Scan shard ${{ matrix.shard }}
     runs-on: ubuntu-latest
     continue-on-error: true
     timeout-minutes: 355
-    needs: [setup]
-    if: needs.setup.result == 'success' && needs.setup.outputs.total != '0'
+    needs: [setup, reset_cache_store]
+    if: always() && needs.setup.result == 'success' && needs.setup.outputs.total != '0'
 
     strategy:
       fail-fast: false
