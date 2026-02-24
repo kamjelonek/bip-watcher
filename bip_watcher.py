@@ -1244,7 +1244,7 @@ def load_cache_v2():
         gr = _ensure_dict("gmina_retry")
         dead = _ensure_dict("dead_urls")
 
-        print(f"📦 Cache loaded: {len(urls)} URLs, {len(content)} content, {len(gseeds)} gmina seeds, {len(dead)} dead entries")
+        print(f"📦 Cache loaded: {len(urls)} URLs, {len(content)} content, {len(gseeds)} gmina seeds, {len(gf)} frontiers, {len(dead)} dead entries")
         return c, set(urls.keys()), content, gseeds, gf, gr, dead
 
     except Exception as e:
@@ -1840,6 +1840,9 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
     saved_frontier = (state.gmina_frontiers or {}).get(gkey, []) or []
     if saved_frontier:
         print(f"  ↩️  Kontynuacja: {len(saved_frontier)} URL z poprzedniego runu ({gmina})", flush=True)
+    elif state.gmina_frontiers:
+        # DEBUG: frontier jest w cache ale klucz nie pasuje
+        print(f"  ⚠️  Brak frontieru dla {gmina} (gkey={gkey[:8]}...), dostępne klucze: {list(state.gmina_frontiers.keys())[:3]}", flush=True)
         for item in saved_frontier:
             try:
                 fu, fd = item[0], int(item[1])
@@ -2022,6 +2025,9 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
 
         # ================= HTML OK =================
         pages_ok += 1
+        if pages_ok % 100 == 0:
+            elapsed = round((time.time() - GLOBAL_T0) / 60, 1)
+            print(f"  📊 [{gmina}] strony={pages_ok} kolejka={len(q)} czas={elapsed}min", flush=True)
         soup = safe_soup(html)
         if not soup:
             continue
@@ -2323,7 +2329,8 @@ async def worker(name: str, queue: asyncio.Queue,
             if frontier_len == 0 and retry_len == 0:
                 print(f"   ✅ Gmina {gmina} – pełne przeskanowanie")
 
-            gkey = gmina_cache_key(gmina, start_url)
+            # FIX v2.15: użyj allowed_host (tak jak w phase2), nie start_url
+            gkey = gmina_cache_key(gmina, "https://" + allowed_host)
             retry_debug = (state.gmina_retry or {}).get(gkey, []) or []
             if retry_debug:
                 print("\n🔴 RETRY DEBUG [" + gmina + "] — " + str(len(retry_debug)) + " URL-i nie udalo sie pobrac:", flush=True)
