@@ -97,9 +97,6 @@ jobs:
 
   # ============================================================
   # KROK 2: Zbuduj dynamic matrix (1 shard = 1 gmina)
-  # FIX: needs tylko init_cache_store — nie reset_cache_store.
-  # reset i setup działają równolegle po init.
-  # scan czeka na OBA (setup + reset) żeby nie startować przed restem.
   # ============================================================
   setup:
     name: Build shard matrix
@@ -156,8 +153,6 @@ jobs:
 
   # ============================================================
   # KROK 3: Skan — 1 job = 1 gmina, max 10 równolegle
-  # needs: setup + reset_cache_store — gdy reset jest skipped,
-  # GitHub pozwoli na uruchomienie bo if: always() + sprawdzamy explicite
   # ============================================================
   scan:
     name: Scan shard ${{ matrix.shard }}
@@ -239,6 +234,14 @@ jobs:
         run: |
           python bip_watcher.py
 
+      # ============================================================
+      # KLUCZOWY KROK — zapis sharda bez konfliktów git
+      # Zamiast rebase (który zostawia brudny stan po konflikcie)
+      # używamy reset --hard do czystego stanu zdalnego,
+      # po czym dokładamy TYLKO swój plik i pushujemy.
+      # Każdy shard ma unikalny plik więc nigdy nie ma merge conflictu —
+      # jedynym problemem jest kolejność commitów, co reset --hard rozwiązuje.
+      # ============================================================
       - name: Compress and commit shard to cache-store
         if: always()
         timeout-minutes: 25
@@ -249,16 +252,16 @@ jobs:
           set -e
 
           SHARD_JSON="data/cache_shard_${SHARD_INDEX}.json"
-          SHARD_GZ_DEST="cache-store/shards/cache_shard_${SHARD_INDEX}.json.gz"
 
           if [ ! -f "$SHARD_JSON" ]; then
             echo "ℹ️ Brak $SHARD_JSON — nic do zapisania"
             exit 0
           fi
 
+          # Wstępna kompresja tylko żeby sprawdzić rozmiar
           mkdir -p cache-store/shards
-          gzip -9 -c "$SHARD_JSON" > "$SHARD_GZ_DEST"
-          SIZE=$(du -h "$SHARD_GZ_DEST" | cut -f1)
+          gzip -9 -c "$SHARD_JSON" > "cache-store/shards/cache_shard_${SHARD_INDEX}.json.gz"
+          SIZE=$(du -h "cache-store/shards/cache_shard_${SHARD_INDEX}.json.gz" | cut -f1)
           echo "✅ Shard $SHARD_INDEX skompresowany: $SIZE"
 
           cd cache-store
@@ -267,9 +270,16 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           COMMITTED=0
-          for i in $(seq 1 10); do
+          for i in $(seq 1 20); do
+            echo "--- Próba $i/20 dla sharda $SHARD_INDEX ---"
+
+            # reset --hard: zawsze zaczynamy od czystego stanu zdalnego
+            # nie ma ryzyka brudnego stanu po nieudanym rebase
             git fetch origin cache-store 2>/dev/null || true
-            git rebase origin/cache-store 2>/dev/null || git pull --rebase origin cache-store 2>/dev/null || true
+            git reset --hard origin/cache-store
+
+            # po reset --hard nasz plik zniknął — odtwarzamy go
+            gzip -9 -c "../${SHARD_JSON}" > "shards/cache_shard_${SHARD_INDEX}.json.gz"
 
             git add "shards/cache_shard_${SHARD_INDEX}.json.gz"
 
@@ -287,13 +297,15 @@ jobs:
               break
             fi
 
-            echo "⚠️ Push retry #$i (konflikt) — cofam commit i próbuję ponownie..."
+            echo "⚠️ Push retry #$i — cofam i próbuję ponownie..."
             git reset HEAD~1
-            sleep $((i * 3 + RANDOM % 5))
+            # losowe opóźnienie z komponentem numeru sharda
+            # dzięki temu różne shardy naturalnie trafiają w różne momenty
+            sleep $(( (RANDOM % 15) + i * 2 + SHARD_INDEX % 7 ))
           done
 
           if [ "$COMMITTED" -eq 0 ]; then
-            echo "❌ Nie udało się zapisać sharda $SHARD_INDEX po 10 próbach!"
+            echo "❌ Nie udało się zapisać sharda $SHARD_INDEX po 20 próbach!"
             exit 1
           fi
 
