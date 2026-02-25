@@ -1783,7 +1783,7 @@
   "content_seen": {
     "0607380bcf40608a33f710c1cd378272146f5e45": {
       "found_at": "2026-02-24T00:26:41",
-      "last_checked": "2026-02-25T18:42:28",
+      "last_checked": "2026-02-25T22:33:06",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -129744,6 +129744,906 @@
       ],
       "att_sig": "[]",
       "status": "NOWE"
+    },
+    "ff457e0f51a0ae8f28985163e931436dc77822c7": {
+      "found_at": "2026-02-25T22:30:31",
+      "last_checked": "2026-02-25T22:30:31",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr XXI/230/25",
+      "url": "https://biuletyn.gostyn.pl/uchwala/14648/uchwala-nr-xxi-230-25",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "86d73f2b0bf1f17828327f6002483fc406f361bf": {
+      "found_at": "2026-02-25T22:30:39",
+      "last_checked": "2026-02-25T22:30:39",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr XXI/229/25",
+      "url": "https://biuletyn.gostyn.pl/uchwala/14647/uchwala-nr-xxi-229-25",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "1af49d6d06172fb720d807d1cb3c4f13cb6b6414": {
+      "found_at": "2026-02-25T22:30:45",
+      "last_checked": "2026-02-25T22:30:45",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr XXI/228/25",
+      "url": "https://biuletyn.gostyn.pl/uchwala/14646/uchwala-nr-xxi-228-25",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "6e5ab5a5b1ec5fbf68fdd356de3441380fba5dbb": {
+      "found_at": "2026-02-25T22:30:46",
+      "last_checked": "2026-02-25T22:30:46",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr XXI/227/25",
+      "url": "https://biuletyn.gostyn.pl/uchwala/14645/uchwala-nr-xxi-227-25",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "fc7275977bc4169f21be6a7f82d1a1f8941f96d5": {
+      "found_at": "2026-02-25T22:30:51",
+      "last_checked": "2026-02-25T22:30:51",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr XXI/226/25",
+      "url": "https://biuletyn.gostyn.pl/uchwala/14644/uchwala-nr-xxi-226-25",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "28b793374b7d4ec0cc6826ed9c81de1ef8af4822": {
+      "found_at": "2026-02-25T22:30:52",
+      "last_checked": "2026-02-25T22:30:52",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr XXI/225/25",
+      "url": "https://biuletyn.gostyn.pl/uchwala/14643/uchwala-nr-xxi-225-25",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "644f869a63d46fe9abec947e0f18cea915cb5dae": {
+      "found_at": "2026-02-25T22:30:57",
+      "last_checked": "2026-02-25T22:30:57",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr XXI/224/25",
+      "url": "https://biuletyn.gostyn.pl/uchwala/14642/uchwala-nr-xxi-224-25",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "5dd0d6654abdc42d64e3b983e68ba529e6f8c2a9": {
+      "found_at": "2026-02-25T22:30:58",
+      "last_checked": "2026-02-25T22:30:58",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr XXI/223/25",
+      "url": "https://biuletyn.gostyn.pl/uchwala/14641/uchwala-nr-xxi-223-25",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "7996da402e8a3dc9838697cfd92937597f4cda7d": {
+      "found_at": "2026-02-25T22:31:01",
+      "last_checked": "2026-02-25T22:31:01",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr XX/222/25",
+      "url": "https://biuletyn.gostyn.pl/uchwala/14551/uchwala-nr-xx-222-25",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "eb94787e288df38e833e7d467bd2072f94da92f5": {
+      "found_at": "2026-02-25T22:31:31",
+      "last_checked": "2026-02-25T22:31:31",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr XX/221/25",
+      "url": "https://biuletyn.gostyn.pl/uchwala/14550/uchwala-nr-xx-221-25",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "2dee7b37c04687f0d5bccb584807f7461f89412c": {
+      "found_at": "2026-02-25T22:31:33",
+      "last_checked": "2026-02-25T22:31:33",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr XX/220/25",
+      "url": "https://biuletyn.gostyn.pl/uchwala/14549/uchwala-nr-xx-220-25",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "6ff3bcfb3127e2ac9d021815cffbc7d14edaa032": {
+      "found_at": "2026-02-25T22:31:40",
+      "last_checked": "2026-02-25T22:31:40",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr XX/219/25",
+      "url": "https://biuletyn.gostyn.pl/uchwala/14548/uchwala-nr-xx-219-25",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "6623c645ca702b977d4b0b0bbe847651ef1eed16": {
+      "found_at": "2026-02-25T22:31:43",
+      "last_checked": "2026-02-25T22:31:43",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr XX/218/25",
+      "url": "https://biuletyn.gostyn.pl/uchwala/14547/uchwala-nr-xx-218-25",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "57c9f6488682cee3d786835caf20778ea8cdda51": {
+      "found_at": "2026-02-25T22:31:46",
+      "last_checked": "2026-02-25T22:31:46",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr XX/217/25",
+      "url": "https://biuletyn.gostyn.pl/uchwala/14546/uchwala-nr-xx-217-25",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "f2f2eed51896f8e6104605c21cfe1608e97c457e": {
+      "found_at": "2026-02-25T22:31:47",
+      "last_checked": "2026-02-25T22:31:47",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr XX/216/25",
+      "url": "https://biuletyn.gostyn.pl/uchwala/14545/uchwala-nr-xx-216-25",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "997f411c498340bf329b068d059f08cab71c6427": {
+      "found_at": "2026-02-25T22:31:50",
+      "last_checked": "2026-02-25T22:31:50",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr XX/215/25",
+      "url": "https://biuletyn.gostyn.pl/uchwala/14544/uchwala-nr-xx-215-25",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "05827f97aa2474c404820434e68da623969f7aa9": {
+      "found_at": "2026-02-25T22:31:53",
+      "last_checked": "2026-02-25T22:31:53",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr XIX/214/25",
+      "url": "https://biuletyn.gostyn.pl/uchwala/14490/uchwala-nr-xix-214-25",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "3992d4f50213f5a03a23a8dcdeec414534e44003": {
+      "found_at": "2026-02-25T22:31:56",
+      "last_checked": "2026-02-25T22:31:56",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr XIX/213/25",
+      "url": "https://biuletyn.gostyn.pl/uchwala/14489/uchwala-nr-xix-213-25",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "a693f1c338cec3bf950a05e7416e86ccc9c5603d": {
+      "found_at": "2026-02-25T22:31:59",
+      "last_checked": "2026-02-25T22:31:59",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr XIX/212/25",
+      "url": "https://biuletyn.gostyn.pl/uchwala/14488/uchwala-nr-xix-212-25",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "a7793d12500724b540334fd6e5cf8d34511b0649": {
+      "found_at": "2026-02-25T22:32:26",
+      "last_checked": "2026-02-25T22:32:26",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr III/14/2002",
+      "url": "https://biuletyn.gostyn.pl/uchwala/2760/uchwala-nr-iii-14-2002",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "936c4021a43696e0961ccf7552b72b25ccc9e062": {
+      "found_at": "2026-02-25T22:32:27",
+      "last_checked": "2026-02-25T22:32:27",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr III/15/2002",
+      "url": "https://biuletyn.gostyn.pl/uchwala/2756/uchwala-nr-iii-15-2002",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "ee11c80c3233a4a2c1cc510262005abd7b5156fa": {
+      "found_at": "2026-02-25T22:32:32",
+      "last_checked": "2026-02-25T22:32:32",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr III/17/2002",
+      "url": "https://biuletyn.gostyn.pl/uchwala/2748/uchwala-nr-iii-17-2002",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "fc526a4ef4c56b75bdb6a195f141debc86d40d9e": {
+      "found_at": "2026-02-25T22:32:35",
+      "last_checked": "2026-02-25T22:32:35",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr III/19/2002",
+      "url": "https://biuletyn.gostyn.pl/uchwala/2743/uchwala-nr-iii-19-2002",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "aef679d61a59b916619d5d25ca8ab93d93593f00": {
+      "found_at": "2026-02-25T22:32:43",
+      "last_checked": "2026-02-25T22:32:43",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr III/21/2002",
+      "url": "https://biuletyn.gostyn.pl/uchwala/2739/uchwala-nr-iii-21-2002",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "89a2107edf14e30f8f1fc5c342360378af20c420": {
+      "found_at": "2026-02-25T22:32:45",
+      "last_checked": "2026-02-25T22:32:45",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr III/22/2002",
+      "url": "https://biuletyn.gostyn.pl/uchwala/2737/uchwala-nr-iii-22-2002",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "25c32cdc1d535e9f35315ad3cc656c622cd7b14a": {
+      "found_at": "2026-02-25T22:32:50",
+      "last_checked": "2026-02-25T22:32:50",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr III/23/2002",
+      "url": "https://biuletyn.gostyn.pl/uchwala/2736/uchwala-nr-iii-23-2002",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "650057cc1b853ed540cf525bcba73c88f17ca17c": {
+      "found_at": "2026-02-25T22:32:51",
+      "last_checked": "2026-02-25T22:32:51",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr III/24/2002",
+      "url": "https://biuletyn.gostyn.pl/uchwala/2735/uchwala-nr-iii-24-2002",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "209ddfcdffa1867b981972746b8517ae9e0a3811": {
+      "found_at": "2026-02-25T22:32:54",
+      "last_checked": "2026-02-25T22:32:54",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr III/25/2002",
+      "url": "https://biuletyn.gostyn.pl/uchwala/2734/uchwala-nr-iii-25-2002",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "a13edd810fb3eeeb13f64a0e7345243b90e3d08c": {
+      "found_at": "2026-02-25T22:32:57",
+      "last_checked": "2026-02-25T22:32:57",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Uchwała nr III/26/2002",
+      "url": "https://biuletyn.gostyn.pl/uchwala/2733/uchwala-nr-iii-26-2002",
+      "keywords": [
+        "miejscowego"
+      ],
+      "att_sig": "[]",
+      "status": "NOWE"
+    },
+    "c7adae6fc50ff2323d589a3664877e91e12cdf6f": {
+      "found_at": "2026-02-24T00:26:41",
+      "last_checked": "2026-02-25T22:33:06",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Na skróty",
+      "url": "https://biuletyn.gostyn.pl/",
+      "keywords": [
+        "środowiskowych uwarunkowaniach"
+      ],
+      "att_sig": "[]",
+      "status": "HIT"
+    },
+    "b990b5591e5271d0c4cb071db2b249dec4d4607a": {
+      "found_at": "2026-02-25T22:33:12",
+      "last_checked": "2026-02-25T22:33:12",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "W ramach Wydziału Spraw Obywatelskich funkcjonują:",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/15826/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "0ef3420bcf27ed586ab8af06f8d9d5f1a267d087": {
+      "found_at": "2026-02-25T22:33:15",
+      "last_checked": "2026-02-25T22:33:15",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "W ramach Wydziału Spraw Obywatelskich funkcjonują:",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/15738/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "1fb6a6f27947ca53e0488a046391eb0803e3e878": {
+      "found_at": "2026-02-25T22:33:20",
+      "last_checked": "2026-02-25T22:33:20",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "W ramach Wydziału Spraw Obywatelskich funkcjonują:",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/15510/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "3197c49b6cf647a98dd62f34a87833cd62ee2291": {
+      "found_at": "2026-02-25T22:33:20",
+      "last_checked": "2026-02-25T22:33:20",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "W ramach Wydziału Spraw Obywatelskich funkcjonują:",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/15509/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "84f66bbf9527608bc634cac22e538c3382ff442d": {
+      "found_at": "2026-02-25T22:33:23",
+      "last_checked": "2026-02-25T22:33:23",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "W ramach Wydziału Spraw Obywatelskich funkcjonują:",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/15508/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "4fb323cdcdff6f439f0b85d3beee735013849c53": {
+      "found_at": "2026-02-25T22:33:28",
+      "last_checked": "2026-02-25T22:33:28",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "W ramach Wydziału Spraw Obywatelskich funkcjonują:",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/15507/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "67180fb68bdcc479631ee839e5dc2f1e9925c199": {
+      "found_at": "2026-02-25T22:33:29",
+      "last_checked": "2026-02-25T22:33:29",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "W ramach Wydziału Spraw Obywatelskich funkcjonują:",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/14598/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "836db1c785037dc6d1efaa2db97bd388031d4047": {
+      "found_at": "2026-02-25T22:33:35",
+      "last_checked": "2026-02-25T22:33:35",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "W ramach Wydziału Spraw Obywatelskich funkcjonują:",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/12267/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "9e4684efc6b0c2a079940f327c351223a2aa524b": {
+      "found_at": "2026-02-25T22:33:35",
+      "last_checked": "2026-02-25T22:33:35",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "W ramach Wydziału Spraw Obywatelskich funkcjonują:",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/11801/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "217ce93a0d18feb1fc3094ee7804a17d1d3f3900": {
+      "found_at": "2026-02-25T22:33:40",
+      "last_checked": "2026-02-25T22:33:40",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "W ramach Wydziału Spraw Obywatelskich funkcjonują:",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/11547/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "d277f2d0d1ec622e0cb66cef05a817bc23a278db": {
+      "found_at": "2026-02-25T22:33:41",
+      "last_checked": "2026-02-25T22:33:41",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "W ramach Wydziału Spraw Obywatelskich funkcjonują:",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/11180/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "65912f266af3ac01eb104b445575ccff047e9345": {
+      "found_at": "2026-02-25T22:33:46",
+      "last_checked": "2026-02-25T22:33:46",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "W ramach Wydziału Spraw Obywatelskich funkcjonują:",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/9234/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "5af4e691c8de13dadd456cdf3032d1c7503726a8": {
+      "found_at": "2026-02-25T22:33:46",
+      "last_checked": "2026-02-25T22:33:46",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "W ramach Wydziału Spraw Obywatelskich funkcjonują:",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/9121/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "ae413d072952f90a45e2b428d2fc3655736938fc": {
+      "found_at": "2026-02-25T22:33:49",
+      "last_checked": "2026-02-25T22:33:49",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "W ramach Wydziału Spraw Obywatelskich funkcjonują:",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/8902/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "47359a96398f94e948cba2bd997f26b3099c6c3c": {
+      "found_at": "2026-02-25T22:33:52",
+      "last_checked": "2026-02-25T22:33:52",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "W ramach Wydziału Spraw Obywatelskich funkcjonują:",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/8273/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "f6b247f0cab8a1da0aa3f86a46f6822c5b972a99": {
+      "found_at": "2026-02-25T22:33:57",
+      "last_checked": "2026-02-25T22:33:57",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "W ramach Wydziału Spraw Obywatelskich funkcjonują:",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/7763/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "9f64ab29436597c4dd775d69da2392778d97d65e": {
+      "found_at": "2026-02-25T22:34:00",
+      "last_checked": "2026-02-25T22:34:00",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "W ramach Wydziału Spraw Obywatelskich funkcjonują:",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/7685/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "cfb44fbc31b70df04a7d96753ddf887173602a40": {
+      "found_at": "2026-02-25T22:34:01",
+      "last_checked": "2026-02-25T22:34:01",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "W ramach Wydziału Spraw Obywatelskich funkcjonują:",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/5978/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "294e024ca4da88aea627f5e60e269802638da2e0": {
+      "found_at": "2026-02-25T22:34:05",
+      "last_checked": "2026-02-25T22:34:05",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "W ramach Wydziału Spraw Obywatelskich funkcjonują:",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/5429/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "8805e955d028b7f51817955939de8d47bbcfb2d1": {
+      "found_at": "2026-02-25T22:34:06",
+      "last_checked": "2026-02-25T22:34:06",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "W ramach Wydziału Spraw Obywatelskich funkcjonują:",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/5428/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "9327336eb7e832f292b21375ca6156c3b8a946cd": {
+      "found_at": "2026-02-25T22:34:09",
+      "last_checked": "2026-02-25T22:34:09",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "W ramach Wydziału Spraw Obywatelskich funkcjonują:",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/3828/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "c41bace64ea604019ed296494e525c89ad62690b": {
+      "found_at": "2026-02-25T22:34:12",
+      "last_checked": "2026-02-25T22:34:12",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "W ramach Wydziału Spraw Obywatelskich funkcjonują:",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/2421/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "9e6ba8ba53a406c05f54c845493a55c3a5356b23": {
+      "found_at": "2026-02-25T22:34:16",
+      "last_checked": "2026-02-25T22:34:16",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "W ramach Wydziału Spraw Obywatelskich funkcjonują:",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/2253/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "412222f741a713df03739ea025beffc87b911532": {
+      "found_at": "2026-02-25T22:34:20",
+      "last_checked": "2026-02-25T22:34:20",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Referat Urzędu Stanu Cywilnego",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/2252/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "d74069270dd5d5b6e37cae03c028c8877585287c": {
+      "found_at": "2026-02-25T22:34:21",
+      "last_checked": "2026-02-25T22:34:21",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Referat Urzędu Stanu Cywilnego",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/740/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "4a40fcf52c098408ee787ba2c99a1acfc6bd0e03": {
+      "found_at": "2026-02-25T22:34:25",
+      "last_checked": "2026-02-25T22:34:25",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Referat Urzędu Stanu Cywilnego",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/739/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "747f2082eaeca7d6608abab5a75689e54e1df44b": {
+      "found_at": "2026-02-25T22:34:31",
+      "last_checked": "2026-02-25T22:34:31",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Referat Urzędu Stanu Cywilnego",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/738/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "2134359b09e0493fdfcd202e6a4462c8135459c3": {
+      "found_at": "2026-02-25T22:34:37",
+      "last_checked": "2026-02-25T22:34:37",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Kompetencje",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/352/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "f43817eb993f5f2ec4091d94e06a18c4e8c3b34f": {
+      "found_at": "2026-02-25T22:34:37",
+      "last_checked": "2026-02-25T22:34:37",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "https://biuletyn.gostyn.pl/contentsversions/7974/340/preview",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/340/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "84e68e1094d5f997fb905c0745a704235837f24d": {
+      "found_at": "2026-02-25T22:34:40",
+      "last_checked": "2026-02-25T22:34:40",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "https://biuletyn.gostyn.pl/contentsversions/7974/0/0/diff",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7974/0/0/diff",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "648620eec54b525093780bed7a2662c5e372df2d": {
+      "found_at": "2026-02-25T22:34:43",
+      "last_checked": "2026-02-25T22:34:43",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Aldona Grześkowiak [start] [koniec]",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7972/15626/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "9d61e7f031fe89bd5e33faa4bb33d4d5a24ff799": {
+      "found_at": "2026-02-25T22:34:47",
+      "last_checked": "2026-02-25T22:34:47",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Aldona Grześkowiak [start] [koniec]",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7972/15411/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "d0d3113c156cab94d7b6a94821e3f3469a450bc6": {
+      "found_at": "2026-02-25T22:34:50",
+      "last_checked": "2026-02-25T22:34:50",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Aldona Grześkowiak [start] [koniec]",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7972/14691/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "3ebd6101b200b7a1397d09ecb87e4542bfd1ba64": {
+      "found_at": "2026-02-25T22:34:52",
+      "last_checked": "2026-02-25T22:34:52",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Aldona Grześkowiak [start] [koniec]",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7972/12724/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "78debe8d31b41862a929cb46536778a38649b2d2": {
+      "found_at": "2026-02-25T22:34:55",
+      "last_checked": "2026-02-25T22:34:55",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Aldona Grześkowiak [start] [koniec]",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7972/9664/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "efbe84d587c677f4d5bb1b9f3de7b7236f6e50dd": {
+      "found_at": "2026-02-25T22:34:57",
+      "last_checked": "2026-02-25T22:34:57",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Aldona Grześkowiak [start] [koniec]",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7972/9633/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "2ef396c7bfc936a444a7d3943df0249024d89a7f": {
+      "found_at": "2026-02-25T22:34:59",
+      "last_checked": "2026-02-25T22:34:59",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Aldona Grześkowiak [start] [koniec]",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7972/9571/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "406824e71edcd16589183bc1264c85a67a5929a8": {
+      "found_at": "2026-02-25T22:35:02",
+      "last_checked": "2026-02-25T22:35:02",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Aldona Grześkowiak [start] [koniec]",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7972/8275/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "12db8fddf4965fd3ab5a02eb0fc2df9cac80990b": {
+      "found_at": "2026-02-25T22:35:06",
+      "last_checked": "2026-02-25T22:35:06",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Aldona Grześkowiak [start] [koniec]",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7972/8274/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
+    },
+    "63ea91d6ee4f8594bbd37599fdd92b9c6eb3bb23": {
+      "found_at": "2026-02-25T22:35:09",
+      "last_checked": "2026-02-25T22:35:09",
+      "etag": "",
+      "last_modified": "",
+      "gmina": "Gostyń",
+      "title": "Aldona Grześkowiak [start] [koniec]",
+      "url": "https://biuletyn.gostyn.pl/contentsversions/7972/8101/preview",
+      "keywords": [],
+      "att_sig": "[]",
+      "status": "NO_MATCH"
     }
   },
   "gmina_seeds": {
