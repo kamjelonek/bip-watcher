@@ -152,7 +152,8 @@ jobs:
           PY
 
   # ============================================================
-  # KROK 3: Skan — 1 job = 1 gmina, max 10 równolegle
+  # KROK 3: Skan — 1 job = 1 gmina
+  # WYDAJNOŚĆ v2.16: max-parallel 10 -> 20
   # ============================================================
   scan:
     name: Scan shard ${{ matrix.shard }}
@@ -164,7 +165,7 @@ jobs:
 
     strategy:
       fail-fast: false
-      max-parallel: 10
+      max-parallel: 20          # v2.16: 10 -> 20
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
 
     steps:
@@ -217,6 +218,12 @@ jobs:
             echo '{"schema":14,"urls_seen":{},"content_seen":{},"gmina_seeds":{},"gmina_frontiers":{},"gmina_retry":{},"dead_urls":{}}' > data/cache.json
           fi
 
+      # ============================================================
+      # NAPRAWA v2.16: exec python zamiast python
+      # exec zastępuje bash procesem Pythona — dzięki temu Cancel
+      # workflow wysyła SIGTERM bezpośrednio do Pythona, który
+      # obsługuje go w signal_handler() i może zrobić czysty zapis.
+      # ============================================================
       - name: Run watcher
         continue-on-error: true
         timeout-minutes: 325
@@ -226,21 +233,21 @@ jobs:
           SHARD_INDEX: "${{ matrix.shard }}"
           RUN_DEADLINE_MIN: "315"
           CONCURRENT_GMINY: "1"
-          CONCURRENT_REQUESTS: "30"
-          LIMIT_PER_HOST: "4"
+          CONCURRENT_REQUESTS: "50"
+          LIMIT_PER_HOST: "6"
           RATE_MIN_DELAY: "0.3"
           CHECKPOINT_EVERY_SEC: "300"
           RESET_CACHE: ${{ github.event.inputs.full_reset || 'false' }}
+        shell: bash
         run: |
-          python bip_watcher.py
+          set -e
+          # NAPRAWA: exec sprawia że bash zostaje zastąpiony przez Pythona
+          # Cancel workflow -> SIGTERM trafia bezpośrednio do Pythona
+          exec python bip_watcher.py
 
       # ============================================================
-      # KLUCZOWY KROK — zapis sharda bez konfliktów git
-      # Zamiast rebase (który zostawia brudny stan po konflikcie)
-      # używamy reset --hard do czystego stanu zdalnego,
-      # po czym dokładamy TYLKO swój plik i pushujemy.
-      # Każdy shard ma unikalny plik więc nigdy nie ma merge conflictu —
-      # jedynym problemem jest kolejność commitów, co reset --hard rozwiązuje.
+      # Zapis sharda — bez konfliktów git
+      # reset --hard do czystego stanu zdalnego, potem tylko nasz plik
       # ============================================================
       - name: Compress and commit shard to cache-store
         if: always()
@@ -258,7 +265,6 @@ jobs:
             exit 0
           fi
 
-          # Wstępna kompresja tylko żeby sprawdzić rozmiar
           mkdir -p cache-store/shards
           gzip -9 -c "$SHARD_JSON" > "cache-store/shards/cache_shard_${SHARD_INDEX}.json.gz"
           SIZE=$(du -h "cache-store/shards/cache_shard_${SHARD_INDEX}.json.gz" | cut -f1)
@@ -273,12 +279,9 @@ jobs:
           for i in $(seq 1 20); do
             echo "--- Próba $i/20 dla sharda $SHARD_INDEX ---"
 
-            # reset --hard: zawsze zaczynamy od czystego stanu zdalnego
-            # nie ma ryzyka brudnego stanu po nieudanym rebase
             git fetch origin cache-store 2>/dev/null || true
             git reset --hard origin/cache-store
 
-            # po reset --hard nasz plik zniknął — odtwarzamy go
             gzip -9 -c "../${SHARD_JSON}" > "shards/cache_shard_${SHARD_INDEX}.json.gz"
 
             git add "shards/cache_shard_${SHARD_INDEX}.json.gz"
@@ -299,8 +302,6 @@ jobs:
 
             echo "⚠️ Push retry #$i — cofam i próbuję ponownie..."
             git reset HEAD~1
-            # losowe opóźnienie z komponentem numeru sharda
-            # dzięki temu różne shardy naturalnie trafiają w różne momenty
             sleep $(( (RANDOM % 15) + i * 2 + SHARD_INDEX % 7 ))
           done
 
