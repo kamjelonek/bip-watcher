@@ -1255,7 +1255,7 @@ def load_cache_v2():
 def save_cache_v2(raw_cache, urls_seen_set, content_seen, gmina_seeds):
     out = {"schema": CACHE_SCHEMA}
     old_urls = (raw_cache or {}).get("urls_seen", {}) if isinstance(raw_cache, dict) else {}
-    out["urls_seen"] = {h: old_urls.get(h, now_iso()) for h in urls_seen_set}
+    print(f"📦 Cache loaded: urls_seen={len(urls)} | content_seen={len(content)} | seeds={len(gseeds)} | frontiers={len(gf)} | dead={len(dead)}")
     out["content_seen"] = content_seen or {}
     out["gmina_seeds"] = gmina_seeds or {}
     out["gmina_frontiers"] = state.gmina_frontiers or {}
@@ -1838,11 +1838,10 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
     retry_seen = set()
 
     saved_frontier = (state.gmina_frontiers or {}).get(gkey, []) or []
+    
     if saved_frontier:
         print(f"  ↩️  Kontynuacja: {len(saved_frontier)} URL z poprzedniego runu ({gmina})", flush=True)
-    elif state.gmina_frontiers:
-        # DEBUG: frontier jest w cache ale klucz nie pasuje
-        print(f"  ⚠️  Brak frontieru dla {gmina} (gkey={gkey[:8]}...), dostępne klucze: {list(state.gmina_frontiers.keys())[:3]}", flush=True)
+    
         for item in saved_frontier:
             try:
                 fu, fd = item[0], int(item[1])
@@ -1852,7 +1851,12 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             if cu and cu not in visited and cu not in dead_set:
                 visited.add(cu)
                 q.append((cu, fd))
+    
+        # zużyty frontier usuwamy (żeby nie mielić w kółko)
         state.gmina_frontiers.pop(gkey, None)
+    
+    elif state.gmina_frontiers:
+        print(f"  ⚠️  Brak frontieru dla {gmina} (gkey={gkey[:8]}...), dostępne klucze: {list(state.gmina_frontiers.keys())[:3]}", flush=True)
 
     retry_list = (state.gmina_retry or {}).get(gkey, []) or []
     retry_added = 0
@@ -2170,7 +2174,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
     if q:
         state.gmina_frontiers[gkey] = [[url, depth] for url, depth in list(q)]
     else:
-        state.gmina_frontiers.pop(gkey, None)
+        state.gmina_frontiers[gkey] = []
 
     return found, {
         "status": "OK",
@@ -2514,3 +2518,4 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
