@@ -393,10 +393,10 @@ SEED_CACHE_TTL_DAYS = 30
 # FIX #3: 40_000 zamiast 999_999 — wystarczy na każde ogłoszenie BIP
 FAST_TEXT_MAX_CHARS = 40_000
 
-HIT_RECHECK_TTL_HOURS = 24
-NO_MATCH_RECHECK_TTL_HOURS = 24
-BLOCKED_RECHECK_TTL_MIN = env_int("BLOCKED_RECHECK_TTL_MIN", 180)
-FAILED_RECHECK_TTL_MIN = env_int("FAILED_RECHECK_TTL_MIN", 120)
+HIT_RECHECK_TTL_HOURS = 0
+NO_MATCH_RECHECK_TTL_HOURS = 0
+BLOCKED_RECHECK_TTL_MIN = env_int("BLOCKED_RECHECK_TTL_MIN", 0)
+FAILED_RECHECK_TTL_MIN = env_int("FAILED_RECHECK_TTL_MIN", 0)
 
 # ===================== USER AGENTS =====================
 USER_AGENTS = [
@@ -492,18 +492,18 @@ RUN_DEADLINE_MIN = env_int("RUN_DEADLINE_MIN", 0)
 GLOBAL_T0 = time.time()
 
 def signal_handler(signum, frame):
-    # 1) ustaw flagę, żeby pętle i checkpointy wiedziały że kończymy
+    # 1) ustaw flagę, żeby pętle wiedziały że kończymy
     state.request_shutdown()
     print(f"\n🛑 SIGNAL {signum} received", flush=True)
 
-    # 2) GitHub Actions: CANCEL workflow ma kończyć proces natychmiast
-    #    (w praktyce GHA wysyła SIGTERM, a my wychodzimy z kodem != 0)
-    if os.getenv("GITHUB_ACTIONS"):
-        print("🛑 GHA cancel -> sys.exit(1) (hard stop)", flush=True)
-        os._exit(1)
+    # 2) priorytet: nie tracimy postępów
+    panic_save_checkpoint_sync(reason=f"signal={signum}")
 
-signal.signal(signal.SIGINT, signal_handler)
-signal.signal(signal.SIGTERM, signal_handler)
+    # 3) GHA: Cancel workflow ma NATYCHMIAST ubić proces
+    #    ale dopiero po panic-save
+    if os.getenv("GITHUB_ACTIONS"):
+        print("🛑 GHA cancel -> hard stop AFTER panic-save", flush=True)
+        os._exit(1)
 
 # ===================== UTILS =====================
 def iso_now():
@@ -551,6 +551,9 @@ def pick_rows_for_shard(rows, shard_index: int, shard_total: int):
     return rows[shard_index::shard_total]
 
 def should_recheck_hit(prev: dict) -> bool:
+    # TTL=0 => zawsze sprawdzaj
+    if (HIT_RECHECK_TTL_HOURS or 0) <= 0:
+        return True
     if not prev or not isinstance(prev, dict):
         return True
     last = prev.get("last_checked") or prev.get("found_at") or ""
@@ -560,6 +563,9 @@ def should_recheck_hit(prev: dict) -> bool:
     return (iso_now() - dt) >= timedelta(hours=HIT_RECHECK_TTL_HOURS)
 
 def should_recheck_no_match(prev: dict) -> bool:
+    # TTL=0 => zawsze sprawdzaj
+    if (NO_MATCH_RECHECK_TTL_HOURS or 0) <= 0:
+        return True
     if not prev or not isinstance(prev, dict):
         return True
     last = prev.get("last_checked") or prev.get("found_at") or ""
@@ -569,6 +575,9 @@ def should_recheck_no_match(prev: dict) -> bool:
     return (iso_now() - dt) >= timedelta(hours=NO_MATCH_RECHECK_TTL_HOURS)
 
 def should_recheck_block(prev: dict, ttl_min: int) -> bool:
+    # ttl_min=0 => zawsze sprawdzaj
+    if int(ttl_min or 0) <= 0:
+        return True
     if not prev or not isinstance(prev, dict):
         return True
     last = prev.get("last_checked") or prev.get("found_at") or ""
@@ -640,6 +649,50 @@ def retry_io(action, tries: int = 5, base_sleep: float = 0.6):
                 raise
     if last_exc:
         raise last_exc
+
+def panic_save_checkpoint_sync(reason: str = "SIGTERM"):
+    """
+    Krytyczne: zapisuje cache/frontiers/retry/dead + diag NATYCHMIAST (sync),
+    żeby Cancel workflow / SIGTERM nie urwał postępów.
+    """
+    try:
+        if not USE_CACHE:
+            return
+
+        # Cache JSON / shard JSON (w zależności od trybu)
+        if os.getenv("GITHUB_ACTIONS") and get_shard_index() >= 0:
+            shard = get_shard_index()
+            out = {"schema": CACHE_SCHEMA}
+            out["urls_seen"] = {}
+            old_urls = (state.raw_cache or {}).get("urls_seen", {}) if isinstance(state.raw_cache, dict) else {}
+            for h in state.urls_seen:
+                out["urls_seen"][h] = old_urls.get(h, now_iso())
+            out["content_seen"] = state.content_seen or {}
+            out["gmina_seeds"] = state.gmina_seeds or {}
+            out["gmina_frontiers"] = state.gmina_frontiers or {}
+            out["gmina_retry"] = state.gmina_retry or {}
+            out["dead_urls"] = getattr(state, "dead_urls", {})
+
+            filename = BASE_DIR / f"cache_shard_{shard}.json"
+            tmp = str(filename) + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(out, f, indent=2, ensure_ascii=False)
+            os.replace(tmp, filename)
+            print(f"🧯 PANIC SAVE (shard) OK [{reason}]: {filename}", flush=True)
+        else:
+            # normalny cache.json
+            save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds)
+            print(f"🧯 PANIC SAVE (cache.json) OK [{reason}]", flush=True)
+
+        # diag też warto
+        try:
+            save_diag(state.diag_rows, state.diag_errors)
+            print(f"🧯 PANIC SAVE (diag) OK [{reason}]", flush=True)
+        except Exception as e:
+            print(f"⚠️ PANIC diag save failed: {e}", flush=True)
+
+    except Exception as e:
+        print(f"⚠️ PANIC SAVE FAILED [{reason}]: {e}", flush=True)
 
 def normalize_url(url: str) -> str:
     try:
@@ -998,20 +1051,17 @@ def _strip_dynamic_noise(txt: str) -> str:
     return txt
 
 def _soup_fast_text(soup: BeautifulSoup, max_chars: int = FAST_TEXT_MAX_CHARS) -> str:
-    # FIX #3: limit 40_000, logika bez zmian
     try:
         if not soup:
             return ""
+        # zawsze wycinamy śmieci techniczne
         for tag in soup(["script", "style", "noscript"]):
             tag.decompose()
-        has_main_content = bool(
-            soup.find("main") or
-            soup.find(id=re.compile(r"(content|tresc|main|article)", re.I)) or
-            soup.find(class_=re.compile(r"(content|tresc|main|article)", re.I))
-        )
-        if has_main_content:
-            for tag in soup(["nav", "header", "footer", "aside"]):
-                tag.decompose()
+
+        # zgodnie z ustaleniem: tnij tylko footer (tam nie będzie ogłoszeń)
+        for tag in soup(["footer"]):
+            tag.decompose()
+
         txt = re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip()
         txt = _strip_dynamic_noise(txt)
         return txt[:max_chars]
@@ -1828,8 +1878,7 @@ def _consecutive_dedup_check(gmina: str, title: str) -> bool:
     state.last_printed[gmina] = title_norm
     return True
 
-
-# ===================== PHASE 2 =====================
+=================================== UTILS =======================================
 async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                        urls_seen: set, content_seen: dict, diag):
     if state.shutdown_requested:
@@ -1845,11 +1894,10 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
 
     retry_seen = set()
 
+    # 1) KONTYNUACJA: ładuj frontier, ALE NIE USUWAJ go na starcie (żeby nie zginął przy crashu)
     saved_frontier = (state.gmina_frontiers or {}).get(gkey, []) or []
-    
     if saved_frontier:
         print(f"  ↩️  Kontynuacja: {len(saved_frontier)} URL z poprzedniego runu ({gmina})", flush=True)
-    
         for item in saved_frontier:
             try:
                 fu, fd = item[0], int(item[1])
@@ -1859,13 +1907,10 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             if cu and cu not in visited and cu not in dead_set:
                 visited.add(cu)
                 q.append((cu, fd))
-    
-        # zużyty frontier usuwamy (żeby nie mielić w kółko)
-        state.gmina_frontiers.pop(gkey, None)
-    
     elif state.gmina_frontiers:
         print(f"  ⚠️  Brak frontieru dla {gmina} (gkey={gkey[:8]}...), dostępne klucze: {list(state.gmina_frontiers.keys())[:3]}", flush=True)
 
+    # 2) Retry (z poprzedniego runu) – wrzuć na początek
     retry_list = (state.gmina_retry or {}).get(gkey, []) or []
     retry_added = 0
     for u in retry_list:
@@ -1878,9 +1923,11 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
     if retry_added:
         print(f"  🔁 Retry: {retry_added} URL ({gmina})", flush=True)
 
+    # wyczyść listę retry dla tej gminy (będzie uzupełniana w trakcie)
     if isinstance(state.gmina_retry, dict):
         state.gmina_retry[gkey] = []
 
+    # 3) Jeśli NIE ma kontynuacji, startuj od seedów
     if not saved_frontier:
         for su in seed_urls:
             cu = _canon(su)
@@ -1894,7 +1941,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
     pages_ok = 0
 
     while q and not state.shutdown_requested:
-        # v2.14: sprawdzaj deadline w każdej iteracji, nie tylko między gminami
+        # deadline
         if RUN_DEADLINE_MIN > 0 and (time.time() - GLOBAL_T0) > (RUN_DEADLINE_MIN * 60):
             state.request_shutdown()
             break
@@ -1915,6 +1962,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
         url_dedup = sha1(canonical_url(url))
         prev_pre = content_seen.get(url_dedup)
 
+        # TTL-SKIP: wyłączone przez TTL=0 + logika poniżej (zostawiamy tylko listing bypass jak było)
         if USE_CACHE and prev_pre and not is_listing:
             status_prev = prev_pre.get("status")
             if status_prev in {"NOWE", "ZMIANA", "HIT"}:
@@ -1926,9 +1974,10 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                     diag["counts"]["no_match_ttl_skip"] += 1
                     continue
             elif status_prev == "BLOCKED":
-                # v2.13: blokowane strony nie są sprawdzane ponownie — skip bezwarunkowo
-                diag["counts"]["blocked_ttl_skip"] += 1
-                continue
+                # ZMIANA: BLOCKED ma wracać do skanu (domyślnie TTL=0 => zawsze True)
+                if not should_recheck_block(prev_pre, BLOCKED_RECHECK_TTL_MIN):
+                    diag["counts"]["blocked_ttl_skip"] += 1
+                    continue
             elif status_prev == "FAILED":
                 if not should_recheck_block(prev_pre, FAILED_RECHECK_TTL_MIN):
                     diag["counts"]["failed_ttl_skip"] += 1
@@ -1966,11 +2015,15 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
 
         if kind == "blocked":
             diag["counts"]["blocked_13"] += 1
+
+            # zawsze dodaj do retry na następny run (to jest Twoje wymaganie)
+            retry_add(gkey, retry_seen, final_c)
+
             url_slug = urlparse(final_c).path.replace("-", " ").replace("_", " ").replace("/", " ")
             ok_url, kw_url = keyword_match_in_blob(url_slug)
+
             if ok_url and final_c not in state.reported_urls_this_run:
                 state.reported_urls_this_run.add(final_c)
-                # FIX #1: użyj final_c jako tytułu, nie url_slug (krzaczki)
                 page_title_blocked = final_c
                 print_hit("🟡 BLOCKED (URL HIT)", gmina, kw_url, final_c)
                 found.append((gmina, kw_url, page_title_blocked, final_c, "NOWE"))
@@ -2006,7 +2059,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                     content_seen[url_dedup_final] = entry
                     if ALIAS_FINAL_AND_SOURCE_KEYS and url_dedup != url_dedup_final:
                         content_seen[url_dedup] = entry
-                retry_add(gkey, retry_seen, final_c)
+
             urls_seen.discard(url_hash)
             continue
 
@@ -2040,6 +2093,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
         if pages_ok % 100 == 0:
             elapsed = round((time.time() - GLOBAL_T0) / 60, 1)
             print(f"  📊 [{gmina}] strony={pages_ok} kolejka={len(q)} czas={elapsed}min", flush=True)
+
         soup = safe_soup(html)
         if not soup:
             continue
@@ -2048,16 +2102,12 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
         att_set = attachments_signature(soup, final_c)
         fast_text = _soup_fast_text(soup)
 
-        # FIX #6: jeśli title jest generyczny, nie używaj go do keyword match
-        if is_generic_page_title(title):
-            blob = f"{h1} {h2} {fast_text}"
-        else:
-            blob = f"{title} {h1} {h2} {fast_text}"
+        # ZMIANA: skanuj całą treść (title/h1/h2 + full text) – footer już ucięty w _soup_fast_text
+        # i NIE odcinamy nav/header/aside itd.
+        blob = f"{title} {h1} {h2} {fast_text}"
 
         ok_any, kw_any = keyword_match_in_blob(blob)
 
-        # FIX v2.11: sprawdź każdy kandydat przez is_generic_page_title
-        # — h1/h2 mogą też brzmieć "Biuletyn Informacji Publicznej"
         page_title = ""
         for candidate in [h1, h2, title]:
             c = (candidate or "").strip()
@@ -2065,7 +2115,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                 page_title = c
                 break
         if not page_title:
-            page_title = final_c  # fallback: czysty URL
+            page_title = final_c
 
         if prev is None:
             status_new = "NOWE" if ok_any else "NO_MATCH"
@@ -2102,7 +2152,6 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
         if status_new in {"NOWE", "ZMIANA"}:
             if final_c not in state.reported_urls_this_run:
                 state.reported_urls_this_run.add(final_c)
-                # v2.12: pomiń jeśli identyczny tytuł jak poprzedni dla tej gminy
                 if _consecutive_dedup_check(gmina, page_title):
                     print_hit(f"🟢 {status_new}", gmina, kw_any, page_title)
                     found.append((gmina, kw_any, page_title, final_c, status_new))
@@ -2119,7 +2168,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             if cu in dead_set:
                 continue
 
-            # FIX #5: pomiń download URL-e jako LINK HIT (nadal crawluj)
+            # downloady: nie rób link-hit, ale dalej crawluj
             if is_download_url(cu):
                 diag["counts"]["link_hit_download_skip"] += 1
                 if cu not in visited and cu not in dead_set:
@@ -2131,54 +2180,42 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             blob_link = f"{txt} {filename}"
             ok_link, kw_link = keyword_match_in_blob(blob_link)
 
-            if ENABLE_LINK_HITS and ok_link and txt:
-                link_title = txt.strip()
-                lt = link_title.lower()
+            # ZMIANA: usuwamy filtry junk/generic – zgłaszaj nawet generyczne/krótkie/plikowe
+            if ENABLE_LINK_HITS and ok_link:
+                link_title = (txt or "").strip()
+                if not link_title:
+                    link_title = filename or cu
 
-                # FIX #6: generyczne tytuły BIP
-                is_generic_bip = (
-                    "biuletyn informacji publicznej" in lt
-                    or lt == "bip"
-                    or (len(lt) <= 6 and "bip" in lt)
-                    or is_generic_page_title(link_title)
-                )
-
-                # FIX #2: śmieciowe anchor texty (nazwy plików, krótkie tokeny, krzaczki)
-                is_junk = is_junk_link_title(link_title, cu)
-
-                skip = is_generic_bip or is_junk or anchor_is_ignored(lt)
-
-                if not skip:
-                    key = sha1(canonical_url(cu))
-                    prev_link = content_seen.get(key)
-                    if prev_link is None and cu not in state.reported_urls_this_run:
-                        async with state.cache_lock:
-                            content_seen[key] = {
-                                "found_at": now_iso(),
-                                "last_checked": now_iso(),
-                                "etag": "", "last_modified": "",
-                                "gmina": gmina,
-                                "title": link_title[:240],
-                                "url": cu,
-                                "keywords": [kw_link],
-                                "att_sig": "",
-                                "status": "NOWE",
-                            }
-                        state.reported_urls_this_run.add(cu)
-                        # v2.12: pomiń jeśli identyczny tytuł jak poprzedni dla tej gminy
-                        if _consecutive_dedup_check(gmina, link_title):
-                            print_hit("🟢 NOWE (LINK)", gmina, kw_link, link_title)
-                            found.append((gmina, kw_link, link_title, cu, "NOWE"))
-                            diag["counts"]["link_hits_new"] += 1
-                        else:
-                            diag["counts"]["consecutive_dedup_skipped"] += 1
-                    elif prev_link is None:
-                        diag["counts"]["link_dedup_skipped"] += 1
+                key = sha1(canonical_url(cu))
+                prev_link = content_seen.get(key)
+                if prev_link is None and cu not in state.reported_urls_this_run:
+                    async with state.cache_lock:
+                        content_seen[key] = {
+                            "found_at": now_iso(),
+                            "last_checked": now_iso(),
+                            "etag": "", "last_modified": "",
+                            "gmina": gmina,
+                            "title": link_title[:240],
+                            "url": cu,
+                            "keywords": [kw_link],
+                            "att_sig": "",
+                            "status": "NOWE",
+                        }
+                    state.reported_urls_this_run.add(cu)
+                    if _consecutive_dedup_check(gmina, link_title):
+                        print_hit("🟢 NOWE (LINK)", gmina, kw_link, link_title)
+                        found.append((gmina, kw_link, link_title, cu, "NOWE"))
+                        diag["counts"]["link_hits_new"] += 1
+                    else:
+                        diag["counts"]["consecutive_dedup_skipped"] += 1
+                elif prev_link is None:
+                    diag["counts"]["link_dedup_skipped"] += 1
 
             if cu not in visited and cu not in dead_set:
                 visited.add(cu)
                 q.append((cu, depth + 1))
 
+    # ZAPIS FRONTIERU – zawsze (żeby kontynuacja była pewna)
     if q:
         state.gmina_frontiers[gkey] = [[url, depth] for url, depth in list(q)]
     else:
@@ -2526,5 +2563,6 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
