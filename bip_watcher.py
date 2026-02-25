@@ -111,7 +111,7 @@ USE_CACHE = True
 ONLY_GMINA = None
 CRAWL_ALL_INTERNAL_LINKS = True
 BOOTSTRAP_MODE = False
-FORCE_PHASE1_REDISCOVERY = True
+FORCE_PHASE1_REDISCOVERY = False
 
 # ===================== REPORTING RULES =====================
 ENABLE_LINK_HITS = True
@@ -295,25 +295,25 @@ CONCURRENT_GMINY = env_int("CONCURRENT_GMINY", 1)          # per shard (1 gmina 
 CONCURRENT_REQUESTS = env_int("CONCURRENT_REQUESTS", 50)   # +20 vs v2.15
 LIMIT_PER_HOST = env_int("LIMIT_PER_HOST", 6)              # +2 vs v2.15
 
-PHASE1_MAX_PAGES = 2000                                     # 1000->2000
-PHASE1_MAX_SEEDS = 12000
+PHASE1_MAX_PAGES = 999999                                     # 1000->2000
+PHASE1_MAX_SEEDS = 999999
 PHASE2_MAX_DEPTH = 4
-PHASE2_MAX_PAGES = 1000000
+PHASE2_MAX_PAGES = 999999
 
 REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=None, sock_connect=12, sock_read=35)
 START_TIMEOUT_FAST = aiohttp.ClientTimeout(total=None, sock_connect=10, sock_read=18)
 START_TIMEOUT_LONG = aiohttp.ClientTimeout(total=None, sock_connect=18, sock_read=45)
-START_MAX_TRIES = 16
+START_MAX_TRIES = 8
 START_AUX_HINTS = ["/robots.txt", "/sitemap.xml", "/sitemap_index.xml"]
-START_TOTAL_TIMEOUT_SEC = 120
+START_TOTAL_TIMEOUT_SEC = 60
 
 SCANNED_TTL_DAYS = 365
 MAX_PRINT_PER_GMINA = 30
 MAX_ERROR_SAMPLES_PER_GMINA = 60
 
 CACHE_CHECKPOINT_EVERY_N_GMINY = 3
-SEED_CACHE_TTL_DAYS = 30
-FAST_TEXT_MAX_CHARS = 40_000
+SEED_CACHE_TTL_DAYS = 999
+FAST_TEXT_MAX_CHARS = 400_000
 
 HIT_RECHECK_TTL_HOURS = 0
 NO_MATCH_RECHECK_TTL_HOURS = 0
@@ -2461,3 +2461,4 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
