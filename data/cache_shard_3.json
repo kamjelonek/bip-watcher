@@ -59017,7 +59017,7 @@
     },
     "0184ebdd7ce486b2abcccd965c3876d96903eace": {
       "found_at": "2026-02-24T04:03:50",
-      "last_checked": "2026-02-25T19:26:29",
+      "last_checked": "2026-02-25T21:40:10",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -59077,7 +59077,7 @@
     },
     "9ad8f77d2d8f9a6c12a578b0db483f33e1498eda": {
       "found_at": "2026-02-24T04:03:52",
-      "last_checked": "2026-02-25T19:26:31",
+      "last_checked": "2026-02-25T21:40:11",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -59101,7 +59101,7 @@
     },
     "3bd88e7b909ca86bbe3736f55d0ffc9a3d55c181": {
       "found_at": "2026-02-24T04:03:52",
-      "last_checked": "2026-02-25T19:26:32",
+      "last_checked": "2026-02-25T21:40:10",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105291,7 +105291,7 @@
     },
     "f39f6892255fe8a54403804071df6c4dec6eb568": {
       "found_at": "2026-02-24T04:37:25",
-      "last_checked": "2026-02-24T04:37:25",
+      "last_checked": "2026-02-25T21:35:17",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105303,7 +105303,7 @@
     },
     "7ad698b6a5294f3e6ba6f27574440e5211fd6f33": {
       "found_at": "2026-02-24T04:37:25",
-      "last_checked": "2026-02-24T04:37:25",
+      "last_checked": "2026-02-25T21:35:17",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105315,7 +105315,7 @@
     },
     "f55b965548098d8fb4ad17cc374736466c64ce84": {
       "found_at": "2026-02-24T04:37:26",
-      "last_checked": "2026-02-24T04:37:26",
+      "last_checked": "2026-02-25T21:35:18",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105327,7 +105327,7 @@
     },
     "675c77e265fa880b62a455d07ad1abfd7a9b8d30": {
       "found_at": "2026-02-24T04:37:26",
-      "last_checked": "2026-02-24T04:37:26",
+      "last_checked": "2026-02-25T21:35:18",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105339,7 +105339,7 @@
     },
     "dd03c29c0b01f0e6cab7719ec73058c9d415e66c": {
       "found_at": "2026-02-24T04:37:26",
-      "last_checked": "2026-02-24T04:37:26",
+      "last_checked": "2026-02-25T21:35:19",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105351,7 +105351,7 @@
     },
     "8e6bd54902f2756fb440311ad2555f6f7748b459": {
       "found_at": "2026-02-24T04:37:27",
-      "last_checked": "2026-02-24T04:37:27",
+      "last_checked": "2026-02-25T21:35:19",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105363,7 +105363,7 @@
     },
     "00b63657811f2e3ec7b0be12c6c39350415146d9": {
       "found_at": "2026-02-24T04:37:27",
-      "last_checked": "2026-02-24T04:37:27",
+      "last_checked": "2026-02-25T21:35:20",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105375,7 +105375,7 @@
     },
     "8d9c9e2e7f1f2a27d5cfa6d46fac3a8689f0f0ef": {
       "found_at": "2026-02-24T04:37:28",
-      "last_checked": "2026-02-24T04:37:28",
+      "last_checked": "2026-02-25T21:35:20",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105387,7 +105387,7 @@
     },
     "174ce21fd322016834ae67e781f9254666b1c3fc": {
       "found_at": "2026-02-24T04:37:28",
-      "last_checked": "2026-02-24T04:37:28",
+      "last_checked": "2026-02-25T21:35:20",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105399,7 +105399,7 @@
     },
     "175829459bc040f451f6044a90e98e2f60c4e63c": {
       "found_at": "2026-02-24T04:37:29",
-      "last_checked": "2026-02-24T04:37:29",
+      "last_checked": "2026-02-25T21:35:21",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105409,11 +105409,11 @@
         "wiatr"
       ],
       "att_sig": "[]",
-      "status": "NOWE"
+      "status": "HIT"
     },
     "7eac5a5a3bb43946202774abe0af5e008ceb398b": {
       "found_at": "2026-02-24T04:37:29",
-      "last_checked": "2026-02-24T04:37:29",
+      "last_checked": "2026-02-25T21:35:21",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105425,7 +105425,7 @@
     },
     "539ecfb894a862d7c605db482f365213a5e4a83c": {
       "found_at": "2026-02-24T04:37:30",
-      "last_checked": "2026-02-24T04:37:30",
+      "last_checked": "2026-02-25T21:35:22",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105437,7 +105437,7 @@
     },
     "a2cbd2ad322b8a0ff2bf52c631279817f46bdc5b": {
       "found_at": "2026-02-24T04:37:31",
-      "last_checked": "2026-02-24T04:37:31",
+      "last_checked": "2026-02-25T21:35:22",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105449,7 +105449,7 @@
     },
     "e82527c8f516e28930a2b7bbf1adf9cc5e133aff": {
       "found_at": "2026-02-24T04:37:31",
-      "last_checked": "2026-02-24T04:37:31",
+      "last_checked": "2026-02-25T21:35:22",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105461,7 +105461,7 @@
     },
     "6a1d26352b051d6075d00eac65817b705eaa96e7": {
       "found_at": "2026-02-24T04:37:32",
-      "last_checked": "2026-02-24T04:37:32",
+      "last_checked": "2026-02-25T21:35:23",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105473,7 +105473,7 @@
     },
     "2820a13bdcbfe9117fcc36fb0c90c4b44fe7dc0f": {
       "found_at": "2026-02-24T04:37:32",
-      "last_checked": "2026-02-24T04:37:32",
+      "last_checked": "2026-02-25T21:35:23",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105485,7 +105485,7 @@
     },
     "a413ddbfd0993eef5202c5803bf9fd111b4d1bfe": {
       "found_at": "2026-02-24T04:37:33",
-      "last_checked": "2026-02-24T04:37:33",
+      "last_checked": "2026-02-25T21:35:24",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105497,7 +105497,7 @@
     },
     "72e0272a13cfa9d49c5dfb12de8f8bcce8061b36": {
       "found_at": "2026-02-24T04:37:34",
-      "last_checked": "2026-02-24T04:37:34",
+      "last_checked": "2026-02-25T21:35:24",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105509,7 +105509,7 @@
     },
     "0d0cc674f0cb443c4172fc5fd0b600de86952dd4": {
       "found_at": "2026-02-24T04:37:34",
-      "last_checked": "2026-02-24T04:37:34",
+      "last_checked": "2026-02-25T21:35:25",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105521,7 +105521,7 @@
     },
     "37943a4f694f8fb0a1c545b362e3adb3f07215c0": {
       "found_at": "2026-02-24T04:37:34",
-      "last_checked": "2026-02-24T04:37:34",
+      "last_checked": "2026-02-25T21:35:25",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105533,7 +105533,7 @@
     },
     "1a1cc2055176c3c6973d8f59138d2993ee3ded5e": {
       "found_at": "2026-02-24T04:37:35",
-      "last_checked": "2026-02-24T04:37:35",
+      "last_checked": "2026-02-25T21:35:26",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105545,7 +105545,7 @@
     },
     "f0d8ae87a89e500939f7f0918d8819bc5bc11091": {
       "found_at": "2026-02-24T04:37:35",
-      "last_checked": "2026-02-24T04:37:35",
+      "last_checked": "2026-02-25T21:35:26",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105557,7 +105557,7 @@
     },
     "4f421526d22008bc87cb6b32aac6b3e99b84f7e2": {
       "found_at": "2026-02-24T04:37:36",
-      "last_checked": "2026-02-24T04:37:36",
+      "last_checked": "2026-02-25T21:35:26",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105569,7 +105569,7 @@
     },
     "790009018e0e725396b9c897263dc8a7b1c17389": {
       "found_at": "2026-02-24T04:37:36",
-      "last_checked": "2026-02-24T04:37:36",
+      "last_checked": "2026-02-25T21:35:27",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105581,7 +105581,7 @@
     },
     "e3df145ef7c31e9690f66918cb6d4ba4fbfa5bde": {
       "found_at": "2026-02-24T04:37:37",
-      "last_checked": "2026-02-24T04:37:37",
+      "last_checked": "2026-02-25T21:35:27",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105593,7 +105593,7 @@
     },
     "cea13dac5d1ccc808b43c33afba42252357181ec": {
       "found_at": "2026-02-24T04:37:37",
-      "last_checked": "2026-02-24T04:37:37",
+      "last_checked": "2026-02-25T21:35:28",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105605,7 +105605,7 @@
     },
     "d84ce52f927540098274e8cf526a0db9de40650a": {
       "found_at": "2026-02-24T04:37:38",
-      "last_checked": "2026-02-24T04:37:38",
+      "last_checked": "2026-02-25T21:35:28",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105617,7 +105617,7 @@
     },
     "b51888a75be09db3f34778fb09f055220c44e7da": {
       "found_at": "2026-02-24T04:37:38",
-      "last_checked": "2026-02-24T04:37:38",
+      "last_checked": "2026-02-25T21:35:29",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105629,7 +105629,7 @@
     },
     "9e499b2ff620a86d3a20ff1786d9783af5d03e5a": {
       "found_at": "2026-02-24T04:37:38",
-      "last_checked": "2026-02-24T04:37:38",
+      "last_checked": "2026-02-25T21:35:29",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105641,7 +105641,7 @@
     },
     "0beefd5dca8a14764fedd7425ce7d341837c904b": {
       "found_at": "2026-02-24T04:37:39",
-      "last_checked": "2026-02-24T04:37:39",
+      "last_checked": "2026-02-25T21:35:29",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105653,7 +105653,7 @@
     },
     "c8d2b312a770b4532537421cc284cf42a96f52c9": {
       "found_at": "2026-02-24T04:37:39",
-      "last_checked": "2026-02-24T04:37:39",
+      "last_checked": "2026-02-25T21:35:30",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105665,7 +105665,7 @@
     },
     "d609bcffcb062d93e267230070d882e73213dff7": {
       "found_at": "2026-02-24T04:37:40",
-      "last_checked": "2026-02-24T04:37:40",
+      "last_checked": "2026-02-25T21:35:30",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105677,7 +105677,7 @@
     },
     "cc19062936a34df4d7c625fb7eda1415f81b9f98": {
       "found_at": "2026-02-24T04:37:40",
-      "last_checked": "2026-02-24T04:37:40",
+      "last_checked": "2026-02-25T21:35:31",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105689,7 +105689,7 @@
     },
     "98e7fcdcf2e2d09cb3e74c8b7eac6720d00e76ec": {
       "found_at": "2026-02-24T04:37:41",
-      "last_checked": "2026-02-24T04:37:41",
+      "last_checked": "2026-02-25T21:35:31",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105701,7 +105701,7 @@
     },
     "5014ffd3e7a5b3b4d51e7b41df0f4bdc0fd7561d": {
       "found_at": "2026-02-24T04:37:41",
-      "last_checked": "2026-02-24T04:37:41",
+      "last_checked": "2026-02-25T21:35:32",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105713,7 +105713,7 @@
     },
     "ce4168c1ae8647261f9e9ebfc6fed6506724cec9": {
       "found_at": "2026-02-24T04:37:41",
-      "last_checked": "2026-02-24T04:37:41",
+      "last_checked": "2026-02-25T21:35:32",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105725,7 +105725,7 @@
     },
     "3bd0463c61cbfecd7e745cd8d5651d63410c1c1e": {
       "found_at": "2026-02-24T04:37:42",
-      "last_checked": "2026-02-24T04:37:42",
+      "last_checked": "2026-02-25T21:35:33",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105737,7 +105737,7 @@
     },
     "20bb3f4de33db766501d6d8391cb5773b8f68aa2": {
       "found_at": "2026-02-24T04:37:42",
-      "last_checked": "2026-02-24T04:37:42",
+      "last_checked": "2026-02-25T21:35:33",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105749,7 +105749,7 @@
     },
     "12168e4227a68b4229b0eddfbe7769103fc0d32e": {
       "found_at": "2026-02-24T04:37:43",
-      "last_checked": "2026-02-24T04:37:43",
+      "last_checked": "2026-02-25T21:35:34",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105761,7 +105761,7 @@
     },
     "a58f5d3a987c42a08b4aecc1da2c7722de06585c": {
       "found_at": "2026-02-24T04:37:43",
-      "last_checked": "2026-02-24T04:37:43",
+      "last_checked": "2026-02-25T21:35:34",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105773,7 +105773,7 @@
     },
     "aaab39c85e3b6bdca66827e11f6219d670d4eda1": {
       "found_at": "2026-02-24T04:37:44",
-      "last_checked": "2026-02-24T04:37:44",
+      "last_checked": "2026-02-25T21:35:35",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -105783,13 +105783,13 @@
         "wiatr"
       ],
       "att_sig": "[\"https://towarzystwonaszdom.pl/app/uploads/2017/10/gg2017-plakat.pdf\"]",
-      "status": "NOWE"
+      "status": "HIT"
     },
     "376976d97ab5e56f7263c48b514763bc45d0e2e1": {
       "found_at": "2026-02-24T04:37:44",
-      "last_checked": "2026-02-24T04:37:44",
+      "last_checked": "2026-02-25T21:35:35",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:37:44 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:35:35 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=11&id=1482%3Adrzwi-otwarte-w-dwojce-i-zapisy-do-klas-pierwszych-2&itemid=102&option=com_content&rch=2&view=article",
@@ -105799,9 +105799,9 @@
     },
     "411407ccc05ca0ddce58a4b5c581947c349422fb": {
       "found_at": "2026-02-24T04:37:45",
-      "last_checked": "2026-02-24T04:37:45",
+      "last_checked": "2026-02-25T21:35:36",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:37:45 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:35:36 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=11&id=1482%3Adrzwi-otwarte-w-dwojce-i-zapisy-do-klas-pierwszych-2&itemid=102&option=com_content&rch=-2&view=article",
@@ -105811,9 +105811,9 @@
     },
     "79d6f94843adc66c9e34c5cb677c2cd9590035bc": {
       "found_at": "2026-02-24T04:37:45",
-      "last_checked": "2026-02-24T04:37:45",
+      "last_checked": "2026-02-25T21:35:36",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:37:45 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:35:36 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=11&id=1481%3Alektura-w-pudelku&itemid=102&option=com_content&rch=2&view=article",
@@ -105823,9 +105823,9 @@
     },
     "8ef07bd1f53443f721a805f6dc2535f0b580ae57": {
       "found_at": "2026-02-24T04:37:45",
-      "last_checked": "2026-02-24T04:37:45",
+      "last_checked": "2026-02-25T21:35:36",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:37:45 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:35:36 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=11&id=1481%3Alektura-w-pudelku&itemid=102&option=com_content&rch=-2&view=article",
@@ -105835,9 +105835,9 @@
     },
     "f98cef90c50427c407dfed0fa35bbd3154e9d0e1": {
       "found_at": "2026-02-24T04:37:46",
-      "last_checked": "2026-02-24T04:37:46",
+      "last_checked": "2026-02-25T21:35:37",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:37:46 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:35:37 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=21&id=1473%3Aeuropa-w-malym-palcu&itemid=148&option=com_content&view=article",
@@ -105847,9 +105847,9 @@
     },
     "9939af6b9b51334f4cd928aee59861baaa043d96": {
       "found_at": "2026-02-24T04:37:46",
-      "last_checked": "2026-02-24T04:37:46",
+      "last_checked": "2026-02-25T21:35:37",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:37:46 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:35:37 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=21&id=1480%3Aszkolny-konkurs-lapbook-na-temat-lektury-szkolnej&itemid=148&option=com_content&rch=2&view=article",
@@ -105859,9 +105859,9 @@
     },
     "0d1b25ac894bc47714626cb49ce024e8e0665426": {
       "found_at": "2026-02-24T04:37:47",
-      "last_checked": "2026-02-24T04:37:47",
+      "last_checked": "2026-02-25T21:35:38",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:37:46 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:35:37 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=21&id=1480%3Aszkolny-konkurs-lapbook-na-temat-lektury-szkolnej&itemid=148&option=com_content&rch=-2&view=article",
@@ -105871,9 +105871,9 @@
     },
     "57d5eecf3d5e42eac862ddb23889266df1b71899": {
       "found_at": "2026-02-24T04:37:47",
-      "last_checked": "2026-02-24T04:37:47",
+      "last_checked": "2026-02-25T21:35:38",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:37:47 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:35:38 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=11&id=1477%3Aczerwony-kapturek&itemid=102&option=com_content&view=article",
@@ -105883,9 +105883,9 @@
     },
     "d5d29d379f0fe9793347b6d908abdfb8b7a216d1": {
       "found_at": "2026-02-24T04:37:47",
-      "last_checked": "2026-02-24T04:37:47",
+      "last_checked": "2026-02-25T21:35:38",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:37:47 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:35:38 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=11&id=1479%3Apodsumowanie-pierwszego-polrocza-i-wreczenie-stypendiow&itemid=102&option=com_content&rch=2&view=article",
@@ -105895,9 +105895,9 @@
     },
     "379319c11a365004f3237133254770880c9b43c3": {
       "found_at": "2026-02-24T04:37:48",
-      "last_checked": "2026-02-24T04:37:48",
+      "last_checked": "2026-02-25T21:35:39",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:37:48 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:35:39 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=11&id=1479%3Apodsumowanie-pierwszego-polrocza-i-wreczenie-stypendiow&itemid=102&option=com_content&rch=-2&view=article",
@@ -105907,9 +105907,9 @@
     },
     "7b1ca79d13ceaf923620dbdeacf4d6209d282c82": {
       "found_at": "2026-02-24T04:37:48",
-      "last_checked": "2026-02-24T04:37:48",
+      "last_checked": "2026-02-25T21:35:39",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:37:48 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:35:39 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=11&id=1276%3Aszkoly-pelne-talentow&itemid=102&option=com_content&view=article",
@@ -105919,9 +105919,9 @@
     },
     "ec6318a24a971fa80cc1423c7dd455d0c4a87d1a": {
       "found_at": "2026-02-24T04:37:49",
-      "last_checked": "2026-02-24T04:37:49",
+      "last_checked": "2026-02-25T21:35:40",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:37:49 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:35:40 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=11&id=1275%3Arozpoczecie-roku-szkolnego-2024-2026&itemid=102&option=com_content&view=article",
@@ -105931,9 +105931,9 @@
     },
     "896aa1f1bc7c256cde0298ba19e18193c8c24cf3": {
       "found_at": "2026-02-24T04:37:55",
-      "last_checked": "2026-02-24T04:37:55",
+      "last_checked": "2026-02-25T21:35:47",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:37:55 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:35:47 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?limitstart=184",
@@ -105943,9 +105943,9 @@
     },
     "aad972c850efd22ea440fc19b191d20e993a8eba": {
       "found_at": "2026-02-24T04:37:56",
-      "last_checked": "2026-02-24T04:37:56",
+      "last_checked": "2026-02-25T21:35:47",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:37:56 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:35:47 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?limitstart=152",
@@ -105955,9 +105955,9 @@
     },
     "381628fc877a9ab1be99781b57d22c386f1e6887": {
       "found_at": "2026-02-24T04:37:56",
-      "last_checked": "2026-02-24T04:37:56",
+      "last_checked": "2026-02-25T21:35:48",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:37:56 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:35:48 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?limitstart=156",
@@ -105967,9 +105967,9 @@
     },
     "96c03bde401e290463474357984f4cd24967828b": {
       "found_at": "2026-02-24T04:37:57",
-      "last_checked": "2026-02-24T04:37:57",
+      "last_checked": "2026-02-25T21:35:48",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:37:57 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:35:48 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?limitstart=160",
@@ -105979,9 +105979,9 @@
     },
     "c2faed4dff8e596922a416e4290a69ddb7402040": {
       "found_at": "2026-02-24T04:37:57",
-      "last_checked": "2026-02-24T04:37:57",
+      "last_checked": "2026-02-25T21:35:49",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:37:57 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:35:49 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?limitstart=164",
@@ -105991,9 +105991,9 @@
     },
     "dd5ce719c420aeb3543e7b220cca7f08ec180c46": {
       "found_at": "2026-02-24T04:37:58",
-      "last_checked": "2026-02-24T04:37:58",
+      "last_checked": "2026-02-25T21:35:49",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:37:58 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:35:49 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?limitstart=168",
@@ -106003,9 +106003,9 @@
     },
     "1e2d2701d7d40aa7739f7c48f2173f42ceb9b375": {
       "found_at": "2026-02-24T04:37:58",
-      "last_checked": "2026-02-24T04:37:58",
+      "last_checked": "2026-02-25T21:35:49",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:37:58 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:35:49 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?limitstart=172",
@@ -106015,9 +106015,9 @@
     },
     "4c8024f27a9f5496778c949bd3b40c325e876d2d": {
       "found_at": "2026-02-24T04:37:59",
-      "last_checked": "2026-02-24T04:37:59",
+      "last_checked": "2026-02-25T21:35:50",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:37:59 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:35:50 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?limitstart=176",
@@ -106027,9 +106027,9 @@
     },
     "da415411069061ddcd84b00a74063aab40d8a1c4": {
       "found_at": "2026-02-24T04:37:59",
-      "last_checked": "2026-02-24T04:37:59",
+      "last_checked": "2026-02-25T21:35:50",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:37:59 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:35:50 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?limitstart=180",
@@ -106039,9 +106039,9 @@
     },
     "c1f61225fddd269354f7b14b78f86cfde589240a": {
       "found_at": "2026-02-24T04:38:00",
-      "last_checked": "2026-02-24T04:38:00",
+      "last_checked": "2026-02-25T21:35:51",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:00 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:35:51 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?limitstart=188&rch=2",
@@ -106051,9 +106051,9 @@
     },
     "663682a347f274a5889338548813d2e1992f882a": {
       "found_at": "2026-02-24T04:38:00",
-      "last_checked": "2026-02-24T04:38:00",
+      "last_checked": "2026-02-25T21:35:51",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:00 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:35:51 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?limitstart=188&rch=-2",
@@ -106063,9 +106063,9 @@
     },
     "547cb25bde3462de7fe0acb08c6e1e6bead26fa1": {
       "found_at": "2026-02-24T04:38:08",
-      "last_checked": "2026-02-24T04:38:08",
+      "last_checked": "2026-02-25T21:35:59",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:08 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:35:58 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=11&id=1476%3Adzien-pizzy&itemid=102&option=com_content&view=article",
@@ -106075,9 +106075,9 @@
     },
     "68cd68d5b538aeacb647a51d4fd05642df974eed": {
       "found_at": "2026-02-24T04:38:16",
-      "last_checked": "2026-02-24T04:38:16",
+      "last_checked": "2026-02-25T21:36:06",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:16 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:06 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=11&id=1475%3Abezpieczne-ferie&itemid=102&option=com_content&view=article",
@@ -106087,9 +106087,9 @@
     },
     "444671850b3f598d2e1b2f2dddf48d1ae2e1d37a": {
       "found_at": "2026-02-24T04:38:17",
-      "last_checked": "2026-02-24T04:38:17",
+      "last_checked": "2026-02-25T21:36:07",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:17 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:07 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=11&id=1474%3Atrening-bowlingu-i-warsztaty-pizzy&itemid=102&option=com_content&view=article",
@@ -106099,9 +106099,9 @@
     },
     "377b25b407e23bcc2a9d48aeb6cd8fe861deb05a": {
       "found_at": "2026-02-24T04:38:17",
-      "last_checked": "2026-02-24T04:38:17",
+      "last_checked": "2026-02-25T21:36:08",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:17 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:08 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=11&id=1472%3Azaspiewalismy-z-orkiestra&itemid=102&option=com_content&view=article",
@@ -106111,9 +106111,9 @@
     },
     "7385ec9b8b81a4b0576d2b4fc65d230671078fc7": {
       "found_at": "2026-02-24T04:38:18",
-      "last_checked": "2026-02-24T04:38:18",
+      "last_checked": "2026-02-25T21:36:08",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:18 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:08 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=11&id=1471%3Ahaiku-japonska-forma-poezji&itemid=102&option=com_content&view=article",
@@ -106123,9 +106123,9 @@
     },
     "a115a650c9c30b7d90e75466452636ff62ec1c0a": {
       "found_at": "2026-02-24T04:38:18",
-      "last_checked": "2026-02-24T04:38:18",
+      "last_checked": "2026-02-25T21:36:09",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:18 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:08 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=11&itemid=102&itemid=102&layout=blog&limitstart=5&option=com_content&view=category",
@@ -106135,9 +106135,9 @@
     },
     "a39862704f15e8bb739ed7fc25634b644a2dd3fc": {
       "found_at": "2026-02-24T04:38:19",
-      "last_checked": "2026-02-24T04:38:19",
+      "last_checked": "2026-02-25T21:36:09",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:18 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:09 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=11&itemid=102&itemid=102&layout=blog&limitstart=10&option=com_content&view=category",
@@ -106147,9 +106147,9 @@
     },
     "ed584cc44cd212f830779c3c67addd30534156fc": {
       "found_at": "2026-02-24T04:38:19",
-      "last_checked": "2026-02-24T04:38:19",
+      "last_checked": "2026-02-25T21:36:10",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:19 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:09 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=11&itemid=102&itemid=102&layout=blog&limitstart=15&option=com_content&view=category",
@@ -106159,9 +106159,9 @@
     },
     "6f1259374474d8fff8e8f9ee5e0bcc8922b95c0a": {
       "found_at": "2026-02-24T04:38:19",
-      "last_checked": "2026-02-24T04:38:19",
+      "last_checked": "2026-02-25T21:36:10",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:19 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:10 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=11&itemid=102&itemid=102&layout=blog&limitstart=20&option=com_content&view=category",
@@ -106171,9 +106171,9 @@
     },
     "e4e771822b92c2b5ffe91abe1d74010caf7147a3": {
       "found_at": "2026-02-24T04:38:20",
-      "last_checked": "2026-02-24T04:38:20",
+      "last_checked": "2026-02-25T21:36:10",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:20 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:10 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=11&itemid=102&itemid=102&layout=blog&limitstart=25&option=com_content&view=category",
@@ -106183,9 +106183,9 @@
     },
     "39d16420d80f4a769511431ac313b6b3bd92b73c": {
       "found_at": "2026-02-24T04:38:20",
-      "last_checked": "2026-02-24T04:38:20",
+      "last_checked": "2026-02-25T21:36:11",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:20 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:11 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=11&itemid=102&itemid=102&layout=blog&limitstart=30&option=com_content&view=category",
@@ -106195,9 +106195,9 @@
     },
     "7e4f04068d4ea9e6a2e2b0b08e20d10e12aba938": {
       "found_at": "2026-02-24T04:38:21",
-      "last_checked": "2026-02-24T04:38:21",
+      "last_checked": "2026-02-25T21:36:11",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:20 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:11 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=11&itemid=102&itemid=102&layout=blog&limitstart=35&option=com_content&view=category",
@@ -106207,9 +106207,9 @@
     },
     "fc84870283c0e4998b711100789f931befc3d4b9": {
       "found_at": "2026-02-24T04:38:21",
-      "last_checked": "2026-02-24T04:38:21",
+      "last_checked": "2026-02-25T21:36:12",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:21 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:11 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=11&itemid=102&itemid=102&layout=blog&limitstart=40&option=com_content&view=category",
@@ -106219,9 +106219,9 @@
     },
     "f9c208632e3c4c7cc9cf30c0d68fbfe1cb736b6b": {
       "found_at": "2026-02-24T04:38:22",
-      "last_checked": "2026-02-24T04:38:22",
+      "last_checked": "2026-02-25T21:36:12",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:22 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:12 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=11&itemid=102&itemid=102&layout=blog&limitstart=45&option=com_content&view=category",
@@ -106229,13 +106229,13 @@
         "wiatr"
       ],
       "att_sig": "[]",
-      "status": "NOWE"
+      "status": "HIT"
     },
     "ecd91281b885a790eef2b78baf6881ba2d8a8e92": {
       "found_at": "2026-02-24T04:38:22",
-      "last_checked": "2026-02-24T04:38:22",
+      "last_checked": "2026-02-25T21:36:12",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:22 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:12 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=11&itemid=102&itemid=102&layout=blog&limitstart=125&option=com_content&view=category",
@@ -106245,9 +106245,9 @@
     },
     "606c775655ec44b304e2d8c348d45da8237fe996": {
       "found_at": "2026-02-24T04:38:23",
-      "last_checked": "2026-02-24T04:38:23",
+      "last_checked": "2026-02-25T21:36:13",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:22 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:13 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=11&itemid=102&layout=blog&option=com_content&rch=2&view=category",
@@ -106257,9 +106257,9 @@
     },
     "e41e975be3f702807ffaea6523f6b049bef2c31f": {
       "found_at": "2026-02-24T04:38:23",
-      "last_checked": "2026-02-24T04:38:23",
+      "last_checked": "2026-02-25T21:36:14",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:23 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:13 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=11&itemid=102&layout=blog&option=com_content&rch=-2&view=category",
@@ -106269,9 +106269,9 @@
     },
     "c1d815148b0483c3a5bb09d4b8e1742f37383175": {
       "found_at": "2026-02-24T04:38:23",
-      "last_checked": "2026-02-24T04:38:23",
+      "last_checked": "2026-02-25T21:36:14",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:23 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:14 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=8&id=1408%3Aplan-lekcji-1-09-2025&itemid=104&option=com_content&view=article",
@@ -106281,7 +106281,7 @@
     },
     "0cc9c7ca7cba33ef9174d5c5d8bd3b182cd9798a": {
       "found_at": "2026-02-24T04:38:24",
-      "last_checked": "2026-02-24T04:38:24",
+      "last_checked": "2026-02-25T21:36:14",
       "etag": "",
       "last_modified": "Wed, 27 Aug 2025 13:22:22 GMT",
       "gmina": "Gostyń",
@@ -106289,13 +106289,13 @@
       "url": "https://sp2.gostyn.pl/materialy-2025-2026/plan_01_09_2025/index.html",
       "keywords": [],
       "att_sig": "[]",
-      "status": "NO_MATCH"
+      "status": "HIT"
     },
     "d02834331868e4a435ad54e38a61375f8f356c10": {
       "found_at": "2026-02-24T04:38:24",
-      "last_checked": "2026-02-24T04:38:24",
+      "last_checked": "2026-02-25T21:36:15",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:24 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:14 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=8&itemid=104&layout=blog&option=com_content&rch=2&view=category",
@@ -106305,9 +106305,9 @@
     },
     "b566253ea3404e45bebb919b9f870db9d8ebbc28": {
       "found_at": "2026-02-24T04:38:25",
-      "last_checked": "2026-02-24T04:38:25",
+      "last_checked": "2026-02-25T21:36:15",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:25 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:15 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=8&itemid=104&layout=blog&option=com_content&rch=-2&view=category",
@@ -106317,9 +106317,9 @@
     },
     "1b9897d521a95b0fe6f790d5a117b7e85d4cbe16": {
       "found_at": "2026-02-24T04:38:25",
-      "last_checked": "2026-02-24T04:38:25",
+      "last_checked": "2026-02-25T21:36:16",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:25 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:16 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=9&id=2%3Adokumenty-szkoly&itemid=105&option=com_content&view=article",
@@ -106329,9 +106329,9 @@
     },
     "9ea3f2078e5b8b2c8c087f624f7eee948b0124f2": {
       "found_at": "2026-02-24T04:38:26",
-      "last_checked": "2026-02-24T04:38:26",
+      "last_checked": "2026-02-25T21:36:16",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:26 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:16 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=9&itemid=105&layout=blog&option=com_content&rch=2&view=category",
@@ -106341,9 +106341,9 @@
     },
     "ea92a968dc0c06306e26cb64a131edc5fdfbdf70": {
       "found_at": "2026-02-24T04:38:26",
-      "last_checked": "2026-02-24T04:38:26",
+      "last_checked": "2026-02-25T21:36:17",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:26 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:17 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=9&itemid=105&layout=blog&option=com_content&rch=-2&view=category",
@@ -106353,9 +106353,9 @@
     },
     "054d552cbb25b89323f160a81ee7b61752980725": {
       "found_at": "2026-02-24T04:38:27",
-      "last_checked": "2026-02-24T04:38:27",
+      "last_checked": "2026-02-25T21:36:17",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:27 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:17 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=19&id=1274%3Awymagania-edukacyjne&itemid=118&option=com_content&view=article",
@@ -106365,9 +106365,9 @@
     },
     "876691b24d1cd16cb506dec1a08bc3d3be5a6c4e": {
       "found_at": "2026-02-24T04:38:27",
-      "last_checked": "2026-02-24T04:38:27",
+      "last_checked": "2026-02-25T21:36:18",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:27 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:18 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=19&itemid=118&layout=blog&option=com_content&rch=2&view=category",
@@ -106377,9 +106377,9 @@
     },
     "719f0841dc90c5fdf1bb9a737c71f675659a48fe": {
       "found_at": "2026-02-24T04:38:28",
-      "last_checked": "2026-02-24T04:38:28",
+      "last_checked": "2026-02-25T21:36:18",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:28 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:18 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=19&itemid=118&layout=blog&option=com_content&rch=-2&view=category",
@@ -106389,9 +106389,9 @@
     },
     "5dc88074115195ae6a4f362026b04bb9f8eb0477": {
       "found_at": "2026-02-24T04:38:28",
-      "last_checked": "2026-02-24T04:38:28",
+      "last_checked": "2026-02-25T21:36:18",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:28 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:18 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=20&id=1470%3Amali-ekolodzy&itemid=147&option=com_content&view=article",
@@ -106401,9 +106401,9 @@
     },
     "8c2db51c37786065b9eb7229a363efdce6e3a88e": {
       "found_at": "2026-02-24T04:38:37",
-      "last_checked": "2026-02-24T04:38:37",
+      "last_checked": "2026-02-25T21:36:27",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:37 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:27 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=20&id=1459%3Aswiateczna-akcja-ciepla-kartka-dla-seniora&itemid=147&option=com_content&view=article",
@@ -106413,9 +106413,9 @@
     },
     "ceebbe2b5fd7c634a121de130e5e1f2ea8a642b7": {
       "found_at": "2026-02-24T04:38:41",
-      "last_checked": "2026-02-24T04:38:41",
+      "last_checked": "2026-02-25T21:36:31",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:41 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:31 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=20&id=1444%3Arozstrzygniecie-konkursu-swietlicowego-jesienny-krajobraz&itemid=147&option=com_content&view=article",
@@ -106425,9 +106425,9 @@
     },
     "64628f65a7f35c8d5d08bb37943eceab7ca3b3f5": {
       "found_at": "2026-02-24T04:38:44",
-      "last_checked": "2026-02-24T04:38:44",
+      "last_checked": "2026-02-25T21:36:35",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:44 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:35 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=20&id=1454%3Arelaksacja-w-swietlicy&itemid=147&option=com_content&view=article",
@@ -106437,9 +106437,9 @@
     },
     "f200171e6029822c5424fd362a0964c139d19a58": {
       "found_at": "2026-02-24T04:38:48",
-      "last_checked": "2026-02-24T04:38:48",
+      "last_checked": "2026-02-25T21:36:40",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:48 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:40 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=20&id=1438%3Awarsztaty-zrob-swoj-odblask-w-szkolnej-swietlicy&itemid=147&option=com_content&view=article",
@@ -106449,9 +106449,9 @@
     },
     "29c496d50c16b477e0f7826f81107c2b879a0079": {
       "found_at": "2026-02-24T04:38:52",
-      "last_checked": "2026-02-24T04:38:52",
+      "last_checked": "2026-02-25T21:36:44",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:52 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:43 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=20&id=1431%3Adzien-dyni&itemid=147&option=com_content&view=article",
@@ -106461,9 +106461,9 @@
     },
     "bb508a236c8632820ece3c355b826b598fcf8a9b": {
       "found_at": "2026-02-24T04:38:53",
-      "last_checked": "2026-02-24T04:38:53",
+      "last_checked": "2026-02-25T21:36:44",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:53 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:44 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=20&id=1430%3Apierwsze-miesiace-swietlicy-szkolnej&itemid=147&option=com_content&view=article",
@@ -106473,9 +106473,9 @@
     },
     "4597b460d93d99af9127c79b0daa8b898691695e": {
       "found_at": "2026-02-24T04:38:53",
-      "last_checked": "2026-02-24T04:38:53",
+      "last_checked": "2026-02-25T21:36:44",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:53 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:44 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=20&id=1414%3Adzien-kropki&itemid=147&option=com_content&view=article",
@@ -106485,9 +106485,9 @@
     },
     "baeca936ea0f0ac5798e14abc85d76d971a292a1": {
       "found_at": "2026-02-24T04:38:54",
-      "last_checked": "2026-02-24T04:38:54",
+      "last_checked": "2026-02-25T21:36:45",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:53 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:45 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=20&id=1409%3Akarta-zgloszenia-udzialu-w-zajeciach-swietlicy-szkolnej&itemid=147&option=com_content&view=article",
@@ -106497,9 +106497,9 @@
     },
     "2586574c00638c283f96d79db624b853c2f549bb": {
       "found_at": "2026-02-24T04:38:54",
-      "last_checked": "2026-02-24T04:38:54",
+      "last_checked": "2026-02-25T21:36:45",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:54 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:45 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=20&itemid=147&itemid=147&layout=blog&limitstart=5&option=com_content&view=category",
@@ -106509,9 +106509,9 @@
     },
     "f9366c0f07cf4c77241739f20122ce36c67f6a39": {
       "found_at": "2026-02-24T04:38:55",
-      "last_checked": "2026-02-24T04:38:55",
+      "last_checked": "2026-02-25T21:36:46",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:54 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:46 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=20&itemid=147&layout=blog&option=com_content&rch=2&view=category",
@@ -106521,9 +106521,9 @@
     },
     "6bfad87e6a2283a4aaeedbcebadbefa651587432": {
       "found_at": "2026-02-24T04:38:55",
-      "last_checked": "2026-02-24T04:38:55",
+      "last_checked": "2026-02-25T21:36:46",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:55 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:46 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=20&itemid=147&layout=blog&option=com_content&rch=-2&view=category",
@@ -106533,9 +106533,9 @@
     },
     "36266f2d00208c863fdbeb61c32d26b387b20773": {
       "found_at": "2026-02-24T04:38:55",
-      "last_checked": "2026-02-24T04:38:55",
+      "last_checked": "2026-02-25T21:36:47",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:55 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:47 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=10&id=212%3Aszkola-promujaca-zdrowie&itemid=103&option=com_content&view=article",
@@ -106545,9 +106545,9 @@
     },
     "3dbabdc4262b34624e8c24264d660dcf7c7ef707": {
       "found_at": "2026-02-24T04:38:56",
-      "last_checked": "2026-02-24T04:38:56",
+      "last_checked": "2026-02-25T21:36:47",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:56 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:47 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=212&itemid=103&option=com_content&rch=2&view=article",
@@ -106557,9 +106557,9 @@
     },
     "79602ce2e9bb294dec55ef73d0b88c455c9c6096": {
       "found_at": "2026-02-24T04:38:56",
-      "last_checked": "2026-02-24T04:38:56",
+      "last_checked": "2026-02-25T21:36:48",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:56 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:48 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=212&itemid=103&option=com_content&rch=-2&view=article",
@@ -106569,9 +106569,9 @@
     },
     "7d0f19d118430525f6a23653dc7a602eb1f427b9": {
       "found_at": "2026-02-24T04:38:57",
-      "last_checked": "2026-02-24T04:38:57",
+      "last_checked": "2026-02-25T21:36:48",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:57 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:48 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=16&itemid=111&layout=blog&option=com_content&rch=2&view=category",
@@ -106581,9 +106581,9 @@
     },
     "4da4cb1c4a3fdf4e27c51623a173e13e7fb04e2c": {
       "found_at": "2026-02-24T04:38:57",
-      "last_checked": "2026-02-24T04:38:57",
+      "last_checked": "2026-02-25T21:36:49",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:57 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:49 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=16&itemid=111&layout=blog&option=com_content&rch=-2&view=category",
@@ -106593,9 +106593,9 @@
     },
     "05ed48a534203c02df7c0f01e8593a07e8dd3a19": {
       "found_at": "2026-02-24T04:38:59",
-      "last_checked": "2026-02-24T04:38:59",
+      "last_checked": "2026-02-25T21:36:51",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:59 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:51 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=21&id=1468%3Asukces-naszej-uczennicy-w-wojewodzkim-konkursie-jezyka-angielskiego&itemid=148&option=com_content&view=article",
@@ -106605,9 +106605,9 @@
     },
     "9eaf990e189662bc70c1dfd9d0e6acda1f01ad05": {
       "found_at": "2026-02-24T04:38:59",
-      "last_checked": "2026-02-24T04:38:59",
+      "last_checked": "2026-02-25T21:36:51",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:38:59 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:51 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=21&id=1469%3Aanna-bogdanska-finalistka-wojewodzkiego-konkursu-chemicznego&itemid=148&option=com_content&view=article",
@@ -106617,9 +106617,9 @@
     },
     "990b0782bc3a1d568b6161a79b5af5b71805e0a0": {
       "found_at": "2026-02-24T04:39:00",
-      "last_checked": "2026-02-24T04:39:00",
+      "last_checked": "2026-02-25T21:36:52",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:00 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:52 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=21&id=1462%3Amale-skarby-wielkiej-okolicy-znam-swoj-region&itemid=148&option=com_content&view=article",
@@ -106629,9 +106629,9 @@
     },
     "84ec79b81ebba9f40df9838319cc8a9c6f0118f8": {
       "found_at": "2026-02-24T04:39:00",
-      "last_checked": "2026-02-24T04:39:00",
+      "last_checked": "2026-02-25T21:36:52",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:00 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:52 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=21&id=1461%3Afinal-mistrzostw-powiatu-w-futsalu&itemid=148&option=com_content&view=article",
@@ -106641,9 +106641,9 @@
     },
     "b2b9aa1b4998a912100c2a2d21653ceb131ec378": {
       "found_at": "2026-02-24T04:39:01",
-      "last_checked": "2026-02-24T04:39:01",
+      "last_checked": "2026-02-25T21:36:53",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:01 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:53 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=21&id=1460%3Akonkurs-matematyczny-rachmistrz-dwojki&itemid=148&option=com_content&view=article",
@@ -106653,9 +106653,9 @@
     },
     "25fa4437a58c8754fe4eedf38cd224424e52b26b": {
       "found_at": "2026-02-24T04:39:01",
-      "last_checked": "2026-02-24T04:39:01",
+      "last_checked": "2026-02-25T21:36:53",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:01 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:53 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=21&id=1458%3Aszkolny-konkurs-plastyczny-najpiekniejsza-choinka&itemid=148&option=com_content&view=article",
@@ -106665,9 +106665,9 @@
     },
     "3d0e0532884eea7ef62ec6a5aeeb0e4cee9290de": {
       "found_at": "2026-02-24T04:39:02",
-      "last_checked": "2026-02-24T04:39:02",
+      "last_checked": "2026-02-25T21:36:54",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:02 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:54 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=21&id=1448%3Aiv-mikolajkowa-liga-robotyczna-sukces-naszych-uczniow&itemid=148&option=com_content&view=article",
@@ -106677,9 +106677,9 @@
     },
     "d237d01ac5f055c89519e17ca86f64ed8442781d": {
       "found_at": "2026-02-24T04:39:02",
-      "last_checked": "2026-02-24T04:39:02",
+      "last_checked": "2026-02-25T21:36:55",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:02 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:54 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=21&itemid=148&itemid=148&layout=blog&limitstart=5&option=com_content&view=category",
@@ -106689,9 +106689,9 @@
     },
     "a78313392bd19cde3edf067a28403ed93d3f79d3": {
       "found_at": "2026-02-24T04:39:03",
-      "last_checked": "2026-02-24T04:39:03",
+      "last_checked": "2026-02-25T21:36:55",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:02 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:55 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=21&itemid=148&itemid=148&layout=blog&limitstart=10&option=com_content&view=category",
@@ -106701,9 +106701,9 @@
     },
     "f250d5796bf46bfa51945b7dbc9052faec727e49": {
       "found_at": "2026-02-24T04:39:03",
-      "last_checked": "2026-02-24T04:39:03",
+      "last_checked": "2026-02-25T21:36:55",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:03 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:55 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=21&itemid=148&itemid=148&layout=blog&limitstart=15&option=com_content&view=category",
@@ -106713,9 +106713,9 @@
     },
     "2608e26d9db4cf93f5ad3488e3ee2271419cddf7": {
       "found_at": "2026-02-24T04:39:04",
-      "last_checked": "2026-02-24T04:39:04",
+      "last_checked": "2026-02-25T21:36:56",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:03 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:56 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=21&itemid=148&itemid=148&layout=blog&limitstart=20&option=com_content&view=category",
@@ -106725,9 +106725,9 @@
     },
     "97cebff302820e20b5451566be1e2bc094166402": {
       "found_at": "2026-02-24T04:39:04",
-      "last_checked": "2026-02-24T04:39:04",
+      "last_checked": "2026-02-25T21:36:56",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:04 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:56 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=21&itemid=148&itemid=148&layout=blog&limitstart=25&option=com_content&view=category",
@@ -106737,9 +106737,9 @@
     },
     "52fd364226fa91040cc983281f5a3430f021c400": {
       "found_at": "2026-02-24T04:39:05",
-      "last_checked": "2026-02-24T04:39:05",
+      "last_checked": "2026-02-25T21:36:56",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:04 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:56 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=21&itemid=148&itemid=148&layout=blog&limitstart=30&option=com_content&view=category",
@@ -106749,9 +106749,9 @@
     },
     "2c3e217730024f231c44317e74950255c3da8f03": {
       "found_at": "2026-02-24T04:39:05",
-      "last_checked": "2026-02-24T04:39:05",
+      "last_checked": "2026-02-25T21:36:57",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:05 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:57 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=21&itemid=148&itemid=148&layout=blog&limitstart=35&option=com_content&view=category",
@@ -106761,9 +106761,9 @@
     },
     "61b2e023b0984f0e918e5db05b4150417936c426": {
       "found_at": "2026-02-24T04:39:05",
-      "last_checked": "2026-02-24T04:39:05",
+      "last_checked": "2026-02-25T21:36:57",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:05 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:57 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=21&itemid=148&itemid=148&layout=blog&limitstart=40&option=com_content&view=category",
@@ -106773,9 +106773,9 @@
     },
     "f2831053e77df799c35f2eb3e9e72a47e9662b02": {
       "found_at": "2026-02-24T04:39:06",
-      "last_checked": "2026-02-24T04:39:06",
+      "last_checked": "2026-02-25T21:36:58",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:06 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:58 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=21&itemid=148&itemid=148&layout=blog&limitstart=45&option=com_content&view=category",
@@ -106785,9 +106785,9 @@
     },
     "6eeed8878b58d4eb74401377048ace0b0f4a80cd": {
       "found_at": "2026-02-24T04:39:06",
-      "last_checked": "2026-02-24T04:39:06",
+      "last_checked": "2026-02-25T21:36:58",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:06 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:58 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=21&itemid=148&itemid=148&layout=blog&limitstart=55&option=com_content&view=category",
@@ -106797,9 +106797,9 @@
     },
     "9d098ae4a21f9520a7a7d80f4187f1f69be38853": {
       "found_at": "2026-02-24T04:39:07",
-      "last_checked": "2026-02-24T04:39:07",
+      "last_checked": "2026-02-25T21:36:59",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:07 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:59 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=21&itemid=148&layout=blog&option=com_content&rch=2&view=category",
@@ -106809,9 +106809,9 @@
     },
     "48632a4b57b73171cca84bdd491e15975ba913e1": {
       "found_at": "2026-02-24T04:39:07",
-      "last_checked": "2026-02-24T04:39:07",
+      "last_checked": "2026-02-25T21:36:59",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:07 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:36:59 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=21&itemid=148&layout=blog&option=com_content&rch=-2&view=category",
@@ -106821,9 +106821,9 @@
     },
     "f8e44531dae38c5d3fe5f433b536d9e505c081e4": {
       "found_at": "2026-02-24T04:39:08",
-      "last_checked": "2026-02-24T04:39:08",
+      "last_checked": "2026-02-25T21:37:00",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:08 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:37:00 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=31&id=606%3Ainspektor-ochrony-danych&itemid=162&option=com_content&view=article",
@@ -106833,9 +106833,9 @@
     },
     "e1567807c92152f4209f057145d882c0262ac445": {
       "found_at": "2026-02-24T04:39:08",
-      "last_checked": "2026-02-24T04:39:08",
+      "last_checked": "2026-02-25T21:37:00",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:08 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:37:00 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=31&itemid=162&layout=blog&option=com_content&rch=2&view=category",
@@ -106845,9 +106845,9 @@
     },
     "5c667e144068ad74bb39aab612bb5d2c1a17f654": {
       "found_at": "2026-02-24T04:39:08",
-      "last_checked": "2026-02-24T04:39:08",
+      "last_checked": "2026-02-25T21:37:00",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:08 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:37:00 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=31&itemid=162&layout=blog&option=com_content&rch=-2&view=category",
@@ -106857,9 +106857,9 @@
     },
     "2ccb0098f1b432e6113cccfd841394c44640386a": {
       "found_at": "2026-02-24T04:39:09",
-      "last_checked": "2026-02-24T04:39:09",
+      "last_checked": "2026-02-25T21:37:01",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:09 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:37:01 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=34&id=835%3Apolityka-prywatnosci&itemid=186&option=com_content&view=article",
@@ -106869,9 +106869,9 @@
     },
     "42c4cbce96386e57e3a785071c8ee14a0c9178b3": {
       "found_at": "2026-02-24T04:39:10",
-      "last_checked": "2026-02-24T04:39:10",
+      "last_checked": "2026-02-25T21:37:01",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:09 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:37:01 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=34&itemid=186&layout=blog&option=com_content&rch=2&view=category",
@@ -106881,9 +106881,9 @@
     },
     "36a58dce17b26dbdf0f590c0c285d9b6e9b21747": {
       "found_at": "2026-02-24T04:39:10",
-      "last_checked": "2026-02-24T04:39:10",
+      "last_checked": "2026-02-25T21:37:02",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:10 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:37:02 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=34&itemid=186&layout=blog&option=com_content&rch=-2&view=category",
@@ -106893,9 +106893,9 @@
     },
     "39cce5934374f5ae8706a49b8efe4740eb094b8b": {
       "found_at": "2026-02-24T04:39:10",
-      "last_checked": "2026-02-24T04:39:10",
+      "last_checked": "2026-02-25T21:37:02",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:10 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:37:02 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=35&itemid=187&layout=blog&option=com_content&rch=2&view=category",
@@ -106905,9 +106905,9 @@
     },
     "63c123b91131c8b7ab256ab7029bd7fb521c410b": {
       "found_at": "2026-02-24T04:39:11",
-      "last_checked": "2026-02-24T04:39:11",
+      "last_checked": "2026-02-25T21:37:03",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:11 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:37:03 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=35&itemid=187&layout=blog&option=com_content&rch=-2&view=category",
@@ -106917,9 +106917,9 @@
     },
     "b09b5c351f70f31d2546869abbebe45c48408d44": {
       "found_at": "2026-02-24T04:39:11",
-      "last_checked": "2026-02-24T04:39:11",
+      "last_checked": "2026-02-25T21:37:03",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:11 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:37:03 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=33&id=1268%3Agdzie-szukac-pomocy-przydatne-adresy-i-numery-telefonow&itemid=166&option=com_content&view=article",
@@ -106929,9 +106929,9 @@
     },
     "91f85a33fdc023e78f9a1f2e2a0463fdb995105c": {
       "found_at": "2026-02-24T04:39:12",
-      "last_checked": "2026-02-24T04:39:12",
+      "last_checked": "2026-02-25T21:37:03",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:12 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:37:03 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=33&itemid=166&layout=blog&option=com_content&rch=2&view=category",
@@ -106941,9 +106941,9 @@
     },
     "a6ecea0d664ae708b39184f388fe4765fc729a1e": {
       "found_at": "2026-02-24T04:39:12",
-      "last_checked": "2026-02-24T04:39:12",
+      "last_checked": "2026-02-25T21:37:04",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:12 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:37:04 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=33&itemid=166&layout=blog&option=com_content&rch=-2&view=category",
@@ -106953,9 +106953,9 @@
     },
     "7c9e5392e689020d7a2dd0a78942f1bb9a951b4a": {
       "found_at": "2026-02-24T04:39:13",
-      "last_checked": "2026-02-24T04:39:13",
+      "last_checked": "2026-02-25T21:37:05",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:13 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:37:04 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=26&id=417%3Agodziny-pracy-pedagoga-i-psychologa-rok-szkolny-2017-2018-i-polrocze&itemid=157&option=com_content&view=article",
@@ -106965,9 +106965,9 @@
     },
     "4e64c12fc9dfe06d04a6327637f3861f8f9a9022": {
       "found_at": "2026-02-24T04:39:13",
-      "last_checked": "2026-02-24T04:39:13",
+      "last_checked": "2026-02-25T21:37:05",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:13 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:37:05 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=26&itemid=157&layout=blog&option=com_content&rch=2&view=category",
@@ -106977,9 +106977,9 @@
     },
     "2c16e1d4442946686eee03a88f58d4198e4017a9": {
       "found_at": "2026-02-24T04:39:13",
-      "last_checked": "2026-02-24T04:39:13",
+      "last_checked": "2026-02-25T21:37:05",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:13 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:37:05 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=26&itemid=157&layout=blog&option=com_content&rch=-2&view=category",
@@ -106989,9 +106989,9 @@
     },
     "db0178445aa1f5d9065103efd0e587d3cb3a2b6d": {
       "found_at": "2026-02-24T04:39:14",
-      "last_checked": "2026-02-24T04:39:14",
+      "last_checked": "2026-02-25T21:37:06",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:14 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:37:06 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=36&id=938%3Awspomaganie-wychowawczej-roli-rodziny-2&itemid=160&option=com_content&view=article",
@@ -107001,9 +107001,9 @@
     },
     "f370432083f8b09de41c79adeebfe62db932a412": {
       "found_at": "2026-02-24T04:39:14",
-      "last_checked": "2026-02-24T04:39:14",
+      "last_checked": "2026-02-25T21:37:06",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:14 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:37:06 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=36&itemid=160&layout=blog&option=com_content&rch=2&view=category",
@@ -107013,9 +107013,9 @@
     },
     "1b77fcc1082feec197bdb1a94b2fdb1439ea89c7": {
       "found_at": "2026-02-24T04:39:15",
-      "last_checked": "2026-02-24T04:39:15",
+      "last_checked": "2026-02-25T21:37:07",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:15 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:37:07 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=36&itemid=160&layout=blog&option=com_content&rch=-2&view=category",
@@ -107025,9 +107025,9 @@
     },
     "84d4a0901499eb0bd74d646dab06a86455819ae5": {
       "found_at": "2026-02-24T04:39:15",
-      "last_checked": "2026-02-24T04:39:15",
+      "last_checked": "2026-02-25T21:37:07",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:15 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:37:07 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=37&id=954%3Ainformacje-o-przetwarzaniu-danych-osobowych&itemid=195&option=com_content&view=article",
@@ -107037,9 +107037,9 @@
     },
     "583a2140f2034bfedab7460591bf962f25cd2f77": {
       "found_at": "2026-02-24T04:39:16",
-      "last_checked": "2026-02-24T04:39:16",
+      "last_checked": "2026-02-25T21:37:08",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:15 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:37:08 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=37&itemid=195&layout=blog&option=com_content&rch=2&view=category",
@@ -107049,9 +107049,9 @@
     },
     "acdd1eff98fe01471b29174045c2bcf32b334137": {
       "found_at": "2026-02-24T04:39:16",
-      "last_checked": "2026-02-24T04:39:16",
+      "last_checked": "2026-02-25T21:37:08",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:16 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:37:08 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=37&itemid=195&layout=blog&option=com_content&rch=-2&view=category",
@@ -107061,9 +107061,9 @@
     },
     "1af1d3e2df54b2df156a2ab696dfc7b5f8bbc03e": {
       "found_at": "2026-02-24T04:39:16",
-      "last_checked": "2026-02-24T04:39:16",
+      "last_checked": "2026-02-25T21:37:09",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:16 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:37:09 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?catid=39&id=1348%3Akoordynator-ds-dostepnosci&itemid=219&option=com_content&view=article",
@@ -107073,9 +107073,9 @@
     },
     "7a73fc9ba91557c2b38fb05066be853a3b574a64": {
       "found_at": "2026-02-24T04:39:17",
-      "last_checked": "2026-02-24T04:39:17",
+      "last_checked": "2026-02-25T21:37:09",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:17 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:37:09 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=39&itemid=219&layout=blog&option=com_content&rch=2&view=category",
@@ -107085,9 +107085,9 @@
     },
     "30536023cc625e3865c07737c0e33b65ea149937": {
       "found_at": "2026-02-24T04:39:17",
-      "last_checked": "2026-02-24T04:39:17",
+      "last_checked": "2026-02-25T21:37:10",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:17 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:37:10 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/index.php?id=39&itemid=219&layout=blog&option=com_content&rch=-2&view=category",
@@ -107097,9 +107097,9 @@
     },
     "d0e5ae14fa6554f4279874f392b00159c97799da": {
       "found_at": "2026-02-24T04:39:18",
-      "last_checked": "2026-02-24T04:39:18",
+      "last_checked": "2026-02-25T21:37:10",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:18 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:37:10 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/?rch=-2&rch=2",
@@ -107109,9 +107109,9 @@
     },
     "502f8a998afd9c0daf4e4a6c6e85081917c17717": {
       "found_at": "2026-02-24T04:39:18",
-      "last_checked": "2026-02-24T04:39:18",
+      "last_checked": "2026-02-25T21:37:11",
       "etag": "",
-      "last_modified": "Tue, 24 Feb 2026 04:39:18 GMT",
+      "last_modified": "Wed, 25 Feb 2026 21:37:11 GMT",
       "gmina": "Gostyń",
       "title": "Szkoła Podstawowa nr 2 im. gen. Tadeusza Kutrzeby w Gostyniu",
       "url": "https://sp2.gostyn.pl/?rch=-2&rch=-2",
@@ -107121,7 +107121,7 @@
     },
     "fdf5ce593923030da488ce0628e516553f030b5f": {
       "found_at": "2026-02-24T04:39:19",
-      "last_checked": "2026-02-24T04:39:19",
+      "last_checked": "2026-02-25T21:37:12",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107133,7 +107133,7 @@
     },
     "babb8511d5a8baea0986f361d8278ed0ef06d2ad": {
       "found_at": "2026-02-24T04:39:19",
-      "last_checked": "2026-02-24T04:39:19",
+      "last_checked": "2026-02-25T21:37:12",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107145,7 +107145,7 @@
     },
     "36a68fc502e54f14530658c9150528b370cd30f3": {
       "found_at": "2026-02-24T04:39:20",
-      "last_checked": "2026-02-24T04:39:20",
+      "last_checked": "2026-02-25T21:37:13",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107157,7 +107157,7 @@
     },
     "92418afd44c096ec84dbc7798b6dd7d45d547e75": {
       "found_at": "2026-02-24T04:39:20",
-      "last_checked": "2026-02-24T04:39:20",
+      "last_checked": "2026-02-25T21:37:13",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107169,7 +107169,7 @@
     },
     "d264aa7d321018f88370af20e5bba327cba65671": {
       "found_at": "2026-02-24T04:39:21",
-      "last_checked": "2026-02-24T04:39:21",
+      "last_checked": "2026-02-25T21:37:14",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107181,7 +107181,7 @@
     },
     "b3d9cee58ff523ce47074cb611d8c1cd60a47f77": {
       "found_at": "2026-02-24T04:39:21",
-      "last_checked": "2026-02-24T04:39:21",
+      "last_checked": "2026-02-25T21:37:14",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107193,7 +107193,7 @@
     },
     "93f2b07a9d8384eac456efa5acf96cf9b2b20377": {
       "found_at": "2026-02-24T04:39:22",
-      "last_checked": "2026-02-24T04:39:22",
+      "last_checked": "2026-02-25T21:37:15",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107205,7 +107205,7 @@
     },
     "f0e88639935a185f462b4253469f54fd0f99ca19": {
       "found_at": "2026-02-24T04:39:22",
-      "last_checked": "2026-02-24T04:39:22",
+      "last_checked": "2026-02-25T21:37:15",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107217,7 +107217,7 @@
     },
     "4c00106ec06ed8ba576e6e5457f88336a9d80a83": {
       "found_at": "2026-02-24T04:39:23",
-      "last_checked": "2026-02-24T04:39:23",
+      "last_checked": "2026-02-25T21:37:16",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107229,7 +107229,7 @@
     },
     "9bf90270c07d1978e0481be30ac11c1345f372f2": {
       "found_at": "2026-02-24T04:39:24",
-      "last_checked": "2026-02-24T04:39:24",
+      "last_checked": "2026-02-25T21:37:16",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107241,7 +107241,7 @@
     },
     "091493f74166af5e04153437d3520abe81511f8a": {
       "found_at": "2026-02-24T04:39:24",
-      "last_checked": "2026-02-24T04:39:24",
+      "last_checked": "2026-02-25T21:37:17",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107253,7 +107253,7 @@
     },
     "c23ffeab7d43d2b39edfa17bbc07e66379ecd63e": {
       "found_at": "2026-02-24T04:39:25",
-      "last_checked": "2026-02-24T04:39:25",
+      "last_checked": "2026-02-25T21:37:17",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107265,7 +107265,7 @@
     },
     "35576ca03ba5c44d53fd373ef288395baa5a409e": {
       "found_at": "2026-02-24T04:39:25",
-      "last_checked": "2026-02-24T04:39:25",
+      "last_checked": "2026-02-25T21:37:18",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107277,7 +107277,7 @@
     },
     "b0fe69ee67fc74e5d3987a804b34f77a1e936564": {
       "found_at": "2026-02-24T04:39:26",
-      "last_checked": "2026-02-24T04:39:26",
+      "last_checked": "2026-02-25T21:37:18",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107289,7 +107289,7 @@
     },
     "97adb0463f25e0846ca107d0614991ca2bdbd0d3": {
       "found_at": "2026-02-24T04:39:26",
-      "last_checked": "2026-02-24T04:39:26",
+      "last_checked": "2026-02-25T21:37:19",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107301,7 +107301,7 @@
     },
     "b13d3f6d391727cc0319b5e01481411aa0db618b": {
       "found_at": "2026-02-24T04:39:27",
-      "last_checked": "2026-02-24T04:39:27",
+      "last_checked": "2026-02-25T21:37:19",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107313,7 +107313,7 @@
     },
     "869629c80fb362aaa1caebc345ce0c6d57e8c362": {
       "found_at": "2026-02-24T04:39:27",
-      "last_checked": "2026-02-24T04:39:27",
+      "last_checked": "2026-02-25T21:37:20",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107325,7 +107325,7 @@
     },
     "27db4f84c776948eacdb0abdef2f17f2c23c7001": {
       "found_at": "2026-02-24T04:39:28",
-      "last_checked": "2026-02-24T04:39:28",
+      "last_checked": "2026-02-25T21:37:21",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107337,7 +107337,7 @@
     },
     "14c6fa5b00be6aafa449ba432824992d8cf26d71": {
       "found_at": "2026-02-24T04:39:28",
-      "last_checked": "2026-02-24T04:39:28",
+      "last_checked": "2026-02-25T21:37:21",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107349,7 +107349,7 @@
     },
     "695716ea45185bdac041574b58b1b2512d92fc8d": {
       "found_at": "2026-02-24T04:39:29",
-      "last_checked": "2026-02-24T04:39:29",
+      "last_checked": "2026-02-25T21:37:22",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107361,7 +107361,7 @@
     },
     "49b191c2c16e4493ea473a573ae063ea00e54c66": {
       "found_at": "2026-02-24T04:39:29",
-      "last_checked": "2026-02-24T04:39:29",
+      "last_checked": "2026-02-25T21:37:22",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107373,7 +107373,7 @@
     },
     "ca8914b490916115165101c9037cc4d560f716c1": {
       "found_at": "2026-02-24T04:39:30",
-      "last_checked": "2026-02-24T04:39:30",
+      "last_checked": "2026-02-25T21:37:23",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107385,7 +107385,7 @@
     },
     "558bd93976b512b8f63631d1768f7c03a7a0f3d8": {
       "found_at": "2026-02-24T04:39:31",
-      "last_checked": "2026-02-24T04:39:31",
+      "last_checked": "2026-02-25T21:37:23",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107397,7 +107397,7 @@
     },
     "591c52b75329c3025548581598761866b2833415": {
       "found_at": "2026-02-24T04:39:31",
-      "last_checked": "2026-02-24T04:39:31",
+      "last_checked": "2026-02-25T21:37:24",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107409,7 +107409,7 @@
     },
     "c82dfe1dd19c3a014799a0e84e99d5e89723877d": {
       "found_at": "2026-02-24T04:39:32",
-      "last_checked": "2026-02-24T04:39:32",
+      "last_checked": "2026-02-25T21:37:24",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107421,7 +107421,7 @@
     },
     "22c4222cd975023d326058f4ca711592134c52b9": {
       "found_at": "2026-02-24T04:39:32",
-      "last_checked": "2026-02-24T04:39:32",
+      "last_checked": "2026-02-25T21:37:25",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107433,7 +107433,7 @@
     },
     "7c1c9b87dc9ee29219e62914b5f649bd754f3fad": {
       "found_at": "2026-02-24T04:39:33",
-      "last_checked": "2026-02-24T04:39:33",
+      "last_checked": "2026-02-25T21:37:25",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107445,7 +107445,7 @@
     },
     "c8fd672b4951032963d56f786c79bd13d631fad8": {
       "found_at": "2026-02-24T04:39:33",
-      "last_checked": "2026-02-24T04:39:33",
+      "last_checked": "2026-02-25T21:37:26",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107457,7 +107457,7 @@
     },
     "54f992ce3e9abeb109780f055f6d2d6b182f50c6": {
       "found_at": "2026-02-24T04:39:34",
-      "last_checked": "2026-02-24T04:39:34",
+      "last_checked": "2026-02-25T21:37:26",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107469,7 +107469,7 @@
     },
     "3c406933703ba72de923d05a2df3987bdb699f05": {
       "found_at": "2026-02-24T04:39:34",
-      "last_checked": "2026-02-24T04:39:34",
+      "last_checked": "2026-02-25T21:37:27",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107481,7 +107481,7 @@
     },
     "998bd430e71b9b32367ff8cda4cc251cc7a2dc94": {
       "found_at": "2026-02-24T04:39:35",
-      "last_checked": "2026-02-24T04:39:35",
+      "last_checked": "2026-02-25T21:37:27",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107493,7 +107493,7 @@
     },
     "b214098a156199473a4a7b759a8593fe7ef323dd": {
       "found_at": "2026-02-24T04:39:35",
-      "last_checked": "2026-02-24T04:39:35",
+      "last_checked": "2026-02-25T21:37:28",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107505,7 +107505,7 @@
     },
     "7b480a41d6ce974f82d1fe7d7de36008bb80f30e": {
       "found_at": "2026-02-24T04:39:36",
-      "last_checked": "2026-02-24T04:39:36",
+      "last_checked": "2026-02-25T21:37:28",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107517,7 +107517,7 @@
     },
     "31e8337017a98ec10ab88a6ece9f5ecf44698044": {
       "found_at": "2026-02-24T04:39:36",
-      "last_checked": "2026-02-24T04:39:36",
+      "last_checked": "2026-02-25T21:37:29",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107529,7 +107529,7 @@
     },
     "83b18aaba069cd1dcd1bc2bed085d1ab21b25237": {
       "found_at": "2026-02-24T04:39:37",
-      "last_checked": "2026-02-24T04:39:37",
+      "last_checked": "2026-02-25T21:37:29",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107541,7 +107541,7 @@
     },
     "bd44e9c058873d25380e2dcff713e957a8bbe7a2": {
       "found_at": "2026-02-24T04:39:37",
-      "last_checked": "2026-02-24T04:39:37",
+      "last_checked": "2026-02-25T21:37:30",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107553,7 +107553,7 @@
     },
     "320d9ea8fcb7271fdaba8fd71bef56fd4c76d623": {
       "found_at": "2026-02-24T04:39:38",
-      "last_checked": "2026-02-24T04:39:38",
+      "last_checked": "2026-02-25T21:37:30",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107565,7 +107565,7 @@
     },
     "afe235791a1b15537ce1e9d022f998df2e652ca4": {
       "found_at": "2026-02-24T04:39:38",
-      "last_checked": "2026-02-24T04:39:38",
+      "last_checked": "2026-02-25T21:37:31",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107577,7 +107577,7 @@
     },
     "0ff9a41b6732d5273f123e7e72075470b089935e": {
       "found_at": "2026-02-24T04:39:39",
-      "last_checked": "2026-02-24T04:39:39",
+      "last_checked": "2026-02-25T21:37:31",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107589,7 +107589,7 @@
     },
     "cf6a5daf7fcf82ba458864fa0d52ffe926430db9": {
       "found_at": "2026-02-24T04:39:39",
-      "last_checked": "2026-02-24T04:39:39",
+      "last_checked": "2026-02-25T21:37:32",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107601,7 +107601,7 @@
     },
     "f79e253bd026ba9cc7a17d41fa115060c87881ee": {
       "found_at": "2026-02-24T04:39:40",
-      "last_checked": "2026-02-24T04:39:40",
+      "last_checked": "2026-02-25T21:37:32",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107613,7 +107613,7 @@
     },
     "69d7f2623a76a0c808c34a50a56a64972c8740cc": {
       "found_at": "2026-02-24T04:39:40",
-      "last_checked": "2026-02-24T04:39:40",
+      "last_checked": "2026-02-25T21:37:33",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107625,7 +107625,7 @@
     },
     "87fb151aaafb4c32a1aaac90960551a932eb94e1": {
       "found_at": "2026-02-24T04:39:41",
-      "last_checked": "2026-02-24T04:39:41",
+      "last_checked": "2026-02-25T21:37:33",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107637,7 +107637,7 @@
     },
     "126bbae409415a08010de2a67b9cc809a58c40b3": {
       "found_at": "2026-02-24T04:39:41",
-      "last_checked": "2026-02-24T04:39:41",
+      "last_checked": "2026-02-25T21:37:34",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107649,7 +107649,7 @@
     },
     "d5807fdc0277c8e691636fce8adc21c30b7c8060": {
       "found_at": "2026-02-24T04:39:42",
-      "last_checked": "2026-02-24T04:39:42",
+      "last_checked": "2026-02-25T21:37:34",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107661,7 +107661,7 @@
     },
     "562a2f86e7a2a52dbe66422032804868ca175029": {
       "found_at": "2026-02-24T04:39:42",
-      "last_checked": "2026-02-24T04:39:42",
+      "last_checked": "2026-02-25T21:37:35",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107673,7 +107673,7 @@
     },
     "0da00e5ea6301d9a88f805416ad0c5f52d7da28b": {
       "found_at": "2026-02-24T04:39:43",
-      "last_checked": "2026-02-24T04:39:43",
+      "last_checked": "2026-02-25T21:37:35",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107685,7 +107685,7 @@
     },
     "f1451337db87a0190a741bd11002221b461f56a1": {
       "found_at": "2026-02-24T04:39:44",
-      "last_checked": "2026-02-24T04:39:44",
+      "last_checked": "2026-02-25T21:37:36",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107697,7 +107697,7 @@
     },
     "a196b3f04fe345ea44ae98c6aa917e3e7d19ee09": {
       "found_at": "2026-02-24T04:39:44",
-      "last_checked": "2026-02-24T04:39:44",
+      "last_checked": "2026-02-25T21:37:36",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107709,7 +107709,7 @@
     },
     "45c13a86d470b4c789b1a8ec8fde3bd39059fe69": {
       "found_at": "2026-02-24T04:39:45",
-      "last_checked": "2026-02-24T04:39:45",
+      "last_checked": "2026-02-25T21:37:37",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107721,7 +107721,7 @@
     },
     "4a7d9a6c3372ac2e5aed546d536e741405da7232": {
       "found_at": "2026-02-24T04:39:45",
-      "last_checked": "2026-02-24T04:39:45",
+      "last_checked": "2026-02-25T21:37:38",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107733,7 +107733,7 @@
     },
     "25004c7e781e137d9446d0f1489b41be708abc1f": {
       "found_at": "2026-02-24T04:39:46",
-      "last_checked": "2026-02-24T04:39:46",
+      "last_checked": "2026-02-25T21:37:38",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107745,7 +107745,7 @@
     },
     "bcacf11178e00c7ff9ef98d7b9a162c6ca74b5fc": {
       "found_at": "2026-02-24T04:39:46",
-      "last_checked": "2026-02-24T04:39:46",
+      "last_checked": "2026-02-25T21:37:39",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107757,7 +107757,7 @@
     },
     "2e4e078a39a981979588c7a5e23c8b897ea3813e": {
       "found_at": "2026-02-24T04:39:47",
-      "last_checked": "2026-02-24T04:39:47",
+      "last_checked": "2026-02-25T21:37:39",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107769,7 +107769,7 @@
     },
     "7b5ac9583b394b1ca684527301d1741ea4a145a8": {
       "found_at": "2026-02-24T04:39:47",
-      "last_checked": "2026-02-24T04:39:47",
+      "last_checked": "2026-02-25T21:37:40",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107781,7 +107781,7 @@
     },
     "0731f7fe981e3580afa2c3dc8686ca55507f1a88": {
       "found_at": "2026-02-24T04:39:48",
-      "last_checked": "2026-02-24T04:39:48",
+      "last_checked": "2026-02-25T21:37:40",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107793,7 +107793,7 @@
     },
     "30bd85dd894b9733cf07371fe52e4b1c164c4462": {
       "found_at": "2026-02-24T04:39:48",
-      "last_checked": "2026-02-24T04:39:48",
+      "last_checked": "2026-02-25T21:37:40",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107805,7 +107805,7 @@
     },
     "8c2e03dd266d1bb8df4a087aafc0a0aeb5d12109": {
       "found_at": "2026-02-24T04:39:49",
-      "last_checked": "2026-02-24T04:39:49",
+      "last_checked": "2026-02-25T21:37:41",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107817,7 +107817,7 @@
     },
     "dd0c761efa6a8c6d3485baaf02e112d59b17f43e": {
       "found_at": "2026-02-24T04:39:49",
-      "last_checked": "2026-02-24T04:39:49",
+      "last_checked": "2026-02-25T21:37:41",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107829,7 +107829,7 @@
     },
     "b33e73a94470fc192d25b7d313795c55813629ff": {
       "found_at": "2026-02-24T04:39:50",
-      "last_checked": "2026-02-24T04:39:50",
+      "last_checked": "2026-02-25T21:37:42",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107841,7 +107841,7 @@
     },
     "dfa033dfdbacb1edc7bec6ee9a061ba761274c41": {
       "found_at": "2026-02-24T04:39:50",
-      "last_checked": "2026-02-24T04:39:50",
+      "last_checked": "2026-02-25T21:37:42",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107853,7 +107853,7 @@
     },
     "0a9595f19fd12d7530778536f2b0bbb67dc1495c": {
       "found_at": "2026-02-24T04:39:51",
-      "last_checked": "2026-02-24T04:39:51",
+      "last_checked": "2026-02-25T21:37:43",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107865,7 +107865,7 @@
     },
     "b814ccbd4523c05156bb288a5d746232484450b7": {
       "found_at": "2026-02-24T04:39:51",
-      "last_checked": "2026-02-24T04:39:51",
+      "last_checked": "2026-02-25T21:37:44",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107877,7 +107877,7 @@
     },
     "6bcf3a61c2be1f3604a5812e51978353a446e74c": {
       "found_at": "2026-02-24T04:39:52",
-      "last_checked": "2026-02-24T04:39:52",
+      "last_checked": "2026-02-25T21:37:44",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107889,7 +107889,7 @@
     },
     "9a7c5c44a0f4489fbc467af2ac7798a6189c7917": {
       "found_at": "2026-02-24T04:39:52",
-      "last_checked": "2026-02-24T04:39:52",
+      "last_checked": "2026-02-25T21:37:45",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107901,7 +107901,7 @@
     },
     "3014aed20d0d77c1f5d30cbcc8a4f47155e62edb": {
       "found_at": "2026-02-24T04:39:53",
-      "last_checked": "2026-02-24T04:39:53",
+      "last_checked": "2026-02-25T21:37:45",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107913,7 +107913,7 @@
     },
     "01ec1913a2201dc3e1f1324ad8895cc457cebbab": {
       "found_at": "2026-02-24T04:39:54",
-      "last_checked": "2026-02-24T04:39:54",
+      "last_checked": "2026-02-25T21:37:46",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107925,7 +107925,7 @@
     },
     "3283df6398b4b1a7a70585b377a4032bbf2a79e2": {
       "found_at": "2026-02-24T04:39:54",
-      "last_checked": "2026-02-24T04:39:54",
+      "last_checked": "2026-02-25T21:37:46",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107937,7 +107937,7 @@
     },
     "a0a850f0caec6321d4e791267506a6da1d89d0db": {
       "found_at": "2026-02-24T04:39:55",
-      "last_checked": "2026-02-24T04:39:55",
+      "last_checked": "2026-02-25T21:37:47",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107949,7 +107949,7 @@
     },
     "98f3fcb57bb6bc9b0bdeef119a99136b3e265dce": {
       "found_at": "2026-02-24T04:39:55",
-      "last_checked": "2026-02-24T04:39:55",
+      "last_checked": "2026-02-25T21:37:47",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107961,7 +107961,7 @@
     },
     "1553182d5639029b35ca69270eeb8886ba6670f0": {
       "found_at": "2026-02-24T04:39:56",
-      "last_checked": "2026-02-24T04:39:56",
+      "last_checked": "2026-02-25T21:37:48",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107973,7 +107973,7 @@
     },
     "3ac83e06268b8fac85694a4ec2d86238abca424f": {
       "found_at": "2026-02-24T04:39:56",
-      "last_checked": "2026-02-24T04:39:56",
+      "last_checked": "2026-02-25T21:37:48",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107985,7 +107985,7 @@
     },
     "207051f42d4f53c748df7c70ccbf089176b13b52": {
       "found_at": "2026-02-24T04:39:57",
-      "last_checked": "2026-02-24T04:39:57",
+      "last_checked": "2026-02-25T21:37:49",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -107997,7 +107997,7 @@
     },
     "2ad72ae9a7eee30d2ac13911df704526ae9eaeb7": {
       "found_at": "2026-02-24T04:39:57",
-      "last_checked": "2026-02-24T04:39:57",
+      "last_checked": "2026-02-25T21:37:49",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108009,7 +108009,7 @@
     },
     "26fc1adfb232e9f3fcabc93f732fe3ca4dc77fcd": {
       "found_at": "2026-02-24T04:39:58",
-      "last_checked": "2026-02-24T04:39:58",
+      "last_checked": "2026-02-25T21:37:50",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108021,7 +108021,7 @@
     },
     "6b1ef8153f4605aaf58a3436f8c9a77f154a3cc8": {
       "found_at": "2026-02-24T04:39:58",
-      "last_checked": "2026-02-24T04:39:58",
+      "last_checked": "2026-02-25T21:37:50",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108033,7 +108033,7 @@
     },
     "3c509b9fde0dc8eb102a710bec110967b34f881b": {
       "found_at": "2026-02-24T04:39:59",
-      "last_checked": "2026-02-24T04:39:59",
+      "last_checked": "2026-02-25T21:37:51",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108045,7 +108045,7 @@
     },
     "9a54676d111215913f976c9ae9a7621a0dd8a13a": {
       "found_at": "2026-02-24T04:39:59",
-      "last_checked": "2026-02-24T04:39:59",
+      "last_checked": "2026-02-25T21:37:51",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108057,7 +108057,7 @@
     },
     "5e4e4ff24ae77294863b8c64a9608a163e864386": {
       "found_at": "2026-02-24T04:40:00",
-      "last_checked": "2026-02-24T04:40:00",
+      "last_checked": "2026-02-25T21:37:52",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108069,7 +108069,7 @@
     },
     "b28ff341c9bcd28bfd7f68c93b9f6a1c31269f33": {
       "found_at": "2026-02-24T04:40:00",
-      "last_checked": "2026-02-24T04:40:00",
+      "last_checked": "2026-02-25T21:37:52",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108081,7 +108081,7 @@
     },
     "186ff411ef12609e471757367835b3e49099c20a": {
       "found_at": "2026-02-24T04:40:01",
-      "last_checked": "2026-02-24T04:40:01",
+      "last_checked": "2026-02-25T21:37:53",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108093,7 +108093,7 @@
     },
     "4d403f7491475230208f057e01ba08f7973f073d": {
       "found_at": "2026-02-24T04:40:01",
-      "last_checked": "2026-02-24T04:40:01",
+      "last_checked": "2026-02-25T21:37:53",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108105,7 +108105,7 @@
     },
     "0c1c140ffe249cd98d8e28ff2c7b3424861f5955": {
       "found_at": "2026-02-24T04:40:02",
-      "last_checked": "2026-02-24T04:40:02",
+      "last_checked": "2026-02-25T21:37:54",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108117,7 +108117,7 @@
     },
     "2ae3fd8b608abeb36226877454d78eeacdd0cbf3": {
       "found_at": "2026-02-24T04:40:02",
-      "last_checked": "2026-02-24T04:40:02",
+      "last_checked": "2026-02-25T21:37:54",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108129,7 +108129,7 @@
     },
     "c3df74c37166c7cbfca393406e304f3705d452bf": {
       "found_at": "2026-02-24T04:40:03",
-      "last_checked": "2026-02-24T04:40:03",
+      "last_checked": "2026-02-25T21:37:55",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108141,7 +108141,7 @@
     },
     "a6fb856bc1d6ee293e7272a0494a810b0580eabd": {
       "found_at": "2026-02-24T04:40:04",
-      "last_checked": "2026-02-24T04:40:04",
+      "last_checked": "2026-02-25T21:37:55",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108153,7 +108153,7 @@
     },
     "67f1634117c6d267d0e487fcc28dd151ce73321b": {
       "found_at": "2026-02-24T04:40:04",
-      "last_checked": "2026-02-24T04:40:04",
+      "last_checked": "2026-02-25T21:37:56",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108165,7 +108165,7 @@
     },
     "d534db2c438ba44a833846d889e58120828eac65": {
       "found_at": "2026-02-24T04:40:04",
-      "last_checked": "2026-02-24T04:40:04",
+      "last_checked": "2026-02-25T21:37:56",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108177,7 +108177,7 @@
     },
     "2e65976013d283f60f003421d0dcecc6766750a9": {
       "found_at": "2026-02-24T04:40:05",
-      "last_checked": "2026-02-24T04:40:05",
+      "last_checked": "2026-02-25T21:37:57",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108189,7 +108189,7 @@
     },
     "74f4c842dd84b5ff84e3f08f641403c3a0d63655": {
       "found_at": "2026-02-24T04:40:05",
-      "last_checked": "2026-02-24T04:40:05",
+      "last_checked": "2026-02-25T21:37:57",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108201,7 +108201,7 @@
     },
     "aefca68a0dadd20f3343c6f885dfd63407c3cb45": {
       "found_at": "2026-02-24T04:40:06",
-      "last_checked": "2026-02-24T04:40:06",
+      "last_checked": "2026-02-25T21:37:58",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108213,7 +108213,7 @@
     },
     "ec7b6d6c1874a86ba2d11994966f6bb8820f8d24": {
       "found_at": "2026-02-24T04:40:06",
-      "last_checked": "2026-02-24T04:40:06",
+      "last_checked": "2026-02-25T21:37:58",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108225,7 +108225,7 @@
     },
     "4b786a2eb5ebb13549b3b6b49599676221ec9032": {
       "found_at": "2026-02-24T04:40:07",
-      "last_checked": "2026-02-24T04:40:07",
+      "last_checked": "2026-02-25T21:37:59",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108237,7 +108237,7 @@
     },
     "6f339da6a5ca01a8d39e38de682c28e53df872d1": {
       "found_at": "2026-02-24T04:40:07",
-      "last_checked": "2026-02-24T04:40:07",
+      "last_checked": "2026-02-25T21:37:59",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108249,7 +108249,7 @@
     },
     "f7651e80ed5053e9dd1e4a84f289b495c12f0d18": {
       "found_at": "2026-02-24T04:40:08",
-      "last_checked": "2026-02-24T04:40:08",
+      "last_checked": "2026-02-25T21:38:00",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108261,7 +108261,7 @@
     },
     "4855bcb332451829e422d2c2c6513eebf9ef16e2": {
       "found_at": "2026-02-24T04:40:08",
-      "last_checked": "2026-02-24T04:40:08",
+      "last_checked": "2026-02-25T21:38:00",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108273,7 +108273,7 @@
     },
     "3b07227d5772fa1ce0e6ab23a3ed0e2423c32b2a": {
       "found_at": "2026-02-24T04:40:08",
-      "last_checked": "2026-02-24T04:40:08",
+      "last_checked": "2026-02-25T21:38:01",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108285,7 +108285,7 @@
     },
     "b14334935a0339c357a1c614e8d2259631617bdf": {
       "found_at": "2026-02-24T04:40:09",
-      "last_checked": "2026-02-24T04:40:09",
+      "last_checked": "2026-02-25T21:38:01",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108297,7 +108297,7 @@
     },
     "a0099446931d826b78acd62d2035834000533c8a": {
       "found_at": "2026-02-24T04:40:10",
-      "last_checked": "2026-02-24T04:40:10",
+      "last_checked": "2026-02-25T21:38:02",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108309,7 +108309,7 @@
     },
     "eecc7eeacbadd3f9585e7d7cb1dea8ea6dc79ff2": {
       "found_at": "2026-02-24T04:40:10",
-      "last_checked": "2026-02-24T04:40:10",
+      "last_checked": "2026-02-25T21:38:02",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108321,7 +108321,7 @@
     },
     "a3abf51a7b601fd4f651399549d1a796dc3fbb1e": {
       "found_at": "2026-02-24T04:40:11",
-      "last_checked": "2026-02-24T04:40:11",
+      "last_checked": "2026-02-25T21:38:03",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108333,7 +108333,7 @@
     },
     "f43f82c17c9e732d807f7ff61dd92b94a1487153": {
       "found_at": "2026-02-24T04:40:11",
-      "last_checked": "2026-02-24T04:40:11",
+      "last_checked": "2026-02-25T21:38:03",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108345,7 +108345,7 @@
     },
     "71237f2c4c48fc965ddaf88dc49da75126b9a301": {
       "found_at": "2026-02-24T04:40:11",
-      "last_checked": "2026-02-24T04:40:11",
+      "last_checked": "2026-02-25T21:38:04",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108357,7 +108357,7 @@
     },
     "79e45897a8a0c2709965ad7c5b80b8249ae314f1": {
       "found_at": "2026-02-24T04:40:12",
-      "last_checked": "2026-02-24T04:40:12",
+      "last_checked": "2026-02-25T21:38:04",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108369,7 +108369,7 @@
     },
     "d96837dbf9b1f36f1ec999cc959874a4995b2ca3": {
       "found_at": "2026-02-24T04:40:12",
-      "last_checked": "2026-02-24T04:40:12",
+      "last_checked": "2026-02-25T21:38:05",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108381,7 +108381,7 @@
     },
     "0db53482ec2934a0e61eb06f005e2cbca9794a5f": {
       "found_at": "2026-02-24T04:40:13",
-      "last_checked": "2026-02-24T04:40:13",
+      "last_checked": "2026-02-25T21:38:05",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108393,7 +108393,7 @@
     },
     "d95be53c55ec28c0c11cdc126feae019de2dd484": {
       "found_at": "2026-02-24T04:40:13",
-      "last_checked": "2026-02-24T04:40:13",
+      "last_checked": "2026-02-25T21:38:06",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108405,7 +108405,7 @@
     },
     "87afe8d885b867faa6cdbdfa4d536505a5c8f9bc": {
       "found_at": "2026-02-24T04:40:14",
-      "last_checked": "2026-02-24T04:40:14",
+      "last_checked": "2026-02-25T21:38:06",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108417,7 +108417,7 @@
     },
     "de94ad0aaba05cb80cdb1445fe267b5b871ef53e": {
       "found_at": "2026-02-24T04:40:15",
-      "last_checked": "2026-02-24T04:40:15",
+      "last_checked": "2026-02-25T21:38:07",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108429,7 +108429,7 @@
     },
     "95ad8e1bcd9ae7b9606d2d764804245c600e679d": {
       "found_at": "2026-02-24T04:40:15",
-      "last_checked": "2026-02-24T04:40:15",
+      "last_checked": "2026-02-25T21:38:07",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108441,7 +108441,7 @@
     },
     "4f7992f65b8a04ad4e1151c1bfee08e570aebb0a": {
       "found_at": "2026-02-24T04:40:16",
-      "last_checked": "2026-02-24T04:40:16",
+      "last_checked": "2026-02-25T21:38:08",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108453,7 +108453,7 @@
     },
     "19a182951c9de55e36e3d20983705486748c2b51": {
       "found_at": "2026-02-24T04:40:16",
-      "last_checked": "2026-02-24T04:40:16",
+      "last_checked": "2026-02-25T21:38:08",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108465,7 +108465,7 @@
     },
     "be3181fddf80ab7e507b9cac385b41a43135ca88": {
       "found_at": "2026-02-24T04:40:18",
-      "last_checked": "2026-02-24T04:40:18",
+      "last_checked": "2026-02-25T21:38:09",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108477,7 +108477,7 @@
     },
     "96d8c76cb8b045307392cd22b36ab264a6b265c2": {
       "found_at": "2026-02-24T04:40:18",
-      "last_checked": "2026-02-24T04:40:18",
+      "last_checked": "2026-02-25T21:38:09",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108489,7 +108489,7 @@
     },
     "673017a3a060e6cf45629d6cbea81e3ec99dbb75": {
       "found_at": "2026-02-24T04:40:18",
-      "last_checked": "2026-02-24T04:40:18",
+      "last_checked": "2026-02-25T21:38:10",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108501,7 +108501,7 @@
     },
     "6d55a70e04a9f010a212e87282b542b078166b8d": {
       "found_at": "2026-02-24T04:40:19",
-      "last_checked": "2026-02-24T04:40:19",
+      "last_checked": "2026-02-25T21:38:10",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108513,7 +108513,7 @@
     },
     "7b4a45e4dbbfcca5142f01251dd1ffe8ca14ab53": {
       "found_at": "2026-02-24T04:40:20",
-      "last_checked": "2026-02-24T04:40:20",
+      "last_checked": "2026-02-25T21:38:11",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108525,7 +108525,7 @@
     },
     "811f82fae2537e2b1b67c9ffad250e7daaf8d3a5": {
       "found_at": "2026-02-24T04:40:20",
-      "last_checked": "2026-02-24T04:40:20",
+      "last_checked": "2026-02-25T21:38:11",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108537,7 +108537,7 @@
     },
     "8c41aa68597db32ed283180d247b25098703fb5a": {
       "found_at": "2026-02-24T04:40:21",
-      "last_checked": "2026-02-24T04:40:21",
+      "last_checked": "2026-02-25T21:38:12",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108549,7 +108549,7 @@
     },
     "44e4a2780ed577ae21aa27ddb71669e80deb2274": {
       "found_at": "2026-02-24T04:40:21",
-      "last_checked": "2026-02-24T04:40:21",
+      "last_checked": "2026-02-25T21:38:12",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108561,7 +108561,7 @@
     },
     "ba590269beaa61b475549216d69fb8cdaee7c969": {
       "found_at": "2026-02-24T04:40:22",
-      "last_checked": "2026-02-24T04:40:22",
+      "last_checked": "2026-02-25T21:38:13",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108573,7 +108573,7 @@
     },
     "faf608604c79e61f892ae6864972f76063bc265b": {
       "found_at": "2026-02-24T04:40:22",
-      "last_checked": "2026-02-24T04:40:22",
+      "last_checked": "2026-02-25T21:38:13",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108585,7 +108585,7 @@
     },
     "efab7bafdb0e62d8354ff88e9dcebd5b4acdaa3a": {
       "found_at": "2026-02-24T04:40:23",
-      "last_checked": "2026-02-24T04:40:23",
+      "last_checked": "2026-02-25T21:38:14",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108597,7 +108597,7 @@
     },
     "dea5ac5ea4f631c46345300750e1e1d9a79f4578": {
       "found_at": "2026-02-24T04:40:23",
-      "last_checked": "2026-02-24T04:40:23",
+      "last_checked": "2026-02-25T21:38:14",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108609,7 +108609,7 @@
     },
     "71048e4b4fc47a32aac1fe612c8ce3b9adb02f89": {
       "found_at": "2026-02-24T04:40:24",
-      "last_checked": "2026-02-24T04:40:24",
+      "last_checked": "2026-02-25T21:38:15",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108621,7 +108621,7 @@
     },
     "d72ae49c5f6cac07b891672e0ac14ad80d9a5d77": {
       "found_at": "2026-02-24T04:40:24",
-      "last_checked": "2026-02-24T04:40:24",
+      "last_checked": "2026-02-25T21:38:16",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108633,7 +108633,7 @@
     },
     "69f028f3d5f76826cbb5d84bfda7c703f268829f": {
       "found_at": "2026-02-24T04:40:24",
-      "last_checked": "2026-02-24T04:40:24",
+      "last_checked": "2026-02-25T21:38:16",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108645,7 +108645,7 @@
     },
     "5f1a130d92025cf5c04f39232b125600c551ff7b": {
       "found_at": "2026-02-24T04:40:25",
-      "last_checked": "2026-02-24T04:40:25",
+      "last_checked": "2026-02-25T21:38:17",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108657,7 +108657,7 @@
     },
     "eb40c968d67754d34f43560e5cdaf707f91d76e8": {
       "found_at": "2026-02-24T04:40:25",
-      "last_checked": "2026-02-24T04:40:25",
+      "last_checked": "2026-02-25T21:38:17",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108669,7 +108669,7 @@
     },
     "af79d7ce8eb3c8992f9de16bf3ebd820252ea5c7": {
       "found_at": "2026-02-24T04:40:26",
-      "last_checked": "2026-02-24T04:40:26",
+      "last_checked": "2026-02-25T21:38:17",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108681,7 +108681,7 @@
     },
     "73c0d20ea35b9a9f99d4586112a4ffc016bac1a1": {
       "found_at": "2026-02-24T04:40:26",
-      "last_checked": "2026-02-24T04:40:26",
+      "last_checked": "2026-02-25T21:38:18",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108693,7 +108693,7 @@
     },
     "247f12de6cbcdd29c3a291b346c55a65a2b4c976": {
       "found_at": "2026-02-24T04:40:27",
-      "last_checked": "2026-02-24T04:40:27",
+      "last_checked": "2026-02-25T21:38:19",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108705,7 +108705,7 @@
     },
     "765c5037583153072129dce5aa88f8a1f5c21661": {
       "found_at": "2026-02-24T04:40:27",
-      "last_checked": "2026-02-24T04:40:27",
+      "last_checked": "2026-02-25T21:38:19",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108717,7 +108717,7 @@
     },
     "0e4c874905ae4d802f875814fc9885501d4f300a": {
       "found_at": "2026-02-24T04:40:28",
-      "last_checked": "2026-02-24T04:40:28",
+      "last_checked": "2026-02-25T21:38:20",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108729,7 +108729,7 @@
     },
     "5aa3a109bd3e9ba715fe46a33a3952953cd2074f": {
       "found_at": "2026-02-24T04:40:28",
-      "last_checked": "2026-02-24T04:40:28",
+      "last_checked": "2026-02-25T21:38:20",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108741,7 +108741,7 @@
     },
     "070f44e656304900927b1c7fa2f3e64b113d5e00": {
       "found_at": "2026-02-24T04:40:29",
-      "last_checked": "2026-02-24T04:40:29",
+      "last_checked": "2026-02-25T21:38:21",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108753,7 +108753,7 @@
     },
     "c362ef979fd96b88741c94795db34d471da390ec": {
       "found_at": "2026-02-24T04:40:29",
-      "last_checked": "2026-02-24T04:40:29",
+      "last_checked": "2026-02-25T21:38:21",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108765,7 +108765,7 @@
     },
     "e69858063e9ec1a6b79935c3ca6e3fbabe432611": {
       "found_at": "2026-02-24T04:40:30",
-      "last_checked": "2026-02-24T04:40:30",
+      "last_checked": "2026-02-25T21:38:22",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108777,7 +108777,7 @@
     },
     "b469c2fd0dcd3a0cb68afe3bfa64f33588b00183": {
       "found_at": "2026-02-24T04:40:30",
-      "last_checked": "2026-02-24T04:40:30",
+      "last_checked": "2026-02-25T21:38:22",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108789,7 +108789,7 @@
     },
     "eeaa05086f0d1ea6222acfa93d400c6adb24d4ab": {
       "found_at": "2026-02-24T04:40:31",
-      "last_checked": "2026-02-24T04:40:31",
+      "last_checked": "2026-02-25T21:38:23",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108801,7 +108801,7 @@
     },
     "4e19d21e38561da64b879711649e566b1f71104a": {
       "found_at": "2026-02-24T04:40:31",
-      "last_checked": "2026-02-24T04:40:31",
+      "last_checked": "2026-02-25T21:38:23",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108813,7 +108813,7 @@
     },
     "e016ad96acf027b6837a94c3acf4205e23e2dc5e": {
       "found_at": "2026-02-24T04:40:32",
-      "last_checked": "2026-02-24T04:40:32",
+      "last_checked": "2026-02-25T21:38:24",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108825,7 +108825,7 @@
     },
     "bea25088d7032449cb1951c8d1b6550ac1edc6c8": {
       "found_at": "2026-02-24T04:40:32",
-      "last_checked": "2026-02-24T04:40:32",
+      "last_checked": "2026-02-25T21:38:24",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108837,7 +108837,7 @@
     },
     "6fb33e8a0908d3f52b4b32ebdac7f561126fab85": {
       "found_at": "2026-02-24T04:40:33",
-      "last_checked": "2026-02-24T04:40:33",
+      "last_checked": "2026-02-25T21:38:25",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108849,7 +108849,7 @@
     },
     "5f2e994e434ebaedf5182524c976565586b2ec8a": {
       "found_at": "2026-02-24T04:40:33",
-      "last_checked": "2026-02-24T04:40:33",
+      "last_checked": "2026-02-25T21:38:25",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108861,7 +108861,7 @@
     },
     "663cd436288a187b1e08d4cbaf737d74b5e59989": {
       "found_at": "2026-02-24T04:40:34",
-      "last_checked": "2026-02-24T04:40:34",
+      "last_checked": "2026-02-25T21:38:26",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108873,7 +108873,7 @@
     },
     "ee853bb08ddf6fc5b791c69ac9bba2c5152ca348": {
       "found_at": "2026-02-24T04:40:34",
-      "last_checked": "2026-02-24T04:40:34",
+      "last_checked": "2026-02-25T21:38:26",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108885,7 +108885,7 @@
     },
     "e6fa12a23145f457e689944396a95535382bc3f2": {
       "found_at": "2026-02-24T04:40:35",
-      "last_checked": "2026-02-24T04:40:35",
+      "last_checked": "2026-02-25T21:38:27",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108897,7 +108897,7 @@
     },
     "7505c6d8182fc4f06248ff3c25551235880730a8": {
       "found_at": "2026-02-24T04:40:35",
-      "last_checked": "2026-02-24T04:40:35",
+      "last_checked": "2026-02-25T21:38:27",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108909,7 +108909,7 @@
     },
     "501ea0f378461ca525f64475f9feb462f6e5730f": {
       "found_at": "2026-02-24T04:40:36",
-      "last_checked": "2026-02-24T04:40:36",
+      "last_checked": "2026-02-25T21:38:28",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108921,7 +108921,7 @@
     },
     "9294c143552a1e467d87a72af266cf3c09b3a67c": {
       "found_at": "2026-02-24T04:40:36",
-      "last_checked": "2026-02-24T04:40:36",
+      "last_checked": "2026-02-25T21:38:28",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108933,7 +108933,7 @@
     },
     "10f154761ade4587ff76f342327b6677ba896139": {
       "found_at": "2026-02-24T04:40:37",
-      "last_checked": "2026-02-24T04:40:37",
+      "last_checked": "2026-02-25T21:38:29",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108945,7 +108945,7 @@
     },
     "2a38477ab3a26c2d4d821c0736e4a987a87839a3": {
       "found_at": "2026-02-24T04:40:37",
-      "last_checked": "2026-02-24T04:40:37",
+      "last_checked": "2026-02-25T21:38:29",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108957,7 +108957,7 @@
     },
     "5ac07a66b4a7dea5b7844357219a06f8edcaa2a0": {
       "found_at": "2026-02-24T04:40:38",
-      "last_checked": "2026-02-24T04:40:38",
+      "last_checked": "2026-02-25T21:38:30",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108969,7 +108969,7 @@
     },
     "17a8445040574306fe3aa0694e58e6e52b430fc3": {
       "found_at": "2026-02-24T04:40:38",
-      "last_checked": "2026-02-24T04:40:38",
+      "last_checked": "2026-02-25T21:38:30",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108981,7 +108981,7 @@
     },
     "b52918d993e61d6b32c8c7fe91f1866d9644ea76": {
       "found_at": "2026-02-24T04:40:39",
-      "last_checked": "2026-02-24T04:40:39",
+      "last_checked": "2026-02-25T21:38:31",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -108993,7 +108993,7 @@
     },
     "28d910fc5b48fc80627c71e725a50cabeae5da90": {
       "found_at": "2026-02-24T04:40:39",
-      "last_checked": "2026-02-24T04:40:39",
+      "last_checked": "2026-02-25T21:38:32",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109005,7 +109005,7 @@
     },
     "22b7ac5ce7d118fcd605c083d4fdcf15ebf242fb": {
       "found_at": "2026-02-24T04:40:40",
-      "last_checked": "2026-02-24T04:40:40",
+      "last_checked": "2026-02-25T21:38:32",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109017,7 +109017,7 @@
     },
     "37a7c46adb67c182558c34fa27f538169ca135b9": {
       "found_at": "2026-02-24T04:40:40",
-      "last_checked": "2026-02-24T04:40:40",
+      "last_checked": "2026-02-25T21:38:33",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109029,7 +109029,7 @@
     },
     "8b42eb37d75313f4e54c4c36b4faa31e0e510efc": {
       "found_at": "2026-02-24T04:40:41",
-      "last_checked": "2026-02-24T04:40:41",
+      "last_checked": "2026-02-25T21:38:33",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109041,7 +109041,7 @@
     },
     "b450429077d189fca56d4f1fae07e078206a0696": {
       "found_at": "2026-02-24T04:40:41",
-      "last_checked": "2026-02-24T04:40:41",
+      "last_checked": "2026-02-25T21:38:34",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109053,7 +109053,7 @@
     },
     "e08d48301a60ad56f115e3670d17bfb8bb8de708": {
       "found_at": "2026-02-24T04:40:42",
-      "last_checked": "2026-02-24T04:40:42",
+      "last_checked": "2026-02-25T21:38:34",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109065,7 +109065,7 @@
     },
     "b0eaeed40908170262cf3de9a8342339812715f8": {
       "found_at": "2026-02-24T04:40:42",
-      "last_checked": "2026-02-24T04:40:42",
+      "last_checked": "2026-02-25T21:38:35",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109077,7 +109077,7 @@
     },
     "985ea839a295ecc1c6eebc8c01e35919f77bee31": {
       "found_at": "2026-02-24T04:40:43",
-      "last_checked": "2026-02-24T04:40:43",
+      "last_checked": "2026-02-25T21:38:35",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109089,7 +109089,7 @@
     },
     "c345992ab7d177f48c12682e47f9011d0d04c305": {
       "found_at": "2026-02-24T04:40:43",
-      "last_checked": "2026-02-24T04:40:43",
+      "last_checked": "2026-02-25T21:38:36",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109101,7 +109101,7 @@
     },
     "b0f07ab2662b27b7b3294c6d6476057932ef433e": {
       "found_at": "2026-02-24T04:40:44",
-      "last_checked": "2026-02-24T04:40:44",
+      "last_checked": "2026-02-25T21:38:36",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109113,7 +109113,7 @@
     },
     "2a5337cbb646ab3ae1530a1d61be18f283cd6bd2": {
       "found_at": "2026-02-24T04:40:44",
-      "last_checked": "2026-02-24T04:40:44",
+      "last_checked": "2026-02-25T21:38:37",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109125,7 +109125,7 @@
     },
     "2ff79a0a4e85f2e895afdad715e3006685b1b1b7": {
       "found_at": "2026-02-24T04:40:45",
-      "last_checked": "2026-02-24T04:40:45",
+      "last_checked": "2026-02-25T21:38:37",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109137,7 +109137,7 @@
     },
     "20e79b302997018c6943bb8ecece2e0d715b6aaf": {
       "found_at": "2026-02-24T04:40:45",
-      "last_checked": "2026-02-24T04:40:45",
+      "last_checked": "2026-02-25T21:38:38",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109149,7 +109149,7 @@
     },
     "4fb7452835e0446223edf3dc2229e651e4f32a74": {
       "found_at": "2026-02-24T04:40:46",
-      "last_checked": "2026-02-24T04:40:46",
+      "last_checked": "2026-02-25T21:38:38",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109161,7 +109161,7 @@
     },
     "1067c41bfe9eea217d6d1cf9b117742895237d9d": {
       "found_at": "2026-02-24T04:40:46",
-      "last_checked": "2026-02-24T04:40:46",
+      "last_checked": "2026-02-25T21:38:39",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109173,7 +109173,7 @@
     },
     "3d06e9ed3373278f6619e12af1cc362b96d46685": {
       "found_at": "2026-02-24T04:40:47",
-      "last_checked": "2026-02-24T04:40:47",
+      "last_checked": "2026-02-25T21:38:39",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109185,7 +109185,7 @@
     },
     "eb1e094d9c70af7e1b9b02dc891947e5b36d1d74": {
       "found_at": "2026-02-24T04:40:48",
-      "last_checked": "2026-02-24T04:40:48",
+      "last_checked": "2026-02-25T21:38:40",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109197,7 +109197,7 @@
     },
     "33db69dd301a8f845d5e66130f494238879ee186": {
       "found_at": "2026-02-24T04:40:48",
-      "last_checked": "2026-02-24T04:40:48",
+      "last_checked": "2026-02-25T21:38:40",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109209,7 +109209,7 @@
     },
     "9cc43432f4118586f7d801ec84f90d233c014685": {
       "found_at": "2026-02-24T04:40:49",
-      "last_checked": "2026-02-24T04:40:49",
+      "last_checked": "2026-02-25T21:38:41",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109221,7 +109221,7 @@
     },
     "0709499c79ce894ceecca2b0f78892eea959c3a3": {
       "found_at": "2026-02-24T04:40:49",
-      "last_checked": "2026-02-24T04:40:49",
+      "last_checked": "2026-02-25T21:38:41",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109233,7 +109233,7 @@
     },
     "8ea259051a797929fe5f257adf0213a4d37c755b": {
       "found_at": "2026-02-24T04:40:50",
-      "last_checked": "2026-02-24T04:40:50",
+      "last_checked": "2026-02-25T21:38:42",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109245,7 +109245,7 @@
     },
     "6f75bcb2d63fc0bb7f4c57c171479c383e11af39": {
       "found_at": "2026-02-24T04:40:50",
-      "last_checked": "2026-02-24T04:40:50",
+      "last_checked": "2026-02-25T21:38:43",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109257,7 +109257,7 @@
     },
     "2aec645bf437aea9eb93ad360d4ac1c7b37a3a37": {
       "found_at": "2026-02-24T04:40:51",
-      "last_checked": "2026-02-24T04:40:51",
+      "last_checked": "2026-02-25T21:38:43",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109269,7 +109269,7 @@
     },
     "d3e3741208649c8c96d572f0ed0d62927ef75594": {
       "found_at": "2026-02-24T04:40:51",
-      "last_checked": "2026-02-24T04:40:51",
+      "last_checked": "2026-02-25T21:38:44",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109281,7 +109281,7 @@
     },
     "c74e29eb1be72588504794d7445736ed403528f5": {
       "found_at": "2026-02-24T04:40:52",
-      "last_checked": "2026-02-24T04:40:52",
+      "last_checked": "2026-02-25T21:38:44",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109293,7 +109293,7 @@
     },
     "2ee102094d3c1f71fba0870aeedd0ff70ccf22e5": {
       "found_at": "2026-02-24T04:40:52",
-      "last_checked": "2026-02-24T04:40:52",
+      "last_checked": "2026-02-25T21:38:45",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109305,7 +109305,7 @@
     },
     "8ab233014e884f23233d4febe47176fed0ee83cf": {
       "found_at": "2026-02-24T04:40:53",
-      "last_checked": "2026-02-24T04:40:53",
+      "last_checked": "2026-02-25T21:38:45",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109317,7 +109317,7 @@
     },
     "322619a1688e65571ed1c1f1fad1f2e1d79ba175": {
       "found_at": "2026-02-24T04:40:53",
-      "last_checked": "2026-02-24T04:40:53",
+      "last_checked": "2026-02-25T21:38:46",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109329,7 +109329,7 @@
     },
     "b6e8c2521d673e21d66017590802e73d0700a7d5": {
       "found_at": "2026-02-24T04:40:54",
-      "last_checked": "2026-02-24T04:40:54",
+      "last_checked": "2026-02-25T21:38:46",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109341,7 +109341,7 @@
     },
     "7e28d862ffdb73d8150ada4bfe42304f88cef8ca": {
       "found_at": "2026-02-24T04:40:54",
-      "last_checked": "2026-02-24T04:40:54",
+      "last_checked": "2026-02-25T21:38:47",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109353,7 +109353,7 @@
     },
     "58571697f1e0fc17842ea807b7a559f179b7825b": {
       "found_at": "2026-02-24T04:40:55",
-      "last_checked": "2026-02-24T04:40:55",
+      "last_checked": "2026-02-25T21:38:47",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109365,7 +109365,7 @@
     },
     "7e69e48661208e448d3d8e28687aa1be1a624efc": {
       "found_at": "2026-02-24T04:40:55",
-      "last_checked": "2026-02-24T04:40:55",
+      "last_checked": "2026-02-25T21:38:48",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109377,7 +109377,7 @@
     },
     "8dcad9356a1cbbfe0d2e8af6972410bd8eeb3bcc": {
       "found_at": "2026-02-24T04:40:56",
-      "last_checked": "2026-02-24T04:40:56",
+      "last_checked": "2026-02-25T21:38:48",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109389,7 +109389,7 @@
     },
     "3f1cf00560e9bbac023f8cbc2f82717f7a6cf24c": {
       "found_at": "2026-02-24T04:40:56",
-      "last_checked": "2026-02-24T04:40:56",
+      "last_checked": "2026-02-25T21:38:49",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109401,7 +109401,7 @@
     },
     "a567b404e7709374bcc1a414bfa5ba4bf9db5d17": {
       "found_at": "2026-02-24T04:40:57",
-      "last_checked": "2026-02-24T04:40:57",
+      "last_checked": "2026-02-25T21:38:49",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109413,7 +109413,7 @@
     },
     "0a40ff714e9ed18b1c1997a7c5cf927d58606113": {
       "found_at": "2026-02-24T04:40:57",
-      "last_checked": "2026-02-24T04:40:57",
+      "last_checked": "2026-02-25T21:38:50",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109425,7 +109425,7 @@
     },
     "6d1f873c55c09b0bcecaf3731449032591711d4d": {
       "found_at": "2026-02-24T04:40:58",
-      "last_checked": "2026-02-24T04:40:58",
+      "last_checked": "2026-02-25T21:38:50",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109437,7 +109437,7 @@
     },
     "a2638cd443c4616274c6c7f3a2aca648d26efed7": {
       "found_at": "2026-02-24T04:40:58",
-      "last_checked": "2026-02-24T04:40:58",
+      "last_checked": "2026-02-25T21:38:51",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109449,7 +109449,7 @@
     },
     "a6aff7e5a2856c94dede85321f4690466348181c": {
       "found_at": "2026-02-24T04:40:59",
-      "last_checked": "2026-02-24T04:40:59",
+      "last_checked": "2026-02-25T21:38:51",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109461,7 +109461,7 @@
     },
     "e5f9783ded116f345fcc1a6a2da1feb834baa89c": {
       "found_at": "2026-02-24T04:40:59",
-      "last_checked": "2026-02-24T04:40:59",
+      "last_checked": "2026-02-25T21:38:52",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109473,7 +109473,7 @@
     },
     "e366fd89cb7dad224b3a1245708bcd185e187f91": {
       "found_at": "2026-02-24T04:41:00",
-      "last_checked": "2026-02-24T04:41:00",
+      "last_checked": "2026-02-25T21:38:52",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109485,7 +109485,7 @@
     },
     "13b78c5896c55dd35765dfe183d0976a5018fc17": {
       "found_at": "2026-02-24T04:41:00",
-      "last_checked": "2026-02-24T04:41:00",
+      "last_checked": "2026-02-25T21:38:53",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109497,7 +109497,7 @@
     },
     "04481c1b1902063ddfae021495162aca071f6699": {
       "found_at": "2026-02-24T04:41:01",
-      "last_checked": "2026-02-24T04:41:01",
+      "last_checked": "2026-02-25T21:38:53",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109509,7 +109509,7 @@
     },
     "ec6cdb83b2a37d77a85213ec52040132b33fa101": {
       "found_at": "2026-02-24T04:41:01",
-      "last_checked": "2026-02-24T04:41:01",
+      "last_checked": "2026-02-25T21:38:54",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109521,7 +109521,7 @@
     },
     "1383aeee64c4bc5da0d3aac29dfc37be41e71f2d": {
       "found_at": "2026-02-24T04:41:02",
-      "last_checked": "2026-02-24T04:41:02",
+      "last_checked": "2026-02-25T21:38:55",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109533,7 +109533,7 @@
     },
     "bfc669fdac46f21d7c76f516223f6e5e71b13037": {
       "found_at": "2026-02-24T04:41:03",
-      "last_checked": "2026-02-24T04:41:03",
+      "last_checked": "2026-02-25T21:38:55",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109545,7 +109545,7 @@
     },
     "dd8fd79e5ec8198ead9ad96a3a539c2ee9f8c08f": {
       "found_at": "2026-02-24T04:41:03",
-      "last_checked": "2026-02-24T04:41:03",
+      "last_checked": "2026-02-25T21:38:56",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109557,7 +109557,7 @@
     },
     "2cdf0ecf24415117b769be9de0b92cdb112c2503": {
       "found_at": "2026-02-24T04:41:04",
-      "last_checked": "2026-02-24T04:41:04",
+      "last_checked": "2026-02-25T21:38:56",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109569,7 +109569,7 @@
     },
     "d67bb4d5a8cd70a2f987dec30a2325a0ec99224b": {
       "found_at": "2026-02-24T04:41:04",
-      "last_checked": "2026-02-24T04:41:04",
+      "last_checked": "2026-02-25T21:38:57",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109581,7 +109581,7 @@
     },
     "ce510ccad99e70d0fcef282841d0d61ff7d16289": {
       "found_at": "2026-02-24T04:41:05",
-      "last_checked": "2026-02-24T04:41:05",
+      "last_checked": "2026-02-25T21:38:57",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109593,7 +109593,7 @@
     },
     "401cb3a421140b877232cf7ed594a1b574845456": {
       "found_at": "2026-02-24T04:41:05",
-      "last_checked": "2026-02-24T04:41:05",
+      "last_checked": "2026-02-25T21:38:58",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109605,7 +109605,7 @@
     },
     "cde4b86055d599f9024c746512198db1ea056a9f": {
       "found_at": "2026-02-24T04:41:05",
-      "last_checked": "2026-02-24T04:41:05",
+      "last_checked": "2026-02-25T21:38:58",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109617,7 +109617,7 @@
     },
     "e4dfdf0649774d6ff369fed7848ade8f79ddd69b": {
       "found_at": "2026-02-24T04:41:06",
-      "last_checked": "2026-02-24T04:41:06",
+      "last_checked": "2026-02-25T21:38:59",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109629,7 +109629,7 @@
     },
     "38994ae7142fab4600ebdf3768f4345d3937733c": {
       "found_at": "2026-02-24T04:41:07",
-      "last_checked": "2026-02-24T04:41:07",
+      "last_checked": "2026-02-25T21:38:59",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109641,7 +109641,7 @@
     },
     "f13ff10ac43d664da70a5ccee8d317c832c85281": {
       "found_at": "2026-02-24T04:41:07",
-      "last_checked": "2026-02-24T04:41:07",
+      "last_checked": "2026-02-25T21:39:00",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109653,7 +109653,7 @@
     },
     "e24013f45366d0e651a59f27ab1e6f738bf5cedb": {
       "found_at": "2026-02-24T04:41:07",
-      "last_checked": "2026-02-24T04:41:07",
+      "last_checked": "2026-02-25T21:39:00",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109665,7 +109665,7 @@
     },
     "44e0ac2aa4cde59bc823710ebfeacf41402c28ab": {
       "found_at": "2026-02-24T04:41:08",
-      "last_checked": "2026-02-24T04:41:08",
+      "last_checked": "2026-02-25T21:39:01",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109677,7 +109677,7 @@
     },
     "f386e35fb214ecb9501412c21f19bd2d621f75db": {
       "found_at": "2026-02-24T04:41:08",
-      "last_checked": "2026-02-24T04:41:08",
+      "last_checked": "2026-02-25T21:39:01",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109689,7 +109689,7 @@
     },
     "b5d26d1b5b686b8731c6a7acd84946a2f992d0b0": {
       "found_at": "2026-02-24T04:41:09",
-      "last_checked": "2026-02-24T04:41:09",
+      "last_checked": "2026-02-25T21:39:02",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109701,7 +109701,7 @@
     },
     "37e6cbf2e6b1c86e5b5c843bc058b0db2567f3cb": {
       "found_at": "2026-02-24T04:41:09",
-      "last_checked": "2026-02-24T04:41:09",
+      "last_checked": "2026-02-25T21:39:02",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109713,7 +109713,7 @@
     },
     "1fe1b6403f4edb171165d03f630a209d793ae8e9": {
       "found_at": "2026-02-24T04:41:10",
-      "last_checked": "2026-02-24T04:41:10",
+      "last_checked": "2026-02-25T21:39:03",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109725,7 +109725,7 @@
     },
     "66090f2b6d8a30c6944d11cfdc3aae002b376086": {
       "found_at": "2026-02-24T04:41:10",
-      "last_checked": "2026-02-24T04:41:10",
+      "last_checked": "2026-02-25T21:39:03",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109737,7 +109737,7 @@
     },
     "036859e7d2784c24dbe3d71f57b860a213dcb11d": {
       "found_at": "2026-02-24T04:41:11",
-      "last_checked": "2026-02-24T04:41:11",
+      "last_checked": "2026-02-25T21:39:04",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109749,7 +109749,7 @@
     },
     "9125f209529ea8e1ba73e802a1c20ee1e1a4d651": {
       "found_at": "2026-02-24T04:41:11",
-      "last_checked": "2026-02-24T04:41:11",
+      "last_checked": "2026-02-25T21:39:04",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109761,7 +109761,7 @@
     },
     "9a4aadda1048ae5e0a54c32d0f4c4ed1730c5f33": {
       "found_at": "2026-02-24T04:41:12",
-      "last_checked": "2026-02-24T04:41:12",
+      "last_checked": "2026-02-25T21:39:05",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109773,7 +109773,7 @@
     },
     "3dcbd1ba11acdda8e45158abaccfa76540b2dd5a": {
       "found_at": "2026-02-24T04:41:12",
-      "last_checked": "2026-02-24T04:41:12",
+      "last_checked": "2026-02-25T21:39:05",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109785,7 +109785,7 @@
     },
     "b9dbfba59f4c6cfb910830e6ae25240e2c7af669": {
       "found_at": "2026-02-24T04:41:13",
-      "last_checked": "2026-02-24T04:41:13",
+      "last_checked": "2026-02-25T21:39:06",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109797,7 +109797,7 @@
     },
     "12d172627553a651db6fc46b6cbc36b256bde043": {
       "found_at": "2026-02-24T04:41:13",
-      "last_checked": "2026-02-24T04:41:13",
+      "last_checked": "2026-02-25T21:39:06",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109809,7 +109809,7 @@
     },
     "8803dac5c0beb0b72fb6116bc1e8499340bc2f22": {
       "found_at": "2026-02-24T04:41:14",
-      "last_checked": "2026-02-24T04:41:14",
+      "last_checked": "2026-02-25T21:39:07",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109821,7 +109821,7 @@
     },
     "191e625140df16f8b96389d4e25f233ad6ebbfa3": {
       "found_at": "2026-02-24T04:41:14",
-      "last_checked": "2026-02-24T04:41:14",
+      "last_checked": "2026-02-25T21:39:07",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109833,7 +109833,7 @@
     },
     "0beccd86aab939972403d159f2f70e93ff704d8b": {
       "found_at": "2026-02-24T04:41:15",
-      "last_checked": "2026-02-24T04:41:15",
+      "last_checked": "2026-02-25T21:39:08",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109845,7 +109845,7 @@
     },
     "160f960c7fa2a83d1e492b831a64bcb0f7cc74d4": {
       "found_at": "2026-02-24T04:41:15",
-      "last_checked": "2026-02-24T04:41:15",
+      "last_checked": "2026-02-25T21:39:08",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109857,7 +109857,7 @@
     },
     "e7b3454b539fab8ed992dd44aa53c79619aaf219": {
       "found_at": "2026-02-24T04:41:16",
-      "last_checked": "2026-02-24T04:41:16",
+      "last_checked": "2026-02-25T21:39:09",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109869,7 +109869,7 @@
     },
     "2c742fb2db0b82a299e07e65e472a2e12d5c1bbc": {
       "found_at": "2026-02-24T04:41:17",
-      "last_checked": "2026-02-24T04:41:17",
+      "last_checked": "2026-02-25T21:39:09",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109881,7 +109881,7 @@
     },
     "175c9adcbe64152ef914cc15396ef7c1ff957dfd": {
       "found_at": "2026-02-24T04:41:17",
-      "last_checked": "2026-02-24T04:41:17",
+      "last_checked": "2026-02-25T21:39:10",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109893,7 +109893,7 @@
     },
     "c7ba8140623e2e957a5505cff796be4068e2336a": {
       "found_at": "2026-02-24T04:41:18",
-      "last_checked": "2026-02-24T04:41:18",
+      "last_checked": "2026-02-25T21:39:10",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109905,7 +109905,7 @@
     },
     "464a192fe6b2c0f5bd9518c0042f7761d5c4bbd2": {
       "found_at": "2026-02-24T04:41:18",
-      "last_checked": "2026-02-24T04:41:18",
+      "last_checked": "2026-02-25T21:39:11",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109917,7 +109917,7 @@
     },
     "010728e0867ccb6dab7c509355fcb0f299d2fc3d": {
       "found_at": "2026-02-24T04:41:19",
-      "last_checked": "2026-02-24T04:41:19",
+      "last_checked": "2026-02-25T21:39:11",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109929,7 +109929,7 @@
     },
     "df609f4742819595b7bb007a2e3f478596a4aea7": {
       "found_at": "2026-02-24T04:41:19",
-      "last_checked": "2026-02-24T04:41:19",
+      "last_checked": "2026-02-25T21:39:12",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109941,7 +109941,7 @@
     },
     "feeb4908d58ff6b8af50760a27fe27f109155e1e": {
       "found_at": "2026-02-24T04:41:20",
-      "last_checked": "2026-02-24T04:41:20",
+      "last_checked": "2026-02-25T21:39:12",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109953,7 +109953,7 @@
     },
     "888924a6601a657a9ab530e2a2aac1c4fbc5ae37": {
       "found_at": "2026-02-24T04:41:20",
-      "last_checked": "2026-02-24T04:41:20",
+      "last_checked": "2026-02-25T21:39:13",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109965,7 +109965,7 @@
     },
     "9dc23a9fcbe3bf9e61a2dc9a3605a415961e043e": {
       "found_at": "2026-02-24T04:41:21",
-      "last_checked": "2026-02-24T04:41:21",
+      "last_checked": "2026-02-25T21:39:13",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109977,7 +109977,7 @@
     },
     "e10159c047d06116c6cbc495033ccd04a051706d": {
       "found_at": "2026-02-24T04:41:21",
-      "last_checked": "2026-02-24T04:41:21",
+      "last_checked": "2026-02-25T21:39:14",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -109989,7 +109989,7 @@
     },
     "d706db40177e3775dcba474aca5c6a57938a82a4": {
       "found_at": "2026-02-24T04:41:22",
-      "last_checked": "2026-02-24T04:41:22",
+      "last_checked": "2026-02-25T21:39:15",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110001,7 +110001,7 @@
     },
     "47e82d99142a7e03f015046310eedde01d854d4b": {
       "found_at": "2026-02-24T04:41:22",
-      "last_checked": "2026-02-24T04:41:22",
+      "last_checked": "2026-02-25T21:39:15",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110013,7 +110013,7 @@
     },
     "f607ed584c49b7e3089fd16d5771bb14fe6a56fa": {
       "found_at": "2026-02-24T04:41:23",
-      "last_checked": "2026-02-24T04:41:23",
+      "last_checked": "2026-02-25T21:39:16",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110025,7 +110025,7 @@
     },
     "1af5dc71fd8400ac7f5060a0f882ee53f567425a": {
       "found_at": "2026-02-24T04:41:23",
-      "last_checked": "2026-02-24T04:41:23",
+      "last_checked": "2026-02-25T21:39:16",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110037,7 +110037,7 @@
     },
     "fe63da7468a3b976c2c1f295841bcbc864523c9d": {
       "found_at": "2026-02-24T04:41:24",
-      "last_checked": "2026-02-24T04:41:24",
+      "last_checked": "2026-02-25T21:39:17",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110049,7 +110049,7 @@
     },
     "ee34467ab87cda8b14c080df7c2d6ce1edfaffb9": {
       "found_at": "2026-02-24T04:41:24",
-      "last_checked": "2026-02-24T04:41:24",
+      "last_checked": "2026-02-25T21:39:17",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110061,7 +110061,7 @@
     },
     "1ecd6b7b7795ed86b71c8de85c395f16023f6451": {
       "found_at": "2026-02-24T04:41:25",
-      "last_checked": "2026-02-24T04:41:25",
+      "last_checked": "2026-02-25T21:39:18",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110073,7 +110073,7 @@
     },
     "e568b2709390c936f5851258068c412f82d1166f": {
       "found_at": "2026-02-24T04:41:25",
-      "last_checked": "2026-02-24T04:41:25",
+      "last_checked": "2026-02-25T21:39:18",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110085,7 +110085,7 @@
     },
     "25bbe2ad07b5ad62e5c6e1925b8a3403365af884": {
       "found_at": "2026-02-24T04:41:26",
-      "last_checked": "2026-02-24T04:41:26",
+      "last_checked": "2026-02-25T21:39:19",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110097,7 +110097,7 @@
     },
     "55eba12bac71516d49c86630dc2a13c43377529b": {
       "found_at": "2026-02-24T04:41:26",
-      "last_checked": "2026-02-24T04:41:26",
+      "last_checked": "2026-02-25T21:39:19",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110109,7 +110109,7 @@
     },
     "0e1cc4e64ce70f2410984feea578d66083831f20": {
       "found_at": "2026-02-24T04:41:27",
-      "last_checked": "2026-02-24T04:41:27",
+      "last_checked": "2026-02-25T21:39:20",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110121,7 +110121,7 @@
     },
     "9007a74abecd2a3817e59b781b9692de433b2e4d": {
       "found_at": "2026-02-24T04:41:27",
-      "last_checked": "2026-02-24T04:41:27",
+      "last_checked": "2026-02-25T21:39:20",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110133,7 +110133,7 @@
     },
     "3af902bf178abc4fabae16813c98f053fd896f9b": {
       "found_at": "2026-02-24T04:41:28",
-      "last_checked": "2026-02-24T04:41:28",
+      "last_checked": "2026-02-25T21:39:21",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110145,7 +110145,7 @@
     },
     "9cc9d444c7dff9bc7a97890c7074ddf8f004f010": {
       "found_at": "2026-02-24T04:41:28",
-      "last_checked": "2026-02-24T04:41:28",
+      "last_checked": "2026-02-25T21:39:21",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110157,7 +110157,7 @@
     },
     "a618f3779e3e9537c762ecabb0c64fb8f02be551": {
       "found_at": "2026-02-24T04:41:29",
-      "last_checked": "2026-02-24T04:41:29",
+      "last_checked": "2026-02-25T21:39:22",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110169,7 +110169,7 @@
     },
     "4662b4fa80d8f2e7a18ba3f3e9bfacc2c15dcb76": {
       "found_at": "2026-02-24T04:41:29",
-      "last_checked": "2026-02-24T04:41:29",
+      "last_checked": "2026-02-25T21:39:22",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110181,7 +110181,7 @@
     },
     "b02c6bc1b13c11b1b7fb72ec2af0be8c713ffe45": {
       "found_at": "2026-02-24T04:41:30",
-      "last_checked": "2026-02-24T04:41:30",
+      "last_checked": "2026-02-25T21:39:23",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110193,7 +110193,7 @@
     },
     "003eed603038f6c8fa07739cdb434f65681f9e58": {
       "found_at": "2026-02-24T04:41:31",
-      "last_checked": "2026-02-24T04:41:31",
+      "last_checked": "2026-02-25T21:39:23",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110205,7 +110205,7 @@
     },
     "192b0d86f12036e64fc36da3deda1efd647efe3a": {
       "found_at": "2026-02-24T04:41:31",
-      "last_checked": "2026-02-24T04:41:31",
+      "last_checked": "2026-02-25T21:39:24",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110217,7 +110217,7 @@
     },
     "a52bd044cedbe352e8458056169fd1f3e48a71aa": {
       "found_at": "2026-02-24T04:41:31",
-      "last_checked": "2026-02-24T04:41:31",
+      "last_checked": "2026-02-25T21:39:24",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110229,7 +110229,7 @@
     },
     "cf26d38630695d1c33138f17b9d1453bed33c8e8": {
       "found_at": "2026-02-24T04:41:32",
-      "last_checked": "2026-02-24T04:41:32",
+      "last_checked": "2026-02-25T21:39:25",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110241,7 +110241,7 @@
     },
     "58566cd042296e24322c28f987fdc381b5b3d163": {
       "found_at": "2026-02-24T04:41:33",
-      "last_checked": "2026-02-24T04:41:33",
+      "last_checked": "2026-02-25T21:39:25",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110253,7 +110253,7 @@
     },
     "15877c4f19b7c9600a2a09930a8c17d5dbcb3214": {
       "found_at": "2026-02-24T04:41:33",
-      "last_checked": "2026-02-24T04:41:33",
+      "last_checked": "2026-02-25T21:39:26",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110265,7 +110265,7 @@
     },
     "4de93ec242241911cd83ad14ef6e02da3fb0a97a": {
       "found_at": "2026-02-24T04:41:34",
-      "last_checked": "2026-02-24T04:41:34",
+      "last_checked": "2026-02-25T21:39:26",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110277,7 +110277,7 @@
     },
     "66817618ca5d53462d3da1cf1776be919b2bcf9f": {
       "found_at": "2026-02-24T04:41:34",
-      "last_checked": "2026-02-24T04:41:34",
+      "last_checked": "2026-02-25T21:39:27",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110289,7 +110289,7 @@
     },
     "3df991c54d2eb43c67739064764835206f03ce89": {
       "found_at": "2026-02-24T04:41:35",
-      "last_checked": "2026-02-24T04:41:35",
+      "last_checked": "2026-02-25T21:39:28",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110301,7 +110301,7 @@
     },
     "6d849972e18d7decc854d82a950ba3a31f1b11bd": {
       "found_at": "2026-02-24T04:41:35",
-      "last_checked": "2026-02-24T04:41:35",
+      "last_checked": "2026-02-25T21:39:28",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110313,7 +110313,7 @@
     },
     "4f166553cca20a3cd6170b4acde5998aaa6fd1fb": {
       "found_at": "2026-02-24T04:41:36",
-      "last_checked": "2026-02-24T04:41:36",
+      "last_checked": "2026-02-25T21:39:29",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110325,7 +110325,7 @@
     },
     "fca3e7a29c18764b100273b930098f9e77d38d55": {
       "found_at": "2026-02-24T04:41:37",
-      "last_checked": "2026-02-24T04:41:37",
+      "last_checked": "2026-02-25T21:39:29",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110337,7 +110337,7 @@
     },
     "79e43b6308c8db43ae1ac7d404cfc5b81a35f45c": {
       "found_at": "2026-02-24T04:41:37",
-      "last_checked": "2026-02-24T04:41:37",
+      "last_checked": "2026-02-25T21:39:30",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110349,7 +110349,7 @@
     },
     "1bd02d2951ad50e6f7ee11e8ef16575dc06fcdd7": {
       "found_at": "2026-02-24T04:41:38",
-      "last_checked": "2026-02-24T04:41:38",
+      "last_checked": "2026-02-25T21:39:31",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110361,7 +110361,7 @@
     },
     "52326b30458247e64b4283a0bdfa1b82f7bd43d6": {
       "found_at": "2026-02-24T04:41:38",
-      "last_checked": "2026-02-24T04:41:38",
+      "last_checked": "2026-02-25T21:39:31",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110373,7 +110373,7 @@
     },
     "c988fc8c1438e7ffc56193e1572da586c32e56d4": {
       "found_at": "2026-02-24T04:41:39",
-      "last_checked": "2026-02-24T04:41:39",
+      "last_checked": "2026-02-25T21:39:32",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110385,7 +110385,7 @@
     },
     "2369e663feff4cd72f691e58bc61658a44a3598d": {
       "found_at": "2026-02-24T04:41:39",
-      "last_checked": "2026-02-24T04:41:39",
+      "last_checked": "2026-02-25T21:39:32",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110397,7 +110397,7 @@
     },
     "e7fac27ec9f533d60dcd21f2ae7196da16ed1ecc": {
       "found_at": "2026-02-24T04:41:40",
-      "last_checked": "2026-02-24T04:41:40",
+      "last_checked": "2026-02-25T21:39:33",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110409,7 +110409,7 @@
     },
     "8ceaa81e7d5ed30677b5dc2f3a1ecc852342dead": {
       "found_at": "2026-02-24T04:41:40",
-      "last_checked": "2026-02-24T04:41:40",
+      "last_checked": "2026-02-25T21:39:33",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110421,7 +110421,7 @@
     },
     "84663b550f68810dc3ec29fabc48fe8b3d37f088": {
       "found_at": "2026-02-24T04:41:41",
-      "last_checked": "2026-02-24T04:41:41",
+      "last_checked": "2026-02-25T21:39:34",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110433,7 +110433,7 @@
     },
     "41dda12de5183fe2883386f11878f1f58b2d4391": {
       "found_at": "2026-02-24T04:41:41",
-      "last_checked": "2026-02-24T04:41:41",
+      "last_checked": "2026-02-25T21:39:34",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110445,7 +110445,7 @@
     },
     "2d6d76bc626fad79836b070180cc8c68c0faa075": {
       "found_at": "2026-02-24T04:41:42",
-      "last_checked": "2026-02-24T04:41:42",
+      "last_checked": "2026-02-25T21:39:35",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110457,7 +110457,7 @@
     },
     "69079fbd252ff139558c16de1bff25a4401ee1b1": {
       "found_at": "2026-02-24T04:41:42",
-      "last_checked": "2026-02-24T04:41:42",
+      "last_checked": "2026-02-25T21:39:35",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110469,7 +110469,7 @@
     },
     "fe8acf509770d62f4756ac76688c1eaa694ad750": {
       "found_at": "2026-02-24T04:41:43",
-      "last_checked": "2026-02-24T04:41:43",
+      "last_checked": "2026-02-25T21:39:36",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110481,7 +110481,7 @@
     },
     "48f1b73e196bebe9856d1eb93f5c7b108eb9ae68": {
       "found_at": "2026-02-24T04:41:43",
-      "last_checked": "2026-02-24T04:41:43",
+      "last_checked": "2026-02-25T21:39:36",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110493,7 +110493,7 @@
     },
     "adf9d8001d1af71f31424a35a39cd2b26692e7ec": {
       "found_at": "2026-02-24T04:41:44",
-      "last_checked": "2026-02-24T04:41:44",
+      "last_checked": "2026-02-25T21:39:37",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110505,7 +110505,7 @@
     },
     "3ef01521628dc0b0b33506199520f580de74c5a5": {
       "found_at": "2026-02-24T04:41:45",
-      "last_checked": "2026-02-24T04:41:45",
+      "last_checked": "2026-02-25T21:39:37",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110517,7 +110517,7 @@
     },
     "7196ae5d564b0f0dbebb410beebe6c656933eff0": {
       "found_at": "2026-02-24T04:41:45",
-      "last_checked": "2026-02-24T04:41:45",
+      "last_checked": "2026-02-25T21:39:38",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110529,7 +110529,7 @@
     },
     "0280c81d6fe0d6ffeae50a34c9f94ced9c681312": {
       "found_at": "2026-02-24T04:41:46",
-      "last_checked": "2026-02-24T04:41:46",
+      "last_checked": "2026-02-25T21:39:38",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110541,7 +110541,7 @@
     },
     "55ea84ac89ac4116ca8fbe7b4f8d35c1c8ecaa0c": {
       "found_at": "2026-02-24T04:41:46",
-      "last_checked": "2026-02-24T04:41:46",
+      "last_checked": "2026-02-25T21:39:39",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110553,7 +110553,7 @@
     },
     "598a3c365d4b4e37f27fe1d8d559866f9de1ec51": {
       "found_at": "2026-02-24T04:41:47",
-      "last_checked": "2026-02-24T04:41:47",
+      "last_checked": "2026-02-25T21:39:39",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110565,7 +110565,7 @@
     },
     "ecbfe257c94f94167fd480db7dea0d8c29fdaccb": {
       "found_at": "2026-02-24T04:41:47",
-      "last_checked": "2026-02-24T04:41:47",
+      "last_checked": "2026-02-25T21:39:40",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110577,7 +110577,7 @@
     },
     "928216a9015ed407c6af58e73c0e60dcfdb27888": {
       "found_at": "2026-02-24T04:41:48",
-      "last_checked": "2026-02-24T04:41:48",
+      "last_checked": "2026-02-25T21:39:40",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110589,7 +110589,7 @@
     },
     "fc55dedc6e35a44121511e773aa3478e9c037b76": {
       "found_at": "2026-02-24T04:41:48",
-      "last_checked": "2026-02-24T04:41:48",
+      "last_checked": "2026-02-25T21:39:41",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110601,7 +110601,7 @@
     },
     "5ad933faaf43c291bba2512a6e2de47d3267bd7d": {
       "found_at": "2026-02-24T04:41:49",
-      "last_checked": "2026-02-24T04:41:49",
+      "last_checked": "2026-02-25T21:39:41",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110613,7 +110613,7 @@
     },
     "535323768fb25cfcb486119424884e09771103f4": {
       "found_at": "2026-02-24T04:41:49",
-      "last_checked": "2026-02-24T04:41:49",
+      "last_checked": "2026-02-25T21:39:42",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110625,7 +110625,7 @@
     },
     "24f9630a1696152f15783df2240b30652b440306": {
       "found_at": "2026-02-24T04:41:50",
-      "last_checked": "2026-02-24T04:41:50",
+      "last_checked": "2026-02-25T21:39:42",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110637,7 +110637,7 @@
     },
     "2f020eea4f769f76f8ec170454294869215bc34d": {
       "found_at": "2026-02-24T04:41:50",
-      "last_checked": "2026-02-24T04:41:50",
+      "last_checked": "2026-02-25T21:39:43",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110649,7 +110649,7 @@
     },
     "013bdbdc9bcb1d80ae66f43d8908e4999bb1a3e0": {
       "found_at": "2026-02-24T04:41:51",
-      "last_checked": "2026-02-24T04:41:51",
+      "last_checked": "2026-02-25T21:39:43",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110661,7 +110661,7 @@
     },
     "b664abe33bcb23dbf0a680965b286abbca70e530": {
       "found_at": "2026-02-24T04:41:51",
-      "last_checked": "2026-02-24T04:41:51",
+      "last_checked": "2026-02-25T21:39:44",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110673,7 +110673,7 @@
     },
     "0d5981b3e0303e3ea4f9fc18e820392ee6f94d46": {
       "found_at": "2026-02-24T04:41:52",
-      "last_checked": "2026-02-24T04:41:52",
+      "last_checked": "2026-02-25T21:39:44",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110685,7 +110685,7 @@
     },
     "9591f5ed293a531582491470dc6c56e74f7c0ba3": {
       "found_at": "2026-02-24T04:41:52",
-      "last_checked": "2026-02-24T04:41:52",
+      "last_checked": "2026-02-25T21:39:45",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110697,7 +110697,7 @@
     },
     "eb14cf8729436ef502a8739d96ad628421c45b6b": {
       "found_at": "2026-02-24T04:41:53",
-      "last_checked": "2026-02-24T04:41:53",
+      "last_checked": "2026-02-25T21:39:45",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110709,7 +110709,7 @@
     },
     "ae53ce49d41e2e140acb1a91c0a729231be632d0": {
       "found_at": "2026-02-24T04:41:53",
-      "last_checked": "2026-02-24T04:41:53",
+      "last_checked": "2026-02-25T21:39:46",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110721,7 +110721,7 @@
     },
     "6c5fad0dcadab93bd871814178bca713fd58da36": {
       "found_at": "2026-02-24T04:41:54",
-      "last_checked": "2026-02-24T04:41:54",
+      "last_checked": "2026-02-25T21:39:46",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110733,7 +110733,7 @@
     },
     "f1fb38139817c4d7e5d8c081ca9424c6d121c814": {
       "found_at": "2026-02-24T04:41:54",
-      "last_checked": "2026-02-24T04:41:54",
+      "last_checked": "2026-02-25T21:39:47",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110745,7 +110745,7 @@
     },
     "cc7d4e91a9950a2fef96ae2eeab1d215a3914fe9": {
       "found_at": "2026-02-24T04:41:55",
-      "last_checked": "2026-02-24T04:41:55",
+      "last_checked": "2026-02-25T21:39:47",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110757,7 +110757,7 @@
     },
     "ca87202d3551620d32e0d2593baae11736881086": {
       "found_at": "2026-02-24T04:41:55",
-      "last_checked": "2026-02-24T04:41:55",
+      "last_checked": "2026-02-25T21:39:48",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110769,7 +110769,7 @@
     },
     "60bd020eca43d4a8f4b011c92f1da48e3cb032b9": {
       "found_at": "2026-02-24T04:41:56",
-      "last_checked": "2026-02-24T04:41:56",
+      "last_checked": "2026-02-25T21:39:48",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110781,7 +110781,7 @@
     },
     "c125067e79538c890973a9c7ad05708287826ce0": {
       "found_at": "2026-02-24T04:41:57",
-      "last_checked": "2026-02-24T04:41:57",
+      "last_checked": "2026-02-25T21:39:49",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110793,7 +110793,7 @@
     },
     "d605de9a078d40de8aa9786086f31815e91c39c5": {
       "found_at": "2026-02-24T04:41:57",
-      "last_checked": "2026-02-24T04:41:57",
+      "last_checked": "2026-02-25T21:39:49",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110805,7 +110805,7 @@
     },
     "68a783d0919ed7decb6da0e921a976107d5d0cae": {
       "found_at": "2026-02-24T04:41:58",
-      "last_checked": "2026-02-24T04:41:58",
+      "last_checked": "2026-02-25T21:39:50",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110817,7 +110817,7 @@
     },
     "7876e79bb71b39731a05a39093f63e538eafde28": {
       "found_at": "2026-02-24T04:41:58",
-      "last_checked": "2026-02-24T04:41:58",
+      "last_checked": "2026-02-25T21:39:50",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110829,7 +110829,7 @@
     },
     "2ffaa72cd45ccf852fe70e7dd428f7a6c2a2ac6d": {
       "found_at": "2026-02-24T04:41:59",
-      "last_checked": "2026-02-24T04:41:59",
+      "last_checked": "2026-02-25T21:39:51",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110841,7 +110841,7 @@
     },
     "4dbef59847d0fdeb1843794265a367a12c227bd3": {
       "found_at": "2026-02-24T04:41:59",
-      "last_checked": "2026-02-24T04:41:59",
+      "last_checked": "2026-02-25T21:39:51",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110853,7 +110853,7 @@
     },
     "55e2cda15ca4dc49ea4a32cbf1be1f29fdc9289a": {
       "found_at": "2026-02-24T04:42:00",
-      "last_checked": "2026-02-24T04:42:00",
+      "last_checked": "2026-02-25T21:39:52",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110865,7 +110865,7 @@
     },
     "c9d5c6a2768857ab0b15e326a4b9928c44f3f3ca": {
       "found_at": "2026-02-24T04:42:00",
-      "last_checked": "2026-02-24T04:42:00",
+      "last_checked": "2026-02-25T21:39:52",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110877,7 +110877,7 @@
     },
     "1bf239a445dfd4c6fbfa7c53465c716ed7f8e324": {
       "found_at": "2026-02-24T04:42:01",
-      "last_checked": "2026-02-24T04:42:01",
+      "last_checked": "2026-02-25T21:39:53",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110889,7 +110889,7 @@
     },
     "5e68e628c2cbad1555fd9ae13ab0e7383174fe77": {
       "found_at": "2026-02-24T04:42:01",
-      "last_checked": "2026-02-24T04:42:01",
+      "last_checked": "2026-02-25T21:39:54",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110901,7 +110901,7 @@
     },
     "81449d8387ee9e07573e5909bddbd212733bd1c3": {
       "found_at": "2026-02-24T04:42:02",
-      "last_checked": "2026-02-24T04:42:02",
+      "last_checked": "2026-02-25T21:39:54",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110913,7 +110913,7 @@
     },
     "3519ab0446cf3ac9e0b74962b9b691c9f7ec9b04": {
       "found_at": "2026-02-24T04:42:02",
-      "last_checked": "2026-02-24T04:42:02",
+      "last_checked": "2026-02-25T21:39:55",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110925,7 +110925,7 @@
     },
     "b935134e9c79ba8f8d89a14c72e91256b843cd9f": {
       "found_at": "2026-02-24T04:42:03",
-      "last_checked": "2026-02-24T04:42:03",
+      "last_checked": "2026-02-25T21:39:55",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110937,7 +110937,7 @@
     },
     "2483dc9095383358c42f17e7482a9f958823a435": {
       "found_at": "2026-02-24T04:42:03",
-      "last_checked": "2026-02-24T04:42:03",
+      "last_checked": "2026-02-25T21:39:56",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110949,7 +110949,7 @@
     },
     "98352d84741c83dbff424bcb0bd84a92c3e2c9ec": {
       "found_at": "2026-02-24T04:42:04",
-      "last_checked": "2026-02-24T04:42:04",
+      "last_checked": "2026-02-25T21:39:56",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110961,7 +110961,7 @@
     },
     "660347a24b91398f746abfccee23b6494bcbd9fa": {
       "found_at": "2026-02-24T04:42:04",
-      "last_checked": "2026-02-24T04:42:04",
+      "last_checked": "2026-02-25T21:39:57",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110973,7 +110973,7 @@
     },
     "8275edd2863d894dafbd8bc6ac3bb73780e8cb6c": {
       "found_at": "2026-02-24T04:42:05",
-      "last_checked": "2026-02-24T04:42:05",
+      "last_checked": "2026-02-25T21:39:57",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110985,7 +110985,7 @@
     },
     "396cdce974a97b3b8145d921b7932bafb160f3f1": {
       "found_at": "2026-02-24T04:42:05",
-      "last_checked": "2026-02-24T04:42:05",
+      "last_checked": "2026-02-25T21:39:58",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -110997,7 +110997,7 @@
     },
     "51822ec10eef9a451d2393c6c06a949d2bcfafc5": {
       "found_at": "2026-02-24T04:42:06",
-      "last_checked": "2026-02-24T04:42:06",
+      "last_checked": "2026-02-25T21:39:58",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111009,7 +111009,7 @@
     },
     "d3b18ac1ff2f21e708a98a9b47584e0b76cbf37b": {
       "found_at": "2026-02-24T04:42:06",
-      "last_checked": "2026-02-24T04:42:06",
+      "last_checked": "2026-02-25T21:39:59",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111021,7 +111021,7 @@
     },
     "99f624510d1ed5dbf91905b5a402abeb650d1215": {
       "found_at": "2026-02-24T04:42:07",
-      "last_checked": "2026-02-24T04:42:07",
+      "last_checked": "2026-02-25T21:39:59",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111033,7 +111033,7 @@
     },
     "7863ba3b022a1cd05c391b56901ce076c105a637": {
       "found_at": "2026-02-24T04:42:07",
-      "last_checked": "2026-02-24T04:42:07",
+      "last_checked": "2026-02-25T21:40:00",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111045,7 +111045,7 @@
     },
     "0a26ab07b5547e6baa22a092927c444dc355572f": {
       "found_at": "2026-02-24T04:42:08",
-      "last_checked": "2026-02-24T04:42:08",
+      "last_checked": "2026-02-25T21:40:01",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111057,7 +111057,7 @@
     },
     "b11ff783bbdf0f6e447706d0116f7765168f0e7b": {
       "found_at": "2026-02-24T04:42:08",
-      "last_checked": "2026-02-24T04:42:08",
+      "last_checked": "2026-02-25T21:40:01",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111069,7 +111069,7 @@
     },
     "9c2708a696120214cd74ffceff7f5ba9003da99c": {
       "found_at": "2026-02-24T04:42:09",
-      "last_checked": "2026-02-24T04:42:09",
+      "last_checked": "2026-02-25T21:40:02",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111081,7 +111081,7 @@
     },
     "4a4fbd1a8b9a6891eeea76a14dc4d0672e18622a": {
       "found_at": "2026-02-24T04:42:09",
-      "last_checked": "2026-02-24T04:42:09",
+      "last_checked": "2026-02-25T21:40:02",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111093,7 +111093,7 @@
     },
     "97fd554c24c067d220208daecd05f243571156a6": {
       "found_at": "2026-02-24T04:42:10",
-      "last_checked": "2026-02-24T04:42:10",
+      "last_checked": "2026-02-25T21:40:03",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111105,7 +111105,7 @@
     },
     "d2c620a702c6877a0484cff062f5a0ffc9f9f47f": {
       "found_at": "2026-02-24T04:42:11",
-      "last_checked": "2026-02-24T04:42:11",
+      "last_checked": "2026-02-25T21:40:03",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111117,7 +111117,7 @@
     },
     "e015488f50fd63bada1bb79736db055c5f894bec": {
       "found_at": "2026-02-24T04:42:11",
-      "last_checked": "2026-02-24T04:42:11",
+      "last_checked": "2026-02-25T21:40:04",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111129,7 +111129,7 @@
     },
     "1f3cba4fb153eaee719fd6950c4f7e001dfacc2e": {
       "found_at": "2026-02-24T04:42:12",
-      "last_checked": "2026-02-24T04:42:12",
+      "last_checked": "2026-02-25T21:40:04",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111141,7 +111141,7 @@
     },
     "b461a40bd4c8d5d38972eb20b23f67d6a2a379d6": {
       "found_at": "2026-02-24T04:42:12",
-      "last_checked": "2026-02-24T04:42:12",
+      "last_checked": "2026-02-25T21:40:05",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111153,7 +111153,7 @@
     },
     "25a3f5ec21c84caa6b48c1f42f7035834ddee255": {
       "found_at": "2026-02-24T04:42:48",
-      "last_checked": "2026-02-24T04:42:48",
+      "last_checked": "2026-02-25T21:40:05",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111165,7 +111165,7 @@
     },
     "1db9ba579ac32bbef7503dbc7d6d5e2b63a99beb": {
       "found_at": "2026-02-24T04:42:49",
-      "last_checked": "2026-02-24T04:42:49",
+      "last_checked": "2026-02-25T21:40:05",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111177,7 +111177,7 @@
     },
     "79536bdd32bea79caa07ff7c8b6d96e9eb5346fa": {
       "found_at": "2026-02-24T04:42:49",
-      "last_checked": "2026-02-24T04:42:49",
+      "last_checked": "2026-02-25T21:40:06",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111189,7 +111189,7 @@
     },
     "77132773dfa128ad3b4d3a7ef1e617f3519b6138": {
       "found_at": "2026-02-24T04:42:49",
-      "last_checked": "2026-02-24T04:42:49",
+      "last_checked": "2026-02-25T21:40:06",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111201,7 +111201,7 @@
     },
     "698339ade7c15c0609cefbe5d45c94da7013b46f": {
       "found_at": "2026-02-24T04:42:50",
-      "last_checked": "2026-02-24T04:42:50",
+      "last_checked": "2026-02-25T21:40:06",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111213,7 +111213,7 @@
     },
     "ae334b70387c318b93d96cd632f7c050db3288a3": {
       "found_at": "2026-02-24T04:42:51",
-      "last_checked": "2026-02-24T04:42:51",
+      "last_checked": "2026-02-25T21:40:07",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111225,7 +111225,7 @@
     },
     "b4cc06f856f394e40bca4e9a68821f3aaccadd1f": {
       "found_at": "2026-02-24T04:42:52",
-      "last_checked": "2026-02-24T04:42:52",
+      "last_checked": "2026-02-25T21:40:07",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111237,7 +111237,7 @@
     },
     "6b4cfdf62506d559a5f9870994f0051fdae984e1": {
       "found_at": "2026-02-24T04:42:52",
-      "last_checked": "2026-02-24T04:42:52",
+      "last_checked": "2026-02-25T21:40:08",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111249,7 +111249,7 @@
     },
     "f753510a01043dd8a74d4e0cf989cde203174158": {
       "found_at": "2026-02-24T04:42:53",
-      "last_checked": "2026-02-24T04:42:53",
+      "last_checked": "2026-02-25T21:40:08",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111261,7 +111261,7 @@
     },
     "2232d327994f636a62cf1c3d920e8f427994c335": {
       "found_at": "2026-02-24T04:42:53",
-      "last_checked": "2026-02-24T04:42:53",
+      "last_checked": "2026-02-25T21:40:09",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111273,7 +111273,7 @@
     },
     "8cf6376159f66e82f02c1a264d12ca3297833401": {
       "found_at": "2026-02-24T04:42:53",
-      "last_checked": "2026-02-24T04:42:53",
+      "last_checked": "2026-02-25T21:40:09",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111285,7 +111285,7 @@
     },
     "8bfa6890ed12f85c033354872979c625408835a3": {
       "found_at": "2026-02-24T04:42:54",
-      "last_checked": "2026-02-24T04:42:54",
+      "last_checked": "2026-02-25T21:40:11",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111297,7 +111297,7 @@
     },
     "dfb02df3cfa6e21506d878bc34b7c818be2c02c7": {
       "found_at": "2026-02-24T04:42:54",
-      "last_checked": "2026-02-24T04:42:54",
+      "last_checked": "2026-02-25T21:40:12",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111309,7 +111309,7 @@
     },
     "a0d0a0a04089bafae707f6a30399a82b38616fa1": {
       "found_at": "2026-02-24T04:42:55",
-      "last_checked": "2026-02-24T04:42:55",
+      "last_checked": "2026-02-25T21:40:12",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111321,7 +111321,7 @@
     },
     "78b5dfcbca13b331d5b71436307788df09ee267d": {
       "found_at": "2026-02-24T04:42:55",
-      "last_checked": "2026-02-24T04:42:55",
+      "last_checked": "2026-02-25T21:40:13",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111333,7 +111333,7 @@
     },
     "4ab9a4038fa4a77ce096767a77f10f5e7dd37002": {
       "found_at": "2026-02-24T04:42:56",
-      "last_checked": "2026-02-24T04:42:56",
+      "last_checked": "2026-02-25T21:40:13",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111345,7 +111345,7 @@
     },
     "83d87a35ee883928fe7e080679bba5c5e3312be6": {
       "found_at": "2026-02-24T04:42:56",
-      "last_checked": "2026-02-24T04:42:56",
+      "last_checked": "2026-02-25T21:40:14",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111357,7 +111357,7 @@
     },
     "8db228ef3e04980049c873fc449ec0eb4cd9c6c1": {
       "found_at": "2026-02-24T04:42:57",
-      "last_checked": "2026-02-24T04:42:57",
+      "last_checked": "2026-02-25T21:40:14",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111369,7 +111369,7 @@
     },
     "1599b8f2dfeb413feb84198c293285415dc19175": {
       "found_at": "2026-02-24T04:42:57",
-      "last_checked": "2026-02-24T04:42:57",
+      "last_checked": "2026-02-25T21:40:15",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111381,7 +111381,7 @@
     },
     "f9527ff2247fb42fb1db0924473b6b9dea18dd20": {
       "found_at": "2026-02-24T04:42:58",
-      "last_checked": "2026-02-24T04:42:58",
+      "last_checked": "2026-02-25T21:40:16",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111393,7 +111393,7 @@
     },
     "98e568b05b8a5d80f88bdcd37771204d22b75257": {
       "found_at": "2026-02-24T04:42:58",
-      "last_checked": "2026-02-24T04:42:58",
+      "last_checked": "2026-02-25T21:40:16",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111405,7 +111405,7 @@
     },
     "cfb5461ef06b98148ee52001e1193640a647ae97": {
       "found_at": "2026-02-24T04:42:59",
-      "last_checked": "2026-02-24T04:42:59",
+      "last_checked": "2026-02-25T21:40:17",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111415,11 +111415,11 @@
         "miejscowego"
       ],
       "att_sig": "[]",
-      "status": "NOWE"
+      "status": "HIT"
     },
     "394be570de644a54bd885c857fbc33c6223899b8": {
       "found_at": "2026-02-24T04:42:59",
-      "last_checked": "2026-02-24T04:42:59",
+      "last_checked": "2026-02-25T21:40:17",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
@@ -111431,7 +111431,7 @@
     },
     "e645d3db00b3a50d509b5bac7e4612ea84fdab83": {
       "found_at": "2026-02-24T04:43:00",
-      "last_checked": "2026-02-24T04:43:00",
+      "last_checked": "2026-02-25T21:40:18",
       "etag": "",
       "last_modified": "",
       "gmina": "Gostyń",
