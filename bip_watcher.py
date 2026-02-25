@@ -11,7 +11,7 @@ Zawiera wszystkie fixy z v2.9-v2.12:
   consecutive dedup, page title selection through generic filter
 """
 
-import os, csv, json, hashlib, asyncio, re, time, smtplib, warnings, socket, random, signal
+import os, sys, csv, json, hashlib, asyncio, re, time, smtplib, warnings, socket, random, signal
 from collections import deque, defaultdict
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
@@ -492,7 +492,15 @@ RUN_DEADLINE_MIN = env_int("RUN_DEADLINE_MIN", 0)
 GLOBAL_T0 = time.time()
 
 def signal_handler(signum, frame):
+    # 1) ustaw flagę, żeby pętle i checkpointy wiedziały że kończymy
     state.request_shutdown()
+    print(f"\n🛑 SIGNAL {signum} received", flush=True)
+
+    # 2) GitHub Actions: CANCEL workflow ma kończyć proces natychmiast
+    #    (w praktyce GHA wysyła SIGTERM, a my wychodzimy z kodem != 0)
+    if os.getenv("GITHUB_ACTIONS"):
+        print("🛑 GHA cancel -> sys.exit(1) (hard stop)", flush=True)
+        os._exit(1)
 
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
@@ -1255,7 +1263,7 @@ def load_cache_v2():
 def save_cache_v2(raw_cache, urls_seen_set, content_seen, gmina_seeds):
     out = {"schema": CACHE_SCHEMA}
     old_urls = (raw_cache or {}).get("urls_seen", {}) if isinstance(raw_cache, dict) else {}
-    print(f"📦 Cache loaded: urls_seen={len(urls)} | content_seen={len(content)} | seeds={len(gseeds)} | frontiers={len(gf)} | dead={len(dead)}")
+    print(f"💾 save_cache_v2: urls_seen={len(urls_seen_set)} | content_seen={len(content_seen or {})} | seeds={len(gmina_seeds or {})} | frontiers={len(state.gmina_frontiers or {})} | dead={len(getattr(state,'dead_urls',{}) or {})}")
     out["content_seen"] = content_seen or {}
     out["gmina_seeds"] = gmina_seeds or {}
     out["gmina_frontiers"] = state.gmina_frontiers or {}
@@ -2518,4 +2526,5 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
