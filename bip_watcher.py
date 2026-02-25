@@ -1878,7 +1878,6 @@ def _consecutive_dedup_check(gmina: str, title: str) -> bool:
     state.last_printed[gmina] = title_norm
     return True
 
-=================================== UTILS =======================================
 async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                        urls_seen: set, content_seen: dict, diag):
     if state.shutdown_requested:
@@ -2563,6 +2562,7 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
 
