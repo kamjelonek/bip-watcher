@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.15 - PRODUCTION
-Zmiany v2.14 vs v2.13:
-- Usunięto "mpzp" i "oze" całkowicie — z KEYWORDS, STRICT_ONLY i LISTING_URL_HINTS
-Zmiany v2.13 vs v2.12:
-- TTL HIT i NO_MATCH: 24h -> 172h (raz w tygodniu)
-- BLOCKED strony nie są sprawdzane ponownie (skip bezwarunkowo)
-Zawiera wszystkie fixy z v2.9-v2.12:
-- is_download_url(), binary PDF detection, generic title filtering,
-  consecutive dedup, page title selection through generic filter
+BIP WATCHER v2.16 - PRODUCTION
+Zmiany v2.16 vs v2.15:
+- NAPRAWA: save_shard_cache_and_commit() teraz faktycznie commituje w GHA
+  (usunięto blokadę "commit pominięty")
+- NAPRAWA: signal_handler() - najpierw zapis, potem exit (nie os._exit przed zapisem)
+- NAPRAWA: exec w YAML (patrz workflow) - SIGTERM trafia do Pythona
+- NAPRAWA: periodic_checkpoint robi finalny zapis gdy shutdown_requested=True
+- WYDAJNOŚĆ: max-parallel 10->20, CONCURRENT_GMINY domyślnie 1 (per shard),
+  CONCURRENT_REQUESTS 30->50, LIMIT_PER_HOST 4->6,
+  RATE_MIN_DELAY 0.5->0.3, PHASE1_MAX_PAGES 1000->2000
 """
 
 import os, sys, csv, json, hashlib, asyncio, re, time, smtplib, warnings, socket, random, signal
@@ -46,9 +47,10 @@ def get_shard_index():
         return -1
 
 def _git_commit_file(filepath, message):
-    if os.getenv("GITHUB_ACTIONS"):
-        print(f"📁 Plik zapisany lokalnie (bez commita): {filepath}")
-        return
+    """
+    NAPRAWA v2.16: usunięto blokadę dla GITHUB_ACTIONS.
+    Teraz commituje zawsze — zarówno lokalnie jak i w GHA.
+    """
     try:
         print(f"📤 Git commit: {filepath} with message: {message}")
         subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=False)
@@ -78,19 +80,19 @@ async def save_shard_cache_and_commit(loop=None):
 
     filename = BASE_DIR / f"cache_shard_{shard}.json"
     try:
-        with open(filename, "w", encoding="utf-8") as f:
+        tmp = str(filename) + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
             json.dump(out, f, indent=2, ensure_ascii=False)
+        os.replace(tmp, filename)
         print(f"📁 Plik shardowy zapisany: {filename}")
     except Exception as e:
         print(f"⚠️ Failed to write shard cache: {e}")
         return
 
-    if not os.getenv("GITHUB_ACTIONS"):
-        if loop is None:
-            loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, _git_commit_file, filename, f"Auto-update cache shard {shard} [skip ci]")
-    else:
-        print("📌 W GHA – plik zapisany lokalnie, commit pominięty")
+    # NAPRAWA v2.16: commituj zawsze (nie tylko poza GHA)
+    if loop is None:
+        loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, _git_commit_file, filename, f"Auto-update cache shard {shard} [skip ci]")
 
 # ===================== PATHS =====================
 BASE_DIR = Path(__file__).resolve().parent / "data"
@@ -121,25 +123,20 @@ ENABLE_EMAIL = False
 
 # ===================== KEYWORDS =====================
 KEYWORDS = [
-    # mpzp / plany — usunięto "mpzp" (za krótkie, za dużo false positives)
     "miejscowy plan", "plan miejscowy", "miejscowego",
     "miejscowy plan zagospodarowania przestrzennego",
     "projekt mpzp", "miejscowego planu zagospodarowania przestrzennego",
-    # plan ogólny
     "plan ogólny", "plan ogolny", "planu ogólnego",
-    # studium
     "studium uwarunkowań", "studium uwarunkowan",
-    # decyzje
     "warunki zabudowy", "decyzja o warunkach zabudowy", "decyzje o warunkach zabudowy",
     "decyzja środowiskowa", "decyzje środowiskowe",
     "decyzja o środowiskowych uwarunkowaniach", "środowiskowych uwarunkowaniach",
     "raport o oddziaływaniu na środowisko",
-    # OZE — usunięto "oze" (za krótkie, za dużo false positives)
     "elektrownia wiatrowa", "farma wiatrowa", "wiatr", "wiatrow", "turbina",
     "fotowolta", "farma fotowoltaiczna", "magazyn energii",
 ]
 
-STRICT_ONLY = {"wz"}  # usunięto "mpzp" i "oze" — wypadły z KEYWORDS
+STRICT_ONLY = {"wz"}
 
 def keyword_match_in_blob(blob: str):
     t = re.sub(r"\s+", " ", (blob or "")).strip().lower()
@@ -197,14 +194,12 @@ ATT_EXT = (
     ".tif", ".tiff",
 )
 
-# ===================== FIX #5: Download URL patterns =====================
 DOWNLOAD_URL_SEGMENTS = [
     "/pobierz/", "/download/", "/pobieranie/",
     "/file/", "/files/", "/attachment/", "/attachments/",
     "/getfile/", "/get-file/",
     "/dokumenty/pobierz/",
     "/media/", "/uploads/",
-    # FIX #1: wzorce z bip.miastonowydwor.pl i podobnych
     "/file_add/", "/file_add/download/",
     "/filedownload/", "/file-download/",
     "/pobierz-plik/", "/get-file/",
@@ -214,18 +209,12 @@ DOWNLOAD_URL_PARAMS = [
     "file=", "pobierz=", "download=", "attachment=", "getfile=",
 ]
 
-# FIX #1: wzorce końcówek URL które wskazują na plik bez rozszerzenia
-# np. "download/2091_informacja-o-wynikach-naborupdf" (brak kropki przed pdf)
 _DOWNLOAD_SUFFIX_RE = re.compile(
     r"(pdf|docx?|xlsx?|odt|rtf|zip|rar|7z|gml|xml|tiff?|dwg|dxf)$",
     re.IGNORECASE
 )
 
 def is_download_url(u: str) -> bool:
-    """
-    FIX #1 + FIX #5: Wykrywa URL-e do pobierania plików nawet bez rozszerzenia.
-    Obsługuje: /pobierz/123, ?file=19562, /file_add/download/XXXpdf
-    """
     low = (u or "").lower()
     for seg in DOWNLOAD_URL_SEGMENTS:
         if seg in low:
@@ -233,7 +222,6 @@ def is_download_url(u: str) -> bool:
     for param in DOWNLOAD_URL_PARAMS:
         if param in low:
             return True
-    # FIX #1: URL kończący się rozszerzeniem bez kropki (np. "XXXpdf")
     path = urlparse(u).path
     if path and not path.endswith("/"):
         if _DOWNLOAD_SUFFIX_RE.search(path.split("/")[-1]):
@@ -242,63 +230,19 @@ def is_download_url(u: str) -> bool:
 
 # ===================== FIX #6: Generic page title filter =====================
 _GENERIC_TITLE_PATTERNS = [
-    "biuletyn informacji publicznej",
-    "biuletyn informacji",
-    "archiwum bip",
-    "bip archiwum",
-    "strona główna",
-    "strona glowna",
-    "aktualności",
-    "aktualnosci",
-    "ogłoszenia",
-    "ogloszenia",
-    "redakcja",
-    "rejestr zmian",
-    "mapa strony",
-    "mapa serwisu",
-    "szukaj",
-    "wyszukiwarka",
-    "kontakt",
-    "start",
-    "home",
-    # FIX #4: rozszerzone
-    "biznes",
-    "informacje",
-    "informacja",
-    "dla mieszkańców",
-    "dla mieszkancow",
-    "urząd",
-    "urzad",
-    "gmina",
-    "miasto",
-    "powiat",
-    "więcej",
-    "wiecej",
-    "czytaj więcej",
-    "czytaj wiecej",
-    "zobacz więcej",
-    "wszystkie",
-    "kategoria",
-    "tagi",
-    "archiwum",
-    "newsletter",
-    "galeria",
-    "multimedia",
-    "przetargi",
-    "zamówienia",
-    "zamowienia",
-    "rada gminy",
-    "rada miasta",
-    "zarząd",
-    "zarzad",
-    "burmistrz",
-    "wójt",
-    "wojt",
-    "starosta",
+    "biuletyn informacji publicznej", "biuletyn informacji", "archiwum bip",
+    "bip archiwum", "strona główna", "strona glowna", "aktualności", "aktualnosci",
+    "ogłoszenia", "ogloszenia", "redakcja", "rejestr zmian", "mapa strony",
+    "mapa serwisu", "szukaj", "wyszukiwarka", "kontakt", "start", "home",
+    "biznes", "informacje", "informacja", "dla mieszkańców", "dla mieszkancow",
+    "urząd", "urzad", "gmina", "miasto", "powiat", "więcej", "wiecej",
+    "czytaj więcej", "czytaj wiecej", "zobacz więcej", "wszystkie", "kategoria",
+    "tagi", "archiwum", "newsletter", "galeria", "multimedia", "przetargi",
+    "zamówienia", "zamowienia", "rada gminy", "rada miasta", "zarząd", "zarzad",
+    "burmistrz", "wójt", "wojt", "starosta",
 ]
 
 def is_generic_page_title(title: str) -> bool:
-    """FIX #6: True jeśli tytuł to nazwa serwisu/systemu, nie ogłoszenia."""
     t = re.sub(r"\s+", " ", (title or "")).strip().lower()
     if not t or len(t) < 3:
         return True
@@ -309,70 +253,49 @@ def is_generic_page_title(title: str) -> bool:
             return True
     return False
 
-# ===================== FIX #2: Link title quality filter =====================
-
-# Wzorce anchor textów które są nazwami plików / ścieżkami URL, nie tytułami ogłoszeń
 _JUNK_LINK_TITLE_RE = re.compile(
     r"""
-    ^\d+\.html?$                        # "344.html", "19562.htm"
-    | ^[\d\s\.\-/\\]+$                  # same cyfry, spacje, slashe
-    | ^[a-z0-9_\-]+\.[a-z]{2,4}$       # "zarzadzenie_nr14.pdf", "plik.docx"
-    | ^\d+$                             # sama liczba
-    | ^(pobierz|download|files?|add|get|view|open|click|tutaj|here)\s*[\d\.\-/]*$ # "pobierz 1346"
+    ^\d+\.html?$
+    | ^[\d\s\.\-/\\]+$
+    | ^[a-z0-9_\-]+\.[a-z]{2,4}$
+    | ^\d+$
+    | ^(pobierz|download|files?|add|get|view|open|click|tutaj|here)\s*[\d\.\-/]*$
     """,
     re.VERBOSE | re.IGNORECASE
 )
 
-# Słowa które w anchor text wskazują na link do pliku, nie do strony
 _DOWNLOAD_WORDS_RE = re.compile(
     r"\b(pobierz|download|files?|attachment|załącznik|zalacznik|pobieranie)\b",
     re.IGNORECASE
 )
 
 def is_junk_link_title(title: str, url: str = "") -> bool:
-    """
-    FIX #2 + FIX #3: True jeśli anchor text to śmieciowy tytuł.
-    Blokuje: nazwy plików, ścieżki, krótkie tokeny, krzaczki,
-             generyczne tytuły BIP (Redakcja, Aktualności, Biuletyn...).
-    """
     t = re.sub(r"\s+", " ", (title or "")).strip()
     lt = t.lower()
-
-    # FIX #3: generyczne tytuły stron/serwisów — sprawdź przed długością
     if is_generic_page_title(t):
         return True
-
-    # za krótkie
     if len(t) < 12:
         return True
-
-    # pasuje do wzorców śmieciowych (nazwy plików, cyfry itp.)
     if _JUNK_LINK_TITLE_RE.match(t):
         return True
-
-    # zawiera słowa download/pobierz i jest krótkie
     if _DOWNLOAD_WORDS_RE.search(lt) and len(t) < 80:
         ok, _ = keyword_match_in_blob(lt)
         if not ok:
             return True
-
-    # URL wskazuje na plik pobierania
     if url and is_download_url(url):
         return True
-
-    # same znaki nie-alfanumeryczne (krzaczki binarne)
     alnum = re.sub(r"[^a-zA-Z0-9\u00C0-\u024F\u0400-\u04FF]", "", t)
     if len(alnum) < 6:
         return True
-
     return False
 
 # ===================== PERFORMANCE =====================
-CONCURRENT_GMINY = env_int("CONCURRENT_GMINY", 8)
-CONCURRENT_REQUESTS = env_int("CONCURRENT_REQUESTS", 30)
-LIMIT_PER_HOST = env_int("LIMIT_PER_HOST", 4)
+# WYDAJNOŚĆ v2.16: podkręcone limity
+CONCURRENT_GMINY = env_int("CONCURRENT_GMINY", 1)          # per shard (1 gmina = 1 shard)
+CONCURRENT_REQUESTS = env_int("CONCURRENT_REQUESTS", 50)   # +20 vs v2.15
+LIMIT_PER_HOST = env_int("LIMIT_PER_HOST", 6)              # +2 vs v2.15
 
-PHASE1_MAX_PAGES = 1000
+PHASE1_MAX_PAGES = 2000                                     # 1000->2000
 PHASE1_MAX_SEEDS = 12000
 PHASE2_MAX_DEPTH = 4
 PHASE2_MAX_PAGES = 1000000
@@ -390,7 +313,6 @@ MAX_ERROR_SAMPLES_PER_GMINA = 60
 
 CACHE_CHECKPOINT_EVERY_N_GMINY = 3
 SEED_CACHE_TTL_DAYS = 30
-# FIX #3: 40_000 zamiast 999_999 — wystarczy na każde ogłoszenie BIP
 FAST_TEXT_MAX_CHARS = 40_000
 
 HIT_RECHECK_TTL_HOURS = 0
@@ -408,7 +330,6 @@ USER_AGENTS = [
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15",
 ]
 
-# FIX #4: Bez cookie consent headers
 def get_random_headers(referer: str = "") -> dict:
     sec_fetch_site = "same-origin" if referer else "none"
     headers = {
@@ -434,7 +355,7 @@ def get_random_headers(referer: str = "") -> dict:
 
 # ===================== RATE LIMITING =====================
 class DomainRateLimiter:
-    def __init__(self, min_delay=0.5, max_delay=1.5):
+    def __init__(self, min_delay=0.3, max_delay=1.0):
         self.min_delay = min_delay
         self.max_delay = max_delay
         self.last_request = {}
@@ -458,8 +379,8 @@ class DomainRateLimiter:
         self.problem_domains[domain] += 1
 
 rate_limiter = DomainRateLimiter(
-    min_delay=env_float("RATE_MIN_DELAY", 0.5),
-    max_delay=env_float("RATE_MAX_DELAY", 1.5),
+    min_delay=env_float("RATE_MIN_DELAY", 0.3),   # v2.16: 0.5->0.3
+    max_delay=env_float("RATE_MAX_DELAY", 1.0),   # v2.16: 1.5->1.0
 )
 
 # ===================== GLOBAL STATE =====================
@@ -479,31 +400,36 @@ class GlobalState:
         self.cache_lock = asyncio.Lock()
         self.mail_dedup = set()
         self.reported_urls_this_run: set = set()
-        # v2.12: deduplicja kolejnych identycznych tytułów per gmina
-        self.last_printed: dict = {}  # gmina -> ostatni wydrukowany tytuł
+        self.last_printed: dict = {}
 
     def request_shutdown(self):
         self.shutdown_requested = True
-        print("\n⚠️  CTRL+C detected - graceful shutdown...", flush=True)
+        print("\n⚠️  Shutdown requested...", flush=True)
 
 state = GlobalState()
 
 RUN_DEADLINE_MIN = env_int("RUN_DEADLINE_MIN", 0)
 GLOBAL_T0 = time.time()
 
+# ===================== SIGNAL HANDLER =====================
+# NAPRAWA v2.16:
+# - NIE robimy os._exit() natychmiast
+# - Ustawiamy tylko flagę shutdown_requested
+# - periodic_checkpoint() wykryje flagę i zrobi finalny zapis, potem exit
+# - To gwarantuje że frontier zostanie zapisany przed śmiercią procesu
+# - exec w YAML (patrz workflow) zapewnia że SIGTERM trafia do Pythona
+
+_signal_received = False
+
 def signal_handler(signum, frame):
-    # 1) ustaw flagę, żeby pętle wiedziały że kończymy
+    global _signal_received
+    print(f"\n🛑 SIGNAL {signum} received (pid={os.getpid()})", flush=True)
     state.request_shutdown()
-    print(f"\n🛑 SIGNAL {signum} received", flush=True)
+    _signal_received = True
+    # NIE robimy os._exit() tutaj — czekamy aż periodic_checkpoint zrobi zapis
 
-    # 2) priorytet: nie tracimy postępów
-    panic_save_checkpoint_sync(reason=f"signal={signum}")
-
-    # 3) GHA: Cancel workflow ma NATYCHMIAST ubić proces
-    #    ale dopiero po panic-save
-    if os.getenv("GITHUB_ACTIONS"):
-        print("🛑 GHA cancel -> hard stop AFTER panic-save", flush=True)
-        os._exit(1)
+signal.signal(signal.SIGTERM, signal_handler)
+signal.signal(signal.SIGINT, signal_handler)
 
 # ===================== UTILS =====================
 def iso_now():
@@ -551,7 +477,6 @@ def pick_rows_for_shard(rows, shard_index: int, shard_total: int):
     return rows[shard_index::shard_total]
 
 def should_recheck_hit(prev: dict) -> bool:
-    # TTL=0 => zawsze sprawdzaj
     if (HIT_RECHECK_TTL_HOURS or 0) <= 0:
         return True
     if not prev or not isinstance(prev, dict):
@@ -563,7 +488,6 @@ def should_recheck_hit(prev: dict) -> bool:
     return (iso_now() - dt) >= timedelta(hours=HIT_RECHECK_TTL_HOURS)
 
 def should_recheck_no_match(prev: dict) -> bool:
-    # TTL=0 => zawsze sprawdzaj
     if (NO_MATCH_RECHECK_TTL_HOURS or 0) <= 0:
         return True
     if not prev or not isinstance(prev, dict):
@@ -575,7 +499,6 @@ def should_recheck_no_match(prev: dict) -> bool:
     return (iso_now() - dt) >= timedelta(hours=NO_MATCH_RECHECK_TTL_HOURS)
 
 def should_recheck_block(prev: dict, ttl_min: int) -> bool:
-    # ttl_min=0 => zawsze sprawdzaj
     if int(ttl_min or 0) <= 0:
         return True
     if not prev or not isinstance(prev, dict):
@@ -652,14 +575,14 @@ def retry_io(action, tries: int = 5, base_sleep: float = 0.6):
 
 def panic_save_checkpoint_sync(reason: str = "SIGTERM"):
     """
-    Krytyczne: zapisuje cache/frontiers/retry/dead + diag NATYCHMIAST (sync),
-    żeby Cancel workflow / SIGTERM nie urwał postępów.
+    NAPRAWA v2.16: Krytyczny zapis synchroniczny — wywoływany przy sygnale lub końcu runa.
+    Zapisuje cache/frontiers/retry/dead + diag.
+    W GHA: commituje plik do repozytorium (branch cache-store).
     """
     try:
         if not USE_CACHE:
             return
 
-        # Cache JSON / shard JSON (w zależności od trybu)
         if os.getenv("GITHUB_ACTIONS") and get_shard_index() >= 0:
             shard = get_shard_index()
             out = {"schema": CACHE_SCHEMA}
@@ -679,12 +602,13 @@ def panic_save_checkpoint_sync(reason: str = "SIGTERM"):
                 json.dump(out, f, indent=2, ensure_ascii=False)
             os.replace(tmp, filename)
             print(f"🧯 PANIC SAVE (shard) OK [{reason}]: {filename}", flush=True)
+
+            # NAPRAWA v2.16: commituj też do repo (synchronicznie)
+            _git_commit_file(filename, f"Panic-save shard {shard} [{reason}] [skip ci]")
         else:
-            # normalny cache.json
             save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds)
             print(f"🧯 PANIC SAVE (cache.json) OK [{reason}]", flush=True)
 
-        # diag też warto
         try:
             save_diag(state.diag_rows, state.diag_errors)
             print(f"🧯 PANIC SAVE (diag) OK [{reason}]", flush=True)
@@ -1051,17 +975,15 @@ def _strip_dynamic_noise(txt: str) -> str:
     return txt
 
 def _soup_fast_text(soup: BeautifulSoup, max_chars: int = FAST_TEXT_MAX_CHARS) -> str:
+    """
+    v2.16: Wycina TYLKO script/style/noscript oraz footer.
+    Nav, header, aside — zostawiane (mogą zawierać ogłoszenia).
+    """
     try:
         if not soup:
             return ""
-        # zawsze wycinamy śmieci techniczne
-        for tag in soup(["script", "style", "noscript"]):
+        for tag in soup(["script", "style", "noscript", "footer"]):
             tag.decompose()
-
-        # zgodnie z ustaleniem: tnij tylko footer (tam nie będzie ogłoszeń)
-        for tag in soup(["footer"]):
-            tag.decompose()
-
         txt = re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip()
         txt = _strip_dynamic_noise(txt)
         return txt[:max_chars]
@@ -1528,26 +1450,17 @@ async def fetch_start_matrix(session_default, session_ipv4, url, diag):
     return last_fail if last_fail else (None, url, "fail", None, "", "no_strategy_worked", None)
 
 def _is_binary_response(ctype: str, data: bytes, url: str) -> bool:
-    """
-    FIX #2: True jeśli odpowiedź to plik binarny (PDF, DOC, obraz itp.)
-    niezależnie od tego co serwer podał w Content-Type.
-    Sprawdza: ctype, magic bytes, suffix URL.
-    """
-    # 1) Content-Type wskazuje na binarny plik
     if _BINARY_CTYPE_RE.search(ctype or ""):
         return True
-    # 2) Magic bytes — pierwsze 8 bajtów jednoznacznie identyfikuje format
     if data and len(data) >= 4:
         header = data[:8]
         for magic in _BINARY_MAGIC:
             if header.startswith(magic):
                 return True
-    # 3) URL kończy się rozszerzeniem pliku (z lub bez kropki)
     path = urlparse(url or "").path
     if path and _BINARY_URL_SUFFIX_RE.search(path.split("/")[-1]):
         return True
     return False
-
 
 async def fetch(session: aiohttp.ClientSession, url: str, extra_headers: dict = None):
     url = normalize_url(url)
@@ -1574,7 +1487,6 @@ async def fetch(session: aiohttp.ClientSession, url: str, extra_headers: dict = 
                 if status == 200 and is_block_page(text):
                     rate_limiter.report_403(domain)
                     return None, final, "blocked", 429, ctype, "block_page_detected", ms
-                # FIX #2: wykryj binarną zawartość niezależnie od ctype
                 if _is_binary_response(ctype, data, final):
                     return None, final, "pdf", status, ctype, None, ms
                 if status != 200:
@@ -1594,16 +1506,9 @@ async def fetch(session: aiohttp.ClientSession, url: str, extra_headers: dict = 
             continue
     return None, url, "exc", None, "", "fetch_failed", 0
 
-# FIX #2: Magic bytes dla wykrywania binarnych plików niezależnie od Content-Type
 _BINARY_MAGIC = [
-    b"%PDF",           # PDF
-    b"\xD0\xCF\x11\xE0",  # DOC/XLS/PPT (OLE2)
-    b"PK\x03\x04",    # DOCX/XLSX/ZIP
-    b"\x1F\x8B",      # GZIP
-    b"BM",            # BMP
-    b"\xFF\xD8\xFF",  # JPEG
-    b"\x89PNG",       # PNG
-    b"GIF8",          # GIF
+    b"%PDF", b"\xD0\xCF\x11\xE0", b"PK\x03\x04", b"\x1F\x8B",
+    b"BM", b"\xFF\xD8\xFF", b"\x89PNG", b"GIF8",
 ]
 
 _BINARY_CTYPE_RE = re.compile(
@@ -1615,9 +1520,10 @@ _BINARY_CTYPE_RE = re.compile(
 
 _BINARY_URL_SUFFIX_RE = re.compile(
     r"\.(pdf|docx?|xlsx?|pptx?|odt|rtf|zip|rar|7z|gml|tiff?|dwg|dxf|jpg|jpeg|png|gif|mp4|mp3)$"
-    r"|pdf$|docx?$|xlsx?$",  # bez kropki (np. "XXXpdf")
+    r"|pdf$|docx?$|xlsx?$",
     re.IGNORECASE
 )
+
 async def fetch_conditional(session: aiohttp.ClientSession, url: str, extra_headers: dict = None):
     url = normalize_url(url)
     domain = urlparse(url).netloc
@@ -1652,7 +1558,6 @@ async def fetch_conditional(session: aiohttp.ClientSession, url: str, extra_head
                 if status == 200 and is_block_page(text):
                     rate_limiter.report_403(domain)
                     return None, final, "blocked", 429, ctype, "block_page_detected", ms, resp_meta
-                # FIX #2: wykryj binarną zawartość (PDF, DOC itp.) nawet gdy ctype jest błędny
                 if _is_binary_response(ctype, data, final):
                     return None, final, "pdf", status, ctype, None, ms, resp_meta
                 if status != 200:
@@ -1829,7 +1734,6 @@ async def phase1_discover(gmina: str, start_url: str,
     trace_set(diag, "PHASE1_DISCOVERY", url=final0)
 
     while q and pages < PHASE1_MAX_PAGES and not state.shutdown_requested:
-        # v2.14: sprawdzaj deadline w każdej iteracji
         if RUN_DEADLINE_MIN > 0 and (time.time() - GLOBAL_T0) > (RUN_DEADLINE_MIN * 60):
             state.request_shutdown()
             break
@@ -1866,11 +1770,6 @@ async def phase1_discover(gmina: str, start_url: str,
     return seed_urls, {"status": "OK", "allowed_host": allowed_host, "start_final": final0, "seeds": len(seed_urls)}
 
 def _consecutive_dedup_check(gmina: str, title: str) -> bool:
-    """
-    v2.12: Zwraca True jeśli wpis powinien być wydrukowany (nie jest duplikatem poprzedniego).
-    Jeśli tytuł jest identyczny jak ostatni wydrukowany dla tej gminy — skipuj.
-    Pierwsze wystąpienie zawsze przechodzi, kolejne identyczne są pomijane.
-    """
     title_norm = re.sub(r"\s+", " ", (title or "")).strip()
     last = state.last_printed.get(gmina, "")
     if title_norm == last:
@@ -1893,7 +1792,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
 
     retry_seen = set()
 
-    # 1) KONTYNUACJA: ładuj frontier, ALE NIE USUWAJ go na starcie (żeby nie zginął przy crashu)
+    # Kontynuacja: ładuj frontier
     saved_frontier = (state.gmina_frontiers or {}).get(gkey, []) or []
     if saved_frontier:
         print(f"  ↩️  Kontynuacja: {len(saved_frontier)} URL z poprzedniego runu ({gmina})", flush=True)
@@ -1909,7 +1808,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
     elif state.gmina_frontiers:
         print(f"  ⚠️  Brak frontieru dla {gmina} (gkey={gkey[:8]}...), dostępne klucze: {list(state.gmina_frontiers.keys())[:3]}", flush=True)
 
-    # 2) Retry (z poprzedniego runu) – wrzuć na początek
+    # Retry z poprzedniego runu
     retry_list = (state.gmina_retry or {}).get(gkey, []) or []
     retry_added = 0
     for u in retry_list:
@@ -1922,11 +1821,10 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
     if retry_added:
         print(f"  🔁 Retry: {retry_added} URL ({gmina})", flush=True)
 
-    # wyczyść listę retry dla tej gminy (będzie uzupełniana w trakcie)
     if isinstance(state.gmina_retry, dict):
         state.gmina_retry[gkey] = []
 
-    # 3) Jeśli NIE ma kontynuacji, startuj od seedów
+    # Jeśli NIE ma kontynuacji, startuj od seedów
     if not saved_frontier:
         for su in seed_urls:
             cu = _canon(su)
@@ -1940,7 +1838,6 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
     pages_ok = 0
 
     while q and not state.shutdown_requested:
-        # deadline
         if RUN_DEADLINE_MIN > 0 and (time.time() - GLOBAL_T0) > (RUN_DEADLINE_MIN * 60):
             state.request_shutdown()
             break
@@ -1961,7 +1858,6 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
         url_dedup = sha1(canonical_url(url))
         prev_pre = content_seen.get(url_dedup)
 
-        # TTL-SKIP: wyłączone przez TTL=0 + logika poniżej (zostawiamy tylko listing bypass jak było)
         if USE_CACHE and prev_pre and not is_listing:
             status_prev = prev_pre.get("status")
             if status_prev in {"NOWE", "ZMIANA", "HIT"}:
@@ -1973,7 +1869,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                     diag["counts"]["no_match_ttl_skip"] += 1
                     continue
             elif status_prev == "BLOCKED":
-                # ZMIANA: BLOCKED ma wracać do skanu (domyślnie TTL=0 => zawsze True)
+                # BLOCKED zawsze wraca do kolejki (TTL=0 domyślnie)
                 if not should_recheck_block(prev_pre, BLOCKED_RECHECK_TTL_MIN):
                     diag["counts"]["blocked_ttl_skip"] += 1
                     continue
@@ -2014,8 +1910,6 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
 
         if kind == "blocked":
             diag["counts"]["blocked_13"] += 1
-
-            # zawsze dodaj do retry na następny run (to jest Twoje wymaganie)
             retry_add(gkey, retry_seen, final_c)
 
             url_slug = urlparse(final_c).path.replace("-", " ").replace("_", " ").replace("/", " ")
@@ -2029,15 +1923,10 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                 diag["counts"]["blocked_url_hits"] += 1
                 async with state.cache_lock:
                     content_seen[url_dedup_final] = {
-                        "found_at": now_iso(),
-                        "last_checked": now_iso(),
+                        "found_at": now_iso(), "last_checked": now_iso(),
                         "etag": "", "last_modified": "",
-                        "gmina": gmina,
-                        "title": page_title_blocked,
-                        "url": final_c,
-                        "keywords": [kw_url],
-                        "att_sig": "",
-                        "status": "NOWE",
+                        "gmina": gmina, "title": page_title_blocked, "url": final_c,
+                        "keywords": [kw_url], "att_sig": "", "status": "NOWE",
                     }
                     if ALIAS_FINAL_AND_SOURCE_KEYS and url_dedup != url_dedup_final:
                         content_seen[url_dedup] = content_seen[url_dedup_final]
@@ -2046,8 +1935,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                     prevb = content_seen.get(url_dedup_final) or prev_pre
                     entry = {
                         "found_at": (prevb.get("found_at") if prevb else now_iso()),
-                        "last_checked": now_iso(),
-                        "etag": "", "last_modified": "",
+                        "last_checked": now_iso(), "etag": "", "last_modified": "",
                         "gmina": gmina,
                         "title": (prevb.get("title") if prevb else ""),
                         "url": final_c,
@@ -2071,8 +1959,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                     prevf = content_seen.get(url_dedup_final) or prev_pre
                     entry = {
                         "found_at": (prevf.get("found_at") if prevf else now_iso()),
-                        "last_checked": now_iso(),
-                        "etag": "", "last_modified": "",
+                        "last_checked": now_iso(), "etag": "", "last_modified": "",
                         "gmina": gmina,
                         "title": (prevf.get("title") if prevf else ""),
                         "url": final_c,
@@ -2087,7 +1974,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                 urls_seen.discard(url_hash)
             continue
 
-        # ================= HTML OK =================
+        # HTML OK
         pages_ok += 1
         if pages_ok % 100 == 0:
             elapsed = round((time.time() - GLOBAL_T0) / 60, 1)
@@ -2101,10 +1988,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
         att_set = attachments_signature(soup, final_c)
         fast_text = _soup_fast_text(soup)
 
-        # ZMIANA: skanuj całą treść (title/h1/h2 + full text) – footer już ucięty w _soup_fast_text
-        # i NIE odcinamy nav/header/aside itd.
         blob = f"{title} {h1} {h2} {fast_text}"
-
         ok_any, kw_any = keyword_match_in_blob(blob)
 
         page_title = ""
@@ -2159,7 +2043,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             else:
                 diag["counts"]["dedup_skipped"] += 1
 
-        # ================= LINK HITS =================
+        # LINK HITS
         for abs_u, txt in iter_links_fast(soup, final_c):
             cu = _canon(abs_u)
             if not cu or not allow_url(cu):
@@ -2167,7 +2051,6 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             if cu in dead_set:
                 continue
 
-            # downloady: nie rób link-hit, ale dalej crawluj
             if is_download_url(cu):
                 diag["counts"]["link_hit_download_skip"] += 1
                 if cu not in visited and cu not in dead_set:
@@ -2179,7 +2062,6 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             blob_link = f"{txt} {filename}"
             ok_link, kw_link = keyword_match_in_blob(blob_link)
 
-            # ZMIANA: usuwamy filtry junk/generic – zgłaszaj nawet generyczne/krótkie/plikowe
             if ENABLE_LINK_HITS and ok_link:
                 link_title = (txt or "").strip()
                 if not link_title:
@@ -2190,15 +2072,10 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                 if prev_link is None and cu not in state.reported_urls_this_run:
                     async with state.cache_lock:
                         content_seen[key] = {
-                            "found_at": now_iso(),
-                            "last_checked": now_iso(),
+                            "found_at": now_iso(), "last_checked": now_iso(),
                             "etag": "", "last_modified": "",
-                            "gmina": gmina,
-                            "title": link_title[:240],
-                            "url": cu,
-                            "keywords": [kw_link],
-                            "att_sig": "",
-                            "status": "NOWE",
+                            "gmina": gmina, "title": link_title[:240], "url": cu,
+                            "keywords": [kw_link], "att_sig": "", "status": "NOWE",
                         }
                     state.reported_urls_this_run.add(cu)
                     if _consecutive_dedup_check(gmina, link_title):
@@ -2214,7 +2091,7 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
                 visited.add(cu)
                 q.append((cu, depth + 1))
 
-    # ZAPIS FRONTIERU – zawsze (żeby kontynuacja była pewna)
+    # Zapis frontieru — zawsze
     if q:
         state.gmina_frontiers[gkey] = [[url, depth] for url, depth in list(q)]
     else:
@@ -2264,7 +2141,7 @@ def write_summary(diag_rows, new_items_for_mail):
         ok = sum(1 for r in (diag_rows or []) if r.get("status") == "OK")
         start_fail = sum(1 for r in (diag_rows or []) if r.get("status") == "START_FAIL")
         lines = [
-            f"BIP WATCHER v2.12 SUMMARY @ {now_iso()}",
+            f"BIP WATCHER v2.16 SUMMARY @ {now_iso()}",
             f"gminy_total={total} ok={ok} start_fail={start_fail}",
             f"mail_items={len(new_items_for_mail or [])}",
             "",
@@ -2377,7 +2254,6 @@ async def worker(name: str, queue: asyncio.Queue,
             if frontier_len == 0 and retry_len == 0:
                 print(f"   ✅ Gmina {gmina} – pełne przeskanowanie")
 
-            # FIX v2.15: użyj allowed_host (tak jak w phase2), nie start_url
             gkey = gmina_cache_key(gmina, "https://" + allowed_host)
             retry_debug = (state.gmina_retry or {}).get(gkey, []) or []
             if retry_debug:
@@ -2458,9 +2334,10 @@ async def main():
         print("ℹ️ Brak gmin w tym shardzie.")
         return
 
+    # WYDAJNOŚĆ v2.16: podkręcone limity połączeń
     conn_kwargs = dict(
-        limit=CONCURRENT_REQUESTS,
-        limit_per_host=LIMIT_PER_HOST,
+        limit=CONCURRENT_REQUESTS,          # 50
+        limit_per_host=LIMIT_PER_HOST,      # 6
         ttl_dns_cache=600,
         enable_cleanup_closed=True,
         ssl=False
@@ -2481,9 +2358,17 @@ async def main():
         checkpoint_counter = {"done": 0}
 
         async def periodic_checkpoint():
-            every = env_int("CHECKPOINT_EVERY_SEC", 60)
+            """
+            NAPRAWA v2.16:
+            - co CHECKPOINT_EVERY_SEC sekund zapisuje i commituje shard
+            - gdy shutdown_requested=True: robi 1 ostatni zapis, potem kończy
+            - NIE robi os._exit() — pozwala main() dokończyć sprzątanie
+            """
+            every = env_int("CHECKPOINT_EVERY_SEC", 300)
             while not state.shutdown_requested:
                 await asyncio.sleep(every)
+                if state.shutdown_requested:
+                    break
                 try:
                     if USE_CACHE:
                         if os.getenv("GITHUB_ACTIONS") and get_shard_index() >= 0:
@@ -2491,8 +2376,22 @@ async def main():
                         else:
                             save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds)
                     save_diag(state.diag_rows, state.diag_errors)
+                    print(f"⏱️ Periodic checkpoint OK", flush=True)
                 except Exception as ex:
                     print(f"⚠️ periodic checkpoint failed: {ex}", flush=True)
+
+            # Finalny zapis po shutdown
+            print("🔚 Periodic checkpoint: finalny zapis po shutdown...", flush=True)
+            try:
+                if USE_CACHE:
+                    if os.getenv("GITHUB_ACTIONS") and get_shard_index() >= 0:
+                        await save_shard_cache_and_commit(asyncio.get_event_loop())
+                    else:
+                        save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds)
+                save_diag(state.diag_rows, state.diag_errors)
+                print("✅ Finalny checkpoint zapisany.", flush=True)
+            except Exception as ex:
+                print(f"⚠️ Finalny checkpoint failed: {ex}", flush=True)
 
         workers = [
             asyncio.create_task(worker(
@@ -2562,7 +2461,3 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
-
-
-
-
