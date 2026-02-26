@@ -48,17 +48,24 @@ def get_shard_index():
 
 def _git_commit_file(filepath, message):
     """
-    NAPRAWA v2.16: usunięto blokadę dla GITHUB_ACTIONS.
-    Teraz commituje zawsze — zarówno lokalnie jak i w GHA.
+    NAPRAWA v2.17: git stash przed pull --rebase żeby uniknąć
+    błędu 'cannot pull with rebase: You have unstaged changes'.
+    Retry push jeśli remote wyprzedził.
     """
     try:
         print(f"📤 Git commit: {filepath} with message: {message}")
         subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=False)
         subprocess.run(["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"], check=False)
+        subprocess.run(["git", "stash", "--include-untracked"], check=False)
         subprocess.run(["git", "pull", "--rebase"], check=False)
+        subprocess.run(["git", "stash", "pop"], check=False)
         subprocess.run(["git", "add", str(filepath)], check=False)
         subprocess.run(["git", "commit", "-m", message], check=False)
-        subprocess.run(["git", "push"], check=False)
+        result = subprocess.run(["git", "push"], check=False)
+        if result.returncode != 0:
+            subprocess.run(["git", "pull", "--rebase"], check=False)
+            subprocess.run(["git", "add", str(filepath)], check=False)
+            subprocess.run(["git", "push"], check=False)
     except Exception as e:
         print(f"⚠️ git error: {e}")
 
@@ -2461,4 +2468,5 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
