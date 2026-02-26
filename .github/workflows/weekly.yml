@@ -240,10 +240,7 @@ jobs:
           RESET_CACHE: ${{ github.event.inputs.full_reset || 'false' }}
         shell: bash
         run: |
-          set -e
-          # NAPRAWA: exec sprawia że bash zostaje zastąpiony przez Pythona
-          # Cancel workflow -> SIGTERM trafia bezpośrednio do Pythona
-          exec python bip_watcher.py
+          python bip_watcher.py
 
       # ============================================================
       # Zapis sharda — bez konfliktów git
