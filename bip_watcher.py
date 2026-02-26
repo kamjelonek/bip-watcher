@@ -975,7 +975,7 @@ def _soup_fast_text(soup: BeautifulSoup, max_chars: int = FAST_TEXT_MAX_CHARS) -
     try:
         if not soup:
             return ""
-        for tag in soup(["script", "style", "noscript", "footer"]):
+        for tag in soup(["script", "style", "noscript", "footer", "header", "nav"]):
             tag.decompose()
         txt = re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip()
         txt = _strip_dynamic_noise(txt)
@@ -2467,6 +2467,7 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
 
