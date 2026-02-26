@@ -160,8 +160,8 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     timeout-minutes: 355
-    needs: [setup, reset_cache_store]
-    if: always() && needs.setup.result == 'success' && needs.setup.outputs.total != '0'
+    needs: [setup]
+    if: needs.setup.result == 'success' && needs.setup.outputs.total != '0'
 
     strategy:
       fail-fast: false
