@@ -212,6 +212,9 @@ jobs:
           front = len(c.get('gmina_frontiers', {}))
           dead  = sum(len(v) for v in c.get('dead_urls', {}).values())
           print(f'📦 Cache restored: {urls} URLs, {cont} content, {seeds} seeds, {front} frontiers, {dead} dead')
+          front_data = c.get('gmina_frontiers', {})
+          for k, v in list(front_data.items())[:3]:
+              print(f'  🗺️  frontier {k[:16]}: {len(v)} URL')
           "
           else
             echo "ℹ️ Brak poprzedniego sharda $SHARD_INDEX — startujemy świeżo"
