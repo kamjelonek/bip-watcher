@@ -317,7 +317,7 @@
     },
     "8a477134fe1b6c9a61c8365a2db5250f9705f99b": {
       "found_at": "2026-02-23T23:32:41",
-      "last_checked": "2026-02-25T20:00:30",
+      "last_checked": "2026-02-26T07:06:56",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -331,7 +331,7 @@
     },
     "de44d5905e2bc118e9abe6687e7b7ef7f29f5262": {
       "found_at": "2026-02-23T23:32:41",
-      "last_checked": "2026-02-26T07:04:47",
+      "last_checked": "2026-02-26T07:08:04",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -359,7 +359,7 @@
     },
     "e5adeec27697f7d4966b1e97ba6bc49dd04674af": {
       "found_at": "2026-02-23T23:35:14",
-      "last_checked": "2026-02-25T20:00:44",
+      "last_checked": "2026-02-26T07:07:11",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3313,7 +3313,7 @@
     },
     "bed98bceab9db7675690db80a1f68706441692b7": {
       "found_at": "2026-02-23T23:34:28",
-      "last_checked": "2026-02-25T20:00:15",
+      "last_checked": "2026-02-26T07:06:42",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3327,7 +3327,7 @@
     },
     "4d7ee43921d3ef8a266fcf9f830c2d94aae29fa0": {
       "found_at": "2026-02-23T23:34:29",
-      "last_checked": "2026-02-25T20:00:15",
+      "last_checked": "2026-02-26T07:06:43",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3341,7 +3341,7 @@
     },
     "64a1ad9065f95aacd5beab5b1053ff485c4a4289": {
       "found_at": "2026-02-23T23:34:29",
-      "last_checked": "2026-02-25T20:00:16",
+      "last_checked": "2026-02-26T07:06:43",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3355,7 +3355,7 @@
     },
     "57cbb12a3565c3e945f8597f9a832827bee851df": {
       "found_at": "2026-02-23T23:34:29",
-      "last_checked": "2026-02-25T20:00:17",
+      "last_checked": "2026-02-26T07:06:44",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3369,7 +3369,7 @@
     },
     "42e3f0b548168f48ff631e1321470b531259706b": {
       "found_at": "2026-02-23T23:34:30",
-      "last_checked": "2026-02-25T20:00:17",
+      "last_checked": "2026-02-26T07:06:44",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3383,7 +3383,7 @@
     },
     "14840f5536860fd9f2351aa1231cac7d9dcef654": {
       "found_at": "2026-02-23T23:34:30",
-      "last_checked": "2026-02-25T20:00:18",
+      "last_checked": "2026-02-26T07:06:45",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3397,21 +3397,19 @@
     },
     "a84b0a01f2013acbc01bbee7a2b24a4b811eefb5": {
       "found_at": "2026-02-23T23:34:31",
-      "last_checked": "2026-02-25T20:00:18",
+      "last_checked": "2026-02-26T07:06:45",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
-      "title": "Protokoły głosowania",
+      "title": "https://ugdolhobyczow.bip.lubelskie.pl/index.php?id=206",
       "url": "https://ugdolhobyczow.bip.lubelskie.pl/index.php?id=206",
-      "keywords": [
-        "plan ogólny"
-      ],
+      "keywords": [],
       "att_sig": "[]",
-      "status": "HIT"
+      "status": "NO_MATCH"
     },
     "0b0b3c9b1e47a1e1122d79c7328818219a117021": {
       "found_at": "2026-02-23T23:34:31",
-      "last_checked": "2026-02-25T20:00:19",
+      "last_checked": "2026-02-26T07:06:46",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3425,21 +3423,19 @@
     },
     "49528842668f2b8c5797b34c061e47635ff9bd45": {
       "found_at": "2026-02-23T23:34:32",
-      "last_checked": "2026-02-25T20:00:19",
+      "last_checked": "2026-02-26T07:06:46",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
-      "title": "Sesje rady kadencja 2024-2029",
+      "title": "https://ugdolhobyczow.bip.lubelskie.pl/index.php?id=298",
       "url": "https://ugdolhobyczow.bip.lubelskie.pl/index.php?id=298",
-      "keywords": [
-        "plan ogólny"
-      ],
+      "keywords": [],
       "att_sig": "[]",
-      "status": "HIT"
+      "status": "NO_MATCH"
     },
     "56be53c8379d5e6078c94f8453a079ca8ffda71b": {
       "found_at": "2026-02-23T23:34:32",
-      "last_checked": "2026-02-25T20:00:20",
+      "last_checked": "2026-02-26T07:06:47",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3453,7 +3449,7 @@
     },
     "7673e113a2d113e7075febf327a2e27fabbd38c5": {
       "found_at": "2026-02-23T23:34:33",
-      "last_checked": "2026-02-25T20:00:20",
+      "last_checked": "2026-02-26T07:06:47",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3467,7 +3463,7 @@
     },
     "cdde8072691eff94032b837b4c96cfda76aafcee": {
       "found_at": "2026-02-23T23:34:33",
-      "last_checked": "2026-02-25T20:00:21",
+      "last_checked": "2026-02-26T07:06:48",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3481,7 +3477,7 @@
     },
     "a8970ff55d9ca297894720bf29fcdef42c4a51c3": {
       "found_at": "2026-02-23T23:34:33",
-      "last_checked": "2026-02-25T20:00:21",
+      "last_checked": "2026-02-26T07:06:48",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3495,7 +3491,7 @@
     },
     "36f097f5b52b6a589b471a8950aa3da30224b4c4": {
       "found_at": "2026-02-23T23:34:34",
-      "last_checked": "2026-02-25T20:00:22",
+      "last_checked": "2026-02-26T07:06:49",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3509,7 +3505,7 @@
     },
     "4bd4f15948d6ef1a9c56a045b805924696999daf": {
       "found_at": "2026-02-23T23:34:34",
-      "last_checked": "2026-02-25T20:00:23",
+      "last_checked": "2026-02-26T07:06:50",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3523,7 +3519,7 @@
     },
     "ce501906eca87b34358d37b5bea37d8aa85a1f25": {
       "found_at": "2026-02-23T23:34:35",
-      "last_checked": "2026-02-25T20:00:23",
+      "last_checked": "2026-02-26T07:06:50",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3537,21 +3533,19 @@
     },
     "5430fa605976649ccdfea1beff14d9c4721f2705": {
       "found_at": "2026-02-23T23:34:35",
-      "last_checked": "2026-02-25T20:00:24",
+      "last_checked": "2026-02-26T07:06:50",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
-      "title": "Regulamin organizacyjny",
+      "title": "https://ugdolhobyczow.bip.lubelskie.pl/index.php?id=79",
       "url": "https://ugdolhobyczow.bip.lubelskie.pl/index.php?id=79",
-      "keywords": [
-        "plan ogólny"
-      ],
+      "keywords": [],
       "att_sig": "[]",
-      "status": "HIT"
+      "status": "NO_MATCH"
     },
     "bd285507bd077af55e415949d44315d159aa7295": {
       "found_at": "2026-02-23T23:34:36",
-      "last_checked": "2026-02-25T20:00:24",
+      "last_checked": "2026-02-26T07:06:51",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3565,7 +3559,7 @@
     },
     "014fb9e2fdfdb98520c204c25681a1a88c398142": {
       "found_at": "2026-02-23T23:34:36",
-      "last_checked": "2026-02-25T20:00:25",
+      "last_checked": "2026-02-26T07:06:52",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3579,7 +3573,7 @@
     },
     "65fd536a17e9e0def8e06ef52948b52fe1b64b98": {
       "found_at": "2026-02-23T23:34:37",
-      "last_checked": "2026-02-25T20:00:25",
+      "last_checked": "2026-02-26T07:06:52",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3593,7 +3587,7 @@
     },
     "0858d31b8f8ab6ead06971fd0da196fb15fe2bb3": {
       "found_at": "2026-02-23T23:34:37",
-      "last_checked": "2026-02-25T20:00:26",
+      "last_checked": "2026-02-26T07:06:52",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3607,7 +3601,7 @@
     },
     "72990b786ca9c21132aab20ebdb3adcd847cd690": {
       "found_at": "2026-02-23T23:34:38",
-      "last_checked": "2026-02-25T20:00:26",
+      "last_checked": "2026-02-26T07:06:53",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3621,7 +3615,7 @@
     },
     "d5b9d75c37a073fab017389e79dacfc6d5c0284b": {
       "found_at": "2026-02-23T23:34:38",
-      "last_checked": "2026-02-25T20:00:27",
+      "last_checked": "2026-02-26T07:06:54",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3635,7 +3629,7 @@
     },
     "ad18beb4322e4def6f11b0436f8cad6277a38afe": {
       "found_at": "2026-02-23T23:34:39",
-      "last_checked": "2026-02-25T20:00:28",
+      "last_checked": "2026-02-26T07:06:54",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3649,7 +3643,7 @@
     },
     "a9ca82024e0c26cf74e39cf141f15db712a3d2e4": {
       "found_at": "2026-02-23T23:34:39",
-      "last_checked": "2026-02-25T20:00:28",
+      "last_checked": "2026-02-26T07:06:55",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3663,7 +3657,7 @@
     },
     "bec766c97de97e4bff87678feabc8a26215e3568": {
       "found_at": "2026-02-23T23:34:40",
-      "last_checked": "2026-02-25T20:00:29",
+      "last_checked": "2026-02-26T07:06:55",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3677,7 +3671,7 @@
     },
     "a837426705c35d696f02a3b74d460a97f910cc7f": {
       "found_at": "2026-02-23T23:34:40",
-      "last_checked": "2026-02-25T20:00:29",
+      "last_checked": "2026-02-26T07:06:56",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3691,7 +3685,7 @@
     },
     "351245bde1db210ebf964f3dac574cb901066f7f": {
       "found_at": "2026-02-23T23:34:41",
-      "last_checked": "2026-02-25T20:00:30",
+      "last_checked": "2026-02-26T07:06:57",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3705,7 +3699,7 @@
     },
     "ed412cba9eb54114df863830e4d8ce72b90e7450": {
       "found_at": "2026-02-23T23:34:41",
-      "last_checked": "2026-02-25T20:00:31",
+      "last_checked": "2026-02-26T07:06:57",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3719,7 +3713,7 @@
     },
     "a9e86747725f1ecc8f2534003ab9b473443e5958": {
       "found_at": "2026-02-23T23:34:42",
-      "last_checked": "2026-02-25T20:00:32",
+      "last_checked": "2026-02-26T07:06:58",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3733,7 +3727,7 @@
     },
     "bfc58e3f959d45f0394abdc8d85fff307539f298": {
       "found_at": "2026-02-23T23:34:42",
-      "last_checked": "2026-02-25T20:00:32",
+      "last_checked": "2026-02-26T07:06:58",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3747,7 +3741,7 @@
     },
     "eb4dc1be8204262c84c0b30a55b2d857983e12ba": {
       "found_at": "2026-02-23T23:34:43",
-      "last_checked": "2026-02-25T20:00:33",
+      "last_checked": "2026-02-26T07:06:59",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3761,7 +3755,7 @@
     },
     "9e04af9895e8d6f39efc4e7a2f6bc14591ae1d37": {
       "found_at": "2026-02-23T23:34:43",
-      "last_checked": "2026-02-25T20:00:33",
+      "last_checked": "2026-02-26T07:06:59",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3775,7 +3769,7 @@
     },
     "ed2f10d91d832b0944c5eff6cf21407c294b917d": {
       "found_at": "2026-02-23T23:34:44",
-      "last_checked": "2026-02-25T20:00:34",
+      "last_checked": "2026-02-26T07:07:00",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3789,7 +3783,7 @@
     },
     "6f50d3cdca37cca217135a85f8b726fbab126bbf": {
       "found_at": "2026-02-23T23:34:44",
-      "last_checked": "2026-02-25T20:00:34",
+      "last_checked": "2026-02-26T07:07:00",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3803,7 +3797,7 @@
     },
     "a391a814aa52a4e00c93bcb5de659ebf53d91534": {
       "found_at": "2026-02-23T23:34:45",
-      "last_checked": "2026-02-25T20:00:35",
+      "last_checked": "2026-02-26T07:07:01",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3817,7 +3811,7 @@
     },
     "4d5e9155c68b94c3619140e56bc61bec2b339eb1": {
       "found_at": "2026-02-23T23:34:45",
-      "last_checked": "2026-02-25T20:00:35",
+      "last_checked": "2026-02-26T07:07:01",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3831,7 +3825,7 @@
     },
     "c9d3dd21af8cb27459fb9cbb445286c33f8ae527": {
       "found_at": "2026-02-23T23:34:45",
-      "last_checked": "2026-02-25T20:00:36",
+      "last_checked": "2026-02-26T07:07:02",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3845,7 +3839,7 @@
     },
     "c5129956170a9191ecbcf0dcb86ca368c5cc63c8": {
       "found_at": "2026-02-23T23:34:46",
-      "last_checked": "2026-02-25T20:00:36",
+      "last_checked": "2026-02-26T07:07:02",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3859,7 +3853,7 @@
     },
     "736d6a4bede55e62dc2653a0b95813cd921f9b74": {
       "found_at": "2026-02-23T23:34:47",
-      "last_checked": "2026-02-25T20:00:37",
+      "last_checked": "2026-02-26T07:07:02",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3873,7 +3867,7 @@
     },
     "0fb1e45a7b3ce12f235b53488ff3ef65acd24474": {
       "found_at": "2026-02-23T23:34:47",
-      "last_checked": "2026-02-25T20:00:37",
+      "last_checked": "2026-02-26T07:07:03",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3887,7 +3881,7 @@
     },
     "1968da564ac5063be2f57fa1fd2d931484735c34": {
       "found_at": "2026-02-23T23:34:47",
-      "last_checked": "2026-02-25T20:00:38",
+      "last_checked": "2026-02-26T07:07:03",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3901,7 +3895,7 @@
     },
     "8e6b441902aec1302476a1ddf0031299cfd2e9f9": {
       "found_at": "2026-02-23T23:34:48",
-      "last_checked": "2026-02-25T20:00:38",
+      "last_checked": "2026-02-26T07:07:04",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3915,7 +3909,7 @@
     },
     "1b2d420a5adcf2a0d4b9133eb60af9827619e10f": {
       "found_at": "2026-02-23T23:34:48",
-      "last_checked": "2026-02-25T20:00:39",
+      "last_checked": "2026-02-26T07:07:04",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3929,7 +3923,7 @@
     },
     "2bccae70defc4fe0fd2ed5eba602c0cc3abb2032": {
       "found_at": "2026-02-23T23:34:49",
-      "last_checked": "2026-02-25T20:00:40",
+      "last_checked": "2026-02-26T07:07:05",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3943,7 +3937,7 @@
     },
     "e892231c43ff9f4c281ac5ec4f4abcdf95a5aee5": {
       "found_at": "2026-02-23T23:34:49",
-      "last_checked": "2026-02-25T20:00:40",
+      "last_checked": "2026-02-26T07:07:05",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -3999,7 +3993,7 @@
     },
     "12bd11a4a943146a0e3cdcc6d20a80dc0b0fc3d3": {
       "found_at": "2026-02-23T23:34:52",
-      "last_checked": "2026-02-25T20:01:14",
+      "last_checked": "2026-02-26T07:07:37",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4013,7 +4007,7 @@
     },
     "e481ea9bd22d0e37a06dce82a0d24ef6c90a98d9": {
       "found_at": "2026-02-23T23:34:52",
-      "last_checked": "2026-02-25T20:00:46",
+      "last_checked": "2026-02-26T07:07:10",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4027,7 +4021,7 @@
     },
     "05adafe3a8cd012175c156e5af4b8335557fa1a2": {
       "found_at": "2026-02-23T23:34:53",
-      "last_checked": "2026-02-25T20:01:52",
+      "last_checked": "2026-02-26T07:07:41",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4041,7 +4035,7 @@
     },
     "b2940e1ae844160cfe4c3846e27032cb779ce342": {
       "found_at": "2026-02-23T23:34:53",
-      "last_checked": "2026-02-25T20:01:33",
+      "last_checked": "2026-02-26T07:07:12",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4055,7 +4049,7 @@
     },
     "7bc259505a228b73f2b6db661cbd820a86e28532": {
       "found_at": "2026-02-23T23:34:53",
-      "last_checked": "2026-02-25T20:01:53",
+      "last_checked": "2026-02-26T07:07:42",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4069,7 +4063,7 @@
     },
     "a1f4918f296a89934f8fc52c76d74f0ef3aa2681": {
       "found_at": "2026-02-23T23:34:53",
-      "last_checked": "2026-02-25T20:01:34",
+      "last_checked": "2026-02-26T07:07:13",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4083,7 +4077,7 @@
     },
     "f198201207a8772c2f38e3f1baa3220b9ab690c3": {
       "found_at": "2026-02-23T23:34:54",
-      "last_checked": "2026-02-25T20:01:55",
+      "last_checked": "2026-02-26T07:07:43",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4097,7 +4091,7 @@
     },
     "10ad664d6457641db7188149faf4b00aea6d93cb": {
       "found_at": "2026-02-23T23:34:54",
-      "last_checked": "2026-02-25T20:01:35",
+      "last_checked": "2026-02-26T07:07:14",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4111,7 +4105,7 @@
     },
     "cd9d2fc6687b9e51f759c2dd1a5f6d21e0f6574f": {
       "found_at": "2026-02-23T23:34:55",
-      "last_checked": "2026-02-25T20:01:56",
+      "last_checked": "2026-02-26T07:07:45",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4125,7 +4119,7 @@
     },
     "5f8b8432fcf8b325286ae8cd67a3736f2a03c9c6": {
       "found_at": "2026-02-23T23:34:55",
-      "last_checked": "2026-02-25T20:01:36",
+      "last_checked": "2026-02-26T07:07:15",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4139,7 +4133,7 @@
     },
     "8104dfb0da8daf45ea26f57cdedfa429aa64a6e8": {
       "found_at": "2026-02-23T23:34:56",
-      "last_checked": "2026-02-25T20:01:57",
+      "last_checked": "2026-02-26T07:07:46",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4153,7 +4147,7 @@
     },
     "6cd9a78f7749bf854b94285c4d7ac9c469de09df": {
       "found_at": "2026-02-23T23:34:56",
-      "last_checked": "2026-02-25T20:01:37",
+      "last_checked": "2026-02-26T07:07:16",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4191,7 +4185,7 @@
     },
     "c626e4be1c1f542e6e015a1ffaca7b966ab6eacc": {
       "found_at": "2026-02-23T23:34:58",
-      "last_checked": "2026-02-25T20:01:22",
+      "last_checked": "2026-02-26T07:07:47",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4205,7 +4199,7 @@
     },
     "e328daaf89709e5c1593c0615ac05835cc8872b3": {
       "found_at": "2026-02-23T23:34:58",
-      "last_checked": "2026-02-25T20:00:53",
+      "last_checked": "2026-02-26T07:07:18",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4219,7 +4213,7 @@
     },
     "46e43cad0a5ea311aef56f9b37f8efb9708e175c": {
       "found_at": "2026-02-23T23:34:59",
-      "last_checked": "2026-02-25T20:01:23",
+      "last_checked": "2026-02-26T07:07:48",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4233,7 +4227,7 @@
     },
     "da35fce5c7f08e2341a85825771ca8676b8abeff": {
       "found_at": "2026-02-23T23:34:59",
-      "last_checked": "2026-02-25T20:00:54",
+      "last_checked": "2026-02-26T07:07:19",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4247,7 +4241,7 @@
     },
     "b72d5c36a8ea0a0e621ee984a86791aac66ccbe0": {
       "found_at": "2026-02-23T23:35:00",
-      "last_checked": "2026-02-25T20:01:25",
+      "last_checked": "2026-02-26T07:07:51",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4261,7 +4255,7 @@
     },
     "d148f3cb51953b548ef29c4628007c2977a287c8": {
       "found_at": "2026-02-23T23:35:00",
-      "last_checked": "2026-02-25T20:00:56",
+      "last_checked": "2026-02-26T07:07:21",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4275,7 +4269,7 @@
     },
     "8eb29dc53c8fef4d556f7c528b683b8022d3740b": {
       "found_at": "2026-02-23T23:35:01",
-      "last_checked": "2026-02-25T20:01:24",
+      "last_checked": "2026-02-26T07:07:49",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4289,7 +4283,7 @@
     },
     "4f59fc131a4eca71cb9fdc6dd2e1e624c9e6ab32": {
       "found_at": "2026-02-23T23:35:01",
-      "last_checked": "2026-02-25T20:00:55",
+      "last_checked": "2026-02-26T07:07:20",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4303,7 +4297,7 @@
     },
     "eddb5eeb4d4b1780a0dab37b3c4a833c66a97e8c": {
       "found_at": "2026-02-23T23:35:02",
-      "last_checked": "2026-02-25T20:01:27",
+      "last_checked": "2026-02-26T07:07:53",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4317,7 +4311,7 @@
     },
     "88ef8aa15795aba394560f4bc18bf61b0ae77efd": {
       "found_at": "2026-02-23T23:35:02",
-      "last_checked": "2026-02-25T20:00:57",
+      "last_checked": "2026-02-26T07:07:22",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4331,7 +4325,7 @@
     },
     "2995770f14889b0b19208cda1c51b603781f2065": {
       "found_at": "2026-02-23T23:35:03",
-      "last_checked": "2026-02-25T20:01:28",
+      "last_checked": "2026-02-26T07:07:54",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4345,7 +4339,7 @@
     },
     "1db917b51455e699b9c3f604ae4bf512db97a7de": {
       "found_at": "2026-02-23T23:35:03",
-      "last_checked": "2026-02-25T20:00:58",
+      "last_checked": "2026-02-26T07:07:23",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4359,7 +4353,7 @@
     },
     "27db42992f5bf3627a47c4b7761c3b9f34ea30ba": {
       "found_at": "2026-02-23T23:35:04",
-      "last_checked": "2026-02-25T20:01:29",
+      "last_checked": "2026-02-26T07:07:56",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4373,7 +4367,7 @@
     },
     "a35c9c71127dcd51e5bfe7ec24e96a4dbfe65268": {
       "found_at": "2026-02-23T23:35:04",
-      "last_checked": "2026-02-25T20:01:00",
+      "last_checked": "2026-02-26T07:07:24",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4387,7 +4381,7 @@
     },
     "3df454b55f86a7e2198623a6113bb860c2a1b3d8": {
       "found_at": "2026-02-23T23:35:04",
-      "last_checked": "2026-02-25T20:01:30",
+      "last_checked": "2026-02-26T07:07:57",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4401,7 +4395,7 @@
     },
     "dbc4db18cd2c7bce02dee99052545a50b0f6d44f": {
       "found_at": "2026-02-23T23:35:04",
-      "last_checked": "2026-02-25T20:01:01",
+      "last_checked": "2026-02-26T07:07:25",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4415,7 +4409,7 @@
     },
     "d391addff76d6c9afd0dcb0d185ecfa90dcb7924": {
       "found_at": "2026-02-23T23:35:05",
-      "last_checked": "2026-02-25T20:01:31",
+      "last_checked": "2026-02-26T07:07:58",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4429,7 +4423,7 @@
     },
     "4cc78267574d1133768dbf9879aa11a7d06834cb": {
       "found_at": "2026-02-23T23:35:05",
-      "last_checked": "2026-02-25T20:01:02",
+      "last_checked": "2026-02-26T07:07:26",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4467,7 +4461,7 @@
     },
     "b0168075d8d3963455bbf3889c35983a9a13b876": {
       "found_at": "2026-02-23T23:35:07",
-      "last_checked": "2026-02-25T20:01:02",
+      "last_checked": "2026-02-26T07:07:27",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4481,7 +4475,7 @@
     },
     "7ffaff1b7801b82ce9677c4e237a53a0a2009869": {
       "found_at": "2026-02-23T23:35:07",
-      "last_checked": "2026-02-25T20:01:03",
+      "last_checked": "2026-02-26T07:07:27",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4495,7 +4489,7 @@
     },
     "63883a825aed0ed0462ce3a59c82d84d33594fa7": {
       "found_at": "2026-02-23T23:35:08",
-      "last_checked": "2026-02-25T20:01:04",
+      "last_checked": "2026-02-26T07:07:28",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4509,7 +4503,7 @@
     },
     "fcc20e0469b1d6c165a4e78391d6f255631d780a": {
       "found_at": "2026-02-23T23:35:08",
-      "last_checked": "2026-02-25T20:01:04",
+      "last_checked": "2026-02-26T07:07:29",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4523,7 +4517,7 @@
     },
     "0160368ca4afcaf57de73cb64d4c4e38c644e4b1": {
       "found_at": "2026-02-23T23:35:09",
-      "last_checked": "2026-02-25T20:01:05",
+      "last_checked": "2026-02-26T07:07:30",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4537,7 +4531,7 @@
     },
     "c4386b0806ee9514c05645e322f5f4d91ff7b543": {
       "found_at": "2026-02-23T23:35:09",
-      "last_checked": "2026-02-25T20:01:05",
+      "last_checked": "2026-02-26T07:07:31",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4551,7 +4545,7 @@
     },
     "7623bc3be586f0374b46beddc1dbdafb3bd6f076": {
       "found_at": "2026-02-23T23:35:10",
-      "last_checked": "2026-02-25T20:01:06",
+      "last_checked": "2026-02-26T07:07:30",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4579,7 +4573,7 @@
     },
     "89db3eaeab74b5a066897c13cb762f8672fe8033": {
       "found_at": "2026-02-23T23:35:11",
-      "last_checked": "2026-02-25T20:01:14",
+      "last_checked": "2026-02-26T07:07:38",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4593,7 +4587,7 @@
     },
     "731faa01e406cc4b9654180f9b283fd5b007d075": {
       "found_at": "2026-02-23T23:35:11",
-      "last_checked": "2026-02-25T20:01:15",
+      "last_checked": "2026-02-26T07:07:38",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4607,7 +4601,7 @@
     },
     "187585242d07f6caec3bc1abf408cccfd83a600e": {
       "found_at": "2026-02-23T23:35:13",
-      "last_checked": "2026-02-25T20:01:16",
+      "last_checked": "2026-02-26T07:07:52",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4621,7 +4615,7 @@
     },
     "31558d359b2b08adfa71df500d14d5f73032a7a1": {
       "found_at": "2026-02-23T23:35:14",
-      "last_checked": "2026-02-25T20:01:12",
+      "last_checked": "2026-02-26T07:07:39",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4635,7 +4629,7 @@
     },
     "b4166bf80b58e6e27fc966f3adec148317801df4": {
       "found_at": "2026-02-23T23:35:15",
-      "last_checked": "2026-02-25T20:01:13",
+      "last_checked": "2026-02-26T07:07:39",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4649,7 +4643,7 @@
     },
     "122bdade16eb8383a9a228cf48c7514f722a9ef8": {
       "found_at": "2026-02-23T23:35:15",
-      "last_checked": "2026-02-25T20:01:13",
+      "last_checked": "2026-02-26T07:07:40",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4663,7 +4657,7 @@
     },
     "ac5d78bb305f76cdb4d4a50ea23e77f139ec0a61": {
       "found_at": "2026-02-23T23:35:17",
-      "last_checked": "2026-02-25T20:01:54",
+      "last_checked": "2026-02-26T07:07:42",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4677,7 +4671,7 @@
     },
     "37c8bd229fbbf955e015c785e2737c34fe3e77c2": {
       "found_at": "2026-02-23T23:35:18",
-      "last_checked": "2026-02-25T20:01:11",
+      "last_checked": "2026-02-26T07:07:36",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4691,7 +4685,7 @@
     },
     "5a7276bcb325373c32f74971a515a8d5eb138ff6": {
       "found_at": "2026-02-23T23:35:19",
-      "last_checked": "2026-02-25T20:01:55",
+      "last_checked": "2026-02-26T07:07:44",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4705,7 +4699,7 @@
     },
     "fe11b482dd06ef0cbfbf76e1b88f17170295ecf8": {
       "found_at": "2026-02-23T23:35:20",
-      "last_checked": "2026-02-25T20:01:21",
+      "last_checked": "2026-02-26T07:07:45",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4719,7 +4713,7 @@
     },
     "192160e6db85bcda9061b1a00312ef67d39296c2": {
       "found_at": "2026-02-23T23:35:24",
-      "last_checked": "2026-02-25T20:01:26",
+      "last_checked": "2026-02-26T07:07:51",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4733,7 +4727,7 @@
     },
     "3d4d83c4ff8f3f3d461f52c536feca2c34d4e7c9": {
       "found_at": "2026-02-23T23:35:25",
-      "last_checked": "2026-02-25T20:01:24",
+      "last_checked": "2026-02-26T07:07:50",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4747,7 +4741,7 @@
     },
     "800a9c58e3b8ae40b5853bedbdd56fd02baf806f": {
       "found_at": "2026-02-23T23:35:26",
-      "last_checked": "2026-02-25T20:01:25",
+      "last_checked": "2026-02-26T07:07:50",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4761,7 +4755,7 @@
     },
     "cce0d026aad764e9d990b0d396574addadac78a6": {
       "found_at": "2026-02-23T23:35:27",
-      "last_checked": "2026-02-25T20:01:27",
+      "last_checked": "2026-02-26T07:07:53",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4775,7 +4769,7 @@
     },
     "7b5b248b737a54638d3330d92fc869b50d4bd82f": {
       "found_at": "2026-02-23T23:35:28",
-      "last_checked": "2026-02-25T20:01:29",
+      "last_checked": "2026-02-26T07:07:55",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4789,7 +4783,7 @@
     },
     "54fcf5f33b9085e70f7e47fa10dd9c2a360ac57b": {
       "found_at": "2026-02-23T23:35:29",
-      "last_checked": "2026-02-25T20:01:18",
+      "last_checked": "2026-02-26T07:07:55",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4803,7 +4797,7 @@
     },
     "b735b5aa22f9ec5de623af51fd6ce77601a1d5b5": {
       "found_at": "2026-02-23T23:35:32",
-      "last_checked": "2026-02-25T20:01:32",
+      "last_checked": "2026-02-26T07:07:59",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4817,7 +4811,7 @@
     },
     "667141fd3af9ceb7cbdf734a54b4ccf13c8a655d": {
       "found_at": "2026-02-23T23:35:33",
-      "last_checked": "2026-02-25T20:01:31",
+      "last_checked": "2026-02-26T07:07:59",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4855,7 +4849,7 @@
     },
     "4e03ff48a8b6dc098b66992de16137ebb39c9138": {
       "found_at": "2026-02-23T23:35:34",
-      "last_checked": "2026-02-25T20:01:38",
+      "last_checked": "2026-02-26T07:08:00",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4869,7 +4863,7 @@
     },
     "247081d759e7be12c6dbcdf5121e5fa5fdf413f4": {
       "found_at": "2026-02-23T23:35:34",
-      "last_checked": "2026-02-25T20:01:38",
+      "last_checked": "2026-02-26T07:08:00",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4883,7 +4877,7 @@
     },
     "d874c3f976b66dfaa3f3caa393d8bc9f84718bf6": {
       "found_at": "2026-02-23T23:35:35",
-      "last_checked": "2026-02-25T20:01:39",
+      "last_checked": "2026-02-26T07:08:01",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4897,7 +4891,7 @@
     },
     "2c8172a9928e5088cb76ce2d6dd620995d40b6c6": {
       "found_at": "2026-02-23T23:35:35",
-      "last_checked": "2026-02-25T20:01:39",
+      "last_checked": "2026-02-26T07:08:01",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4911,7 +4905,7 @@
     },
     "f3eec8aec04ed2be97bb7c2b312df57a299896e6": {
       "found_at": "2026-02-23T23:35:36",
-      "last_checked": "2026-02-25T20:01:40",
+      "last_checked": "2026-02-26T07:08:02",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4925,7 +4919,7 @@
     },
     "36e498cb07429bc15ce90aa215a490d9342245c5": {
       "found_at": "2026-02-23T23:35:37",
-      "last_checked": "2026-02-25T20:01:41",
+      "last_checked": "2026-02-26T07:08:03",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4939,7 +4933,7 @@
     },
     "f6cc4553ec2ab634fe09b2098bb7cf470b8487d7": {
       "found_at": "2026-02-23T23:35:37",
-      "last_checked": "2026-02-25T20:01:41",
+      "last_checked": "2026-02-26T07:08:03",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4953,7 +4947,7 @@
     },
     "a11a87ea5506c27fd6199083326b87917003ae57": {
       "found_at": "2026-02-23T23:32:41",
-      "last_checked": "2026-02-25T20:01:42",
+      "last_checked": "2026-02-26T07:08:04",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4967,7 +4961,7 @@
     },
     "1dea5d958cc75a74436c3a500364a4a900cff526": {
       "found_at": "2026-02-23T23:35:38",
-      "last_checked": "2026-02-25T20:01:58",
+      "last_checked": "2026-02-26T07:08:05",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4981,7 +4975,7 @@
     },
     "e4b36e0376be202a2aa2d142b0d3d2b5f21da185": {
       "found_at": "2026-02-23T23:35:39",
-      "last_checked": "2026-02-25T20:01:58",
+      "last_checked": "2026-02-26T07:08:06",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -4995,7 +4989,7 @@
     },
     "43f479a64cb68c9bac205cbd2fb8e8297f0b5b56": {
       "found_at": "2026-02-23T23:35:40",
-      "last_checked": "2026-02-25T20:01:59",
+      "last_checked": "2026-02-26T07:08:07",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5009,7 +5003,7 @@
     },
     "4b5b2846fec83f96bbac4df1e1f7984be10285b5": {
       "found_at": "2026-02-23T23:35:41",
-      "last_checked": "2026-02-25T20:02:00",
+      "last_checked": "2026-02-26T07:08:08",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5023,7 +5017,7 @@
     },
     "62783309d12e5ede644128dc08efd8d6d49390ab": {
       "found_at": "2026-02-23T23:35:41",
-      "last_checked": "2026-02-25T20:02:01",
+      "last_checked": "2026-02-26T07:08:08",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5037,7 +5031,7 @@
     },
     "6158ea569f9f67f9913f2df65e6fbd55cb6319c0": {
       "found_at": "2026-02-23T23:35:42",
-      "last_checked": "2026-02-25T20:02:02",
+      "last_checked": "2026-02-26T07:08:09",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5051,7 +5045,7 @@
     },
     "ba1ffb719a5793f1659aa304023f1136edd26549": {
       "found_at": "2026-02-23T23:35:43",
-      "last_checked": "2026-02-25T20:02:02",
+      "last_checked": "2026-02-26T07:08:10",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5065,7 +5059,7 @@
     },
     "f0cedbb705df6d79ce39b95ce99765bacedb1519": {
       "found_at": "2026-02-23T23:35:43",
-      "last_checked": "2026-02-25T20:02:03",
+      "last_checked": "2026-02-26T07:08:11",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5079,7 +5073,7 @@
     },
     "589dfd9e8e2f73c54d17b4302a59b7e2654553de": {
       "found_at": "2026-02-23T23:35:44",
-      "last_checked": "2026-02-25T20:02:04",
+      "last_checked": "2026-02-26T07:08:12",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5093,7 +5087,7 @@
     },
     "261d535920f1b0f56521661ff5fe35659d67b91e": {
       "found_at": "2026-02-23T23:35:45",
-      "last_checked": "2026-02-25T20:02:04",
+      "last_checked": "2026-02-26T07:08:12",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5107,7 +5101,7 @@
     },
     "8cec4242729cdd9405552000ecd5d242ad142062": {
       "found_at": "2026-02-23T23:35:45",
-      "last_checked": "2026-02-25T20:02:05",
+      "last_checked": "2026-02-26T07:08:13",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5121,7 +5115,7 @@
     },
     "07d8acb1dc1d54dbdfd42cd85d0495d3ed880e81": {
       "found_at": "2026-02-23T23:35:46",
-      "last_checked": "2026-02-25T20:02:06",
+      "last_checked": "2026-02-26T07:08:14",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5135,7 +5129,7 @@
     },
     "ccde13fafcceb9b7b6a65a26c3ee60a4e26fe3a3": {
       "found_at": "2026-02-23T23:35:47",
-      "last_checked": "2026-02-25T20:02:07",
+      "last_checked": "2026-02-26T07:08:15",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5149,7 +5143,7 @@
     },
     "6fe2e6d372515c8ffb9c6810e97a8037e232fd29": {
       "found_at": "2026-02-23T23:35:47",
-      "last_checked": "2026-02-25T20:02:08",
+      "last_checked": "2026-02-26T07:08:16",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5163,7 +5157,7 @@
     },
     "599cac78aa32325c3b1d436bdca742cc61cbea96": {
       "found_at": "2026-02-23T23:35:48",
-      "last_checked": "2026-02-25T20:02:08",
+      "last_checked": "2026-02-26T07:08:17",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5177,7 +5171,7 @@
     },
     "5d6cf094b2e7899b23956c469513324a4ecca49d": {
       "found_at": "2026-02-23T23:35:48",
-      "last_checked": "2026-02-25T20:01:43",
+      "last_checked": "2026-02-26T07:08:18",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5191,7 +5185,7 @@
     },
     "1b0aa4c0d0271ce500b1b9685814656236eacf15": {
       "found_at": "2026-02-23T23:35:49",
-      "last_checked": "2026-02-25T20:01:44",
+      "last_checked": "2026-02-26T07:08:18",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5205,7 +5199,7 @@
     },
     "63984f544553456211b459c0dfa61419e4f9e574": {
       "found_at": "2026-02-23T23:35:50",
-      "last_checked": "2026-02-25T20:01:45",
+      "last_checked": "2026-02-26T07:08:19",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5219,7 +5213,7 @@
     },
     "8ae9a72097a8db0a12be27921f682c5ca6024a0d": {
       "found_at": "2026-02-23T23:35:50",
-      "last_checked": "2026-02-25T20:01:45",
+      "last_checked": "2026-02-26T07:08:20",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5233,7 +5227,7 @@
     },
     "6f67bad3baf21318aaf988d8c82d82116ed912b6": {
       "found_at": "2026-02-23T23:35:51",
-      "last_checked": "2026-02-25T20:01:46",
+      "last_checked": "2026-02-26T07:08:21",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5247,7 +5241,7 @@
     },
     "d8ba4c4b368ca210df92e823248c1e335cec5654": {
       "found_at": "2026-02-23T23:35:52",
-      "last_checked": "2026-02-25T20:01:47",
+      "last_checked": "2026-02-26T07:08:22",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5261,7 +5255,7 @@
     },
     "81f906133e58a426548f37f296619196e675c75b": {
       "found_at": "2026-02-23T23:35:53",
-      "last_checked": "2026-02-25T20:01:48",
+      "last_checked": "2026-02-26T07:08:23",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5275,7 +5269,7 @@
     },
     "1fd24d91fb7835077c051cfc0a8de7f882daca90": {
       "found_at": "2026-02-23T23:35:53",
-      "last_checked": "2026-02-25T20:01:49",
+      "last_checked": "2026-02-26T07:08:23",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5289,7 +5283,7 @@
     },
     "0e01148c38c7d51922091df6413227c6ef625a27": {
       "found_at": "2026-02-23T23:35:54",
-      "last_checked": "2026-02-25T20:01:50",
+      "last_checked": "2026-02-26T07:08:24",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5303,7 +5297,7 @@
     },
     "caf9fb99f1a050aa52e6d51c205fccef0eb0b91a": {
       "found_at": "2026-02-23T23:35:54",
-      "last_checked": "2026-02-25T20:01:50",
+      "last_checked": "2026-02-26T07:08:25",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5317,7 +5311,7 @@
     },
     "57766cdcb98c96e3a49f95c64b429a8cb2668021": {
       "found_at": "2026-02-23T23:35:55",
-      "last_checked": "2026-02-25T20:01:51",
+      "last_checked": "2026-02-26T07:08:26",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5331,7 +5325,7 @@
     },
     "b2835f4b51a536ae9dd7a27a616e41c09454a5a1": {
       "found_at": "2026-02-24T20:58:50",
-      "last_checked": "2026-02-25T20:01:10",
+      "last_checked": "2026-02-26T07:07:35",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5345,7 +5339,7 @@
     },
     "c8ecaf221ce0bc0aa7e1e8fcb11a4407dc6d718c": {
       "found_at": "2026-02-24T20:58:50",
-      "last_checked": "2026-02-25T20:00:43",
+      "last_checked": "2026-02-26T07:07:09",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5575,7 +5569,7 @@
     },
     "b4d36f96cec41c95db11fb835612c7c8895a00e5": {
       "found_at": "2026-02-24T20:58:59",
-      "last_checked": "2026-02-25T20:01:11",
+      "last_checked": "2026-02-26T07:07:36",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5589,7 +5583,7 @@
     },
     "53550d30f82b1ea38ae5f7372e27c5155a1b0096": {
       "found_at": "2026-02-24T20:58:59",
-      "last_checked": "2026-02-25T20:00:52",
+      "last_checked": "2026-02-26T07:07:17",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5603,7 +5597,7 @@
     },
     "fb65a4540809241a834a34c3b93b23662a532f0d": {
       "found_at": "2026-02-24T20:59:12",
-      "last_checked": "2026-02-25T20:01:21",
+      "last_checked": "2026-02-26T07:07:47",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5669,7 +5663,7 @@
     },
     "5437cc734adc2e8633b5a0e3c0470f4a6e7d3c1f": {
       "found_at": "2026-02-25T14:36:07",
-      "last_checked": "2026-02-25T20:01:07",
+      "last_checked": "2026-02-26T07:07:32",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5683,7 +5677,7 @@
     },
     "c553f721d7118aef2e89172d30757f52a67903f5": {
       "found_at": "2026-02-25T14:36:07",
-      "last_checked": "2026-02-25T20:00:41",
+      "last_checked": "2026-02-26T07:07:06",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5697,7 +5691,7 @@
     },
     "0a904993dfccb69a160abcbf31149c923898046c": {
       "found_at": "2026-02-25T14:36:08",
-      "last_checked": "2026-02-25T20:01:08",
+      "last_checked": "2026-02-26T07:07:34",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5711,7 +5705,7 @@
     },
     "a2414673c127e96be23287900fbc540a6c65ecd9": {
       "found_at": "2026-02-25T14:36:08",
-      "last_checked": "2026-02-25T20:00:42",
+      "last_checked": "2026-02-26T07:07:08",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5725,7 +5719,7 @@
     },
     "04c1c54c35c6a8310959925f798906b9de791f7f": {
       "found_at": "2026-02-25T14:36:36",
-      "last_checked": "2026-02-25T20:01:07",
+      "last_checked": "2026-02-26T07:07:32",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5739,7 +5733,7 @@
     },
     "5bc27a776410fc82fbbef95336276d09b848ec91": {
       "found_at": "2026-02-25T14:36:37",
-      "last_checked": "2026-02-25T20:01:08",
+      "last_checked": "2026-02-26T07:07:33",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
@@ -5753,7 +5747,7 @@
     },
     "4e54cec8d4fee1de461762256c4928345eb783a1": {
       "found_at": "2026-02-25T14:36:38",
-      "last_checked": "2026-02-25T20:01:09",
+      "last_checked": "2026-02-26T07:07:34",
       "etag": "",
       "last_modified": "",
       "gmina": "Dołhobyczów",
