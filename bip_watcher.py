@@ -1817,6 +1817,15 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
     if isinstance(state.gmina_retry, dict):
         state.gmina_retry[gkey] = []
 
+    # --- FUNKCJA DO AKTUALIZACJI FRONTIERU ---
+    async def update_frontier():
+        async with state.cache_lock:
+            state.gmina_frontiers[gkey] = [[url, depth] for url, depth in q]
+
+    # Zapisz początkowy frontier po wczytaniu saved_frontier i retry
+    await update_frontier()
+    # -----------------------------------------
+                         
     # Jeśli NIE ma kontynuacji, startuj od seedów
     if not saved_frontier:
         for su in seed_urls:
@@ -1836,6 +1845,8 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             break
 
         url, depth = q.popleft()
+        await update_frontier()   # <-- DODANE
+
         if depth > PHASE2_MAX_DEPTH:
             continue
 
@@ -2036,53 +2047,55 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
             else:
                 diag["counts"]["dedup_skipped"] += 1
 
-        # LINK HITS
-        for abs_u, txt in iter_links_fast(soup, final_c):
-            cu = _canon(abs_u)
-            if not cu or not allow_url(cu):
-                continue
-            if cu in dead_set:
-                continue
+            # LINK HITS
+            for abs_u, txt in iter_links_fast(soup, final_c):
+                cu = _canon(abs_u)
+                if not cu or not allow_url(cu):
+                    continue
+                if cu in dead_set:
+                    continue
 
-            if is_download_url(cu):
-                diag["counts"]["link_hit_download_skip"] += 1
+                if is_download_url(cu):
+                    diag["counts"]["link_hit_download_skip"] += 1
+                    if cu not in visited and cu not in dead_set:
+                        visited.add(cu)
+                        q.append((cu, depth + 1))
+                        await update_frontier()   # <-- TO JUŻ MASZ
+                    continue
+
+                filename = urlparse(cu).path.split("/")[-1]
+                blob_link = f"{txt} {filename}"
+                ok_link, kw_link = keyword_match_in_blob(blob_link)
+
+                if ENABLE_LINK_HITS and ok_link:
+                    link_title = (txt or "").strip()
+                    if not link_title:
+                        link_title = filename or cu
+
+                    key = sha1(canonical_url(cu))
+                    prev_link = content_seen.get(key)
+                    if prev_link is None and cu not in state.reported_urls_this_run:
+                        async with state.cache_lock:
+                            content_seen[key] = {
+                                "found_at": now_iso(), "last_checked": now_iso(),
+                                "etag": "", "last_modified": "",
+                                "gmina": gmina, "title": link_title[:240], "url": cu,
+                                "keywords": [kw_link], "att_sig": "", "status": "NOWE",
+                            }
+                        state.reported_urls_this_run.add(cu)
+                        if _consecutive_dedup_check(gmina, link_title):
+                            print_hit("🟢 NOWE (LINK)", gmina, kw_link, link_title)
+                            found.append((gmina, kw_link, link_title, cu, "NOWE"))
+                            diag["counts"]["link_hits_new"] += 1
+                        else:
+                            diag["counts"]["consecutive_dedup_skipped"] += 1
+                    elif prev_link is None:
+                        diag["counts"]["link_dedup_skipped"] += 1
+
                 if cu not in visited and cu not in dead_set:
                     visited.add(cu)
                     q.append((cu, depth + 1))
-                continue
-
-            filename = urlparse(cu).path.split("/")[-1]
-            blob_link = f"{txt} {filename}"
-            ok_link, kw_link = keyword_match_in_blob(blob_link)
-
-            if ENABLE_LINK_HITS and ok_link:
-                link_title = (txt or "").strip()
-                if not link_title:
-                    link_title = filename or cu
-
-                key = sha1(canonical_url(cu))
-                prev_link = content_seen.get(key)
-                if prev_link is None and cu not in state.reported_urls_this_run:
-                    async with state.cache_lock:
-                        content_seen[key] = {
-                            "found_at": now_iso(), "last_checked": now_iso(),
-                            "etag": "", "last_modified": "",
-                            "gmina": gmina, "title": link_title[:240], "url": cu,
-                            "keywords": [kw_link], "att_sig": "", "status": "NOWE",
-                        }
-                    state.reported_urls_this_run.add(cu)
-                    if _consecutive_dedup_check(gmina, link_title):
-                        print_hit("🟢 NOWE (LINK)", gmina, kw_link, link_title)
-                        found.append((gmina, kw_link, link_title, cu, "NOWE"))
-                        diag["counts"]["link_hits_new"] += 1
-                    else:
-                        diag["counts"]["consecutive_dedup_skipped"] += 1
-                elif prev_link is None:
-                    diag["counts"]["link_dedup_skipped"] += 1
-
-            if cu not in visited and cu not in dead_set:
-                visited.add(cu)
-                q.append((cu, depth + 1))
+                    await update_frontier()   # <-- DODAJ TĘ LINIĘ
 
     # Zapis frontieru — zawsze
     if q:
@@ -2454,6 +2467,7 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
 
