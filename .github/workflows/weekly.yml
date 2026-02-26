@@ -159,7 +159,7 @@ jobs:
     name: Scan shard ${{ matrix.shard }}
     runs-on: ubuntu-latest
     continue-on-error: true
-    timeout-minutes: 355
+    timeout-minutes: 15
     needs: [setup]
     if: needs.setup.result == 'success' && needs.setup.outputs.total != '0'
 
