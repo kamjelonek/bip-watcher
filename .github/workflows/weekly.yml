@@ -226,7 +226,7 @@ jobs:
       # ============================================================
       - name: Run watcher
         continue-on-error: true
-        timeout-minutes: 325
+        timeout-minutes: 12
         env:
           PYTHONUNBUFFERED: "1"
           SHARD_TOTAL: ${{ needs.setup.outputs.total }}
@@ -248,7 +248,7 @@ jobs:
       # ============================================================
       - name: Compress and commit shard to cache-store
         if: always()
-        timeout-minutes: 25
+        timeout-minutes: 6
         shell: bash
         env:
           SHARD_INDEX: "${{ matrix.shard }}"
@@ -328,7 +328,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [scan]
     if: always()
-    timeout-minutes: 60
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v4
