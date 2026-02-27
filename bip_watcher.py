@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.16 - PRODUCTION
-Zmiany v2.16 vs v2.15:
-- NAPRAWA: save_shard_cache_and_commit() teraz faktycznie commituje w GHA
-  (usunięto blokadę "commit pominięty")
-- NAPRAWA: signal_handler() - najpierw zapis, potem exit (nie os._exit przed zapisem)
-- NAPRAWA: exec w YAML (patrz workflow) - SIGTERM trafia do Pythona
-- NAPRAWA: periodic_checkpoint robi finalny zapis gdy shutdown_requested=True
-- WYDAJNOŚĆ: max-parallel 10->20, CONCURRENT_GMINY domyślnie 1 (per shard),
-  CONCURRENT_REQUESTS 30->50, LIMIT_PER_HOST 4->6,
-  RATE_MIN_DELAY 0.5->0.3, PHASE1_MAX_PAGES 1000->2000
+BIP WATCHER v2.17 - PRODUCTION
+Zmiany v2.17 vs v2.16:
+- NAPRAWA KRYTYCZNA: dodano brakujące funkcje _consecutive_dedup_check, save_diag, write_summary
+  (bez nich Phase2 crashowała natychmiast — zero wyników od wdrożenia v2.16)
+- NAPRAWA KRYTYCZNA: Phase1 BFS ograniczony do głębokości 3
+  (poprzednio crawlował całą domenę bez limitu — Nowy Dwór 65k URL-i w 112 min)
+- NAPRAWA: filtr paginacji w should_skip_href — ?page=, /page/N/ itp.
+- NAPRAWA: Phase2 odkrywa nowe linki podczas skanowania i dodaje je do frontieru
+  (jak w starych wersjach — gwarantuje że strony dodane po Phase1 też trafią do scanu)
+- _soup_fast_text: wersja z v2.16 (bez _pick_main_container który gubił ogłoszenia w sidebarach)
 """
 
 import os, sys, csv, json, hashlib, asyncio, re, time, smtplib, warnings, socket, random, signal
@@ -18,7 +18,6 @@ from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from urllib.parse import urljoin, urlparse, urlunparse, parse_qsl, urlencode
 from pathlib import Path
-import subprocess
 
 import aiohttp
 import requests
@@ -28,6 +27,7 @@ from bs4 import XMLParsedAsHTMLWarning
 warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 warnings.filterwarnings("ignore", category=requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
+# ===================== ENV HELPERS =====================
 def env_int(name, default):
     try:
         return int(os.getenv(name, str(default)))
@@ -46,20 +46,15 @@ def get_shard_index():
     except Exception:
         return -1
 
+# ===================== GIT / SHARD SAVE =====================
 def _git_commit_file(filepath, message):
-    """
-    v2.17: Python NIE pushuje do gita.
-    Zapis do repo obsługuje wyłącznie krok YAML
-    'Compress and commit shard to cache-store'.
-    Python tylko zapisuje plik na dysk.
-    """
+    """Python NIE pushuje do gita. Zapis obsługuje wyłącznie krok YAML."""
     print(f"📁 (git pominięty — plik zapisany na dysk): {filepath}")
 
 async def save_shard_cache_and_commit(loop=None):
     shard = get_shard_index()
     if shard < 0:
         return
-
     out = {"schema": CACHE_SCHEMA}
     out["urls_seen"] = {}
     old_urls = (state.raw_cache or {}).get("urls_seen", {}) if isinstance(state.raw_cache, dict) else {}
@@ -70,7 +65,6 @@ async def save_shard_cache_and_commit(loop=None):
     out["gmina_frontiers"] = state.gmina_frontiers or {}
     out["gmina_retry"] = state.gmina_retry or {}
     out["dead_urls"] = getattr(state, "dead_urls", {})
-
     filename = BASE_DIR / f"cache_shard_{shard}.json"
     try:
         tmp = str(filename) + ".tmp"
@@ -81,8 +75,6 @@ async def save_shard_cache_and_commit(loop=None):
     except Exception as e:
         print(f"⚠️ Failed to write shard cache: {e}")
         return
-
-    # NAPRAWA v2.16: commituj zawsze (nie tylko poza GHA)
     if loop is None:
         loop = asyncio.get_event_loop()
     await loop.run_in_executor(None, _git_commit_file, filename, f"Auto-update cache shard {shard} [skip ci]")
@@ -207,6 +199,16 @@ _DOWNLOAD_SUFFIX_RE = re.compile(
     re.IGNORECASE
 )
 
+# ===================== PAGINATION FILTER =====================
+# v2.17: filtruje nieskończoną paginację która niszczyła Phase1
+_PAGINATION_RE = re.compile(
+    r"[?&](page|strona|p|offset|start|from|skip)=\d+"
+    r"|/page/\d+"
+    r"|/strona/\d+"
+    r"|[?&]p=\d+",
+    re.IGNORECASE
+)
+
 def is_download_url(u: str) -> bool:
     low = (u or "").lower()
     for seg in DOWNLOAD_URL_SEGMENTS:
@@ -221,7 +223,7 @@ def is_download_url(u: str) -> bool:
             return True
     return False
 
-# ===================== FIX #6: Generic page title filter =====================
+# ===================== GENERIC TITLE FILTER =====================
 _GENERIC_TITLE_PATTERNS = [
     "biuletyn informacji publicznej", "biuletyn informacji", "archiwum bip",
     "bip archiwum", "strona główna", "strona glowna", "aktualności", "aktualnosci",
@@ -283,13 +285,14 @@ def is_junk_link_title(title: str, url: str = "") -> bool:
     return False
 
 # ===================== PERFORMANCE =====================
-# WYDAJNOŚĆ v2.16: podkręcone limity
-CONCURRENT_GMINY = env_int("CONCURRENT_GMINY", 1)          # per shard (1 gmina = 1 shard)
-CONCURRENT_REQUESTS = env_int("CONCURRENT_REQUESTS", 50)   # +20 vs v2.15
-LIMIT_PER_HOST = env_int("LIMIT_PER_HOST", 6)              # +2 vs v2.15
+CONCURRENT_GMINY = env_int("CONCURRENT_GMINY", 1)
+CONCURRENT_REQUESTS = env_int("CONCURRENT_REQUESTS", 50)
+LIMIT_PER_HOST = env_int("LIMIT_PER_HOST", 6)
 
-PHASE1_MAX_PAGES = 999999                                     # 1000->2000
-PHASE1_MAX_SEEDS = 999999
+# v2.17: Phase1 ograniczona głębokością, nie liczbą stron
+PHASE1_MAX_DEPTH = env_int("PHASE1_MAX_DEPTH", 3)      # BFS max głębokość
+PHASE1_MAX_URLS = env_int("PHASE1_MAX_URLS", 5000)     # bezpieczny limit URL-i per gmina
+
 PHASE2_MAX_DEPTH = 4
 PHASE2_MAX_PAGES = 999999
 
@@ -312,6 +315,8 @@ HIT_RECHECK_TTL_HOURS = 0
 NO_MATCH_RECHECK_TTL_HOURS = 0
 BLOCKED_RECHECK_TTL_MIN = env_int("BLOCKED_RECHECK_TTL_MIN", 0)
 FAILED_RECHECK_TTL_MIN = env_int("FAILED_RECHECK_TTL_MIN", 0)
+
+FRONTIER_CHECKPOINT_EVERY = 500
 
 # ===================== USER AGENTS =====================
 USER_AGENTS = [
@@ -372,8 +377,8 @@ class DomainRateLimiter:
         self.problem_domains[domain] += 1
 
 rate_limiter = DomainRateLimiter(
-    min_delay=env_float("RATE_MIN_DELAY", 0.3),   # v2.16: 0.5->0.3
-    max_delay=env_float("RATE_MAX_DELAY", 1.0),   # v2.16: 1.5->1.0
+    min_delay=env_float("RATE_MIN_DELAY", 0.3),
+    max_delay=env_float("RATE_MAX_DELAY", 1.0),
 )
 
 # ===================== GLOBAL STATE =====================
@@ -395,7 +400,6 @@ class GlobalState:
         self.reported_urls_this_run: set = set()
         self.last_printed: dict = {}
 
-  
     def request_shutdown(self):
         self.shutdown_requested = True
         print("\n⚠️  Shutdown requested...", flush=True)
@@ -406,13 +410,6 @@ RUN_DEADLINE_MIN = env_int("RUN_DEADLINE_MIN", 0)
 GLOBAL_T0 = time.time()
 
 # ===================== SIGNAL HANDLER =====================
-# NAPRAWA v2.16:
-# - NIE robimy os._exit() natychmiast
-# - Ustawiamy tylko flagę shutdown_requested
-# - periodic_checkpoint() wykryje flagę i zrobi finalny zapis, potem exit
-# - To gwarantuje że frontier zostanie zapisany przed śmiercią procesu
-# - exec w YAML (patrz workflow) zapewnia że SIGTERM trafia do Pythona
-
 _signal_received = False
 
 def signal_handler(signum, frame):
@@ -420,7 +417,6 @@ def signal_handler(signum, frame):
     print(f"\n🛑 SIGNAL {signum} received (pid={os.getpid()})", flush=True)
     state.request_shutdown()
     _signal_received = True
-    # NIE robimy os._exit() tutaj — czekamy aż periodic_checkpoint zrobi zapis
 
 signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGINT, signal_handler)
@@ -567,16 +563,83 @@ def retry_io(action, tries: int = 5, base_sleep: float = 0.6):
     if last_exc:
         raise last_exc
 
+# ===================== BRAKUJĄCE FUNKCJE (v2.17) =====================
+
+def _consecutive_dedup_check(gmina: str, title: str) -> bool:
+    """
+    Zwraca True jeśli warto zaraportować (tytuł różny od poprzedniego dla tej gminy).
+    Zapobiega spamowi gdy ta sama strona pojawia się wielokrotnie w frontierze.
+    """
+    key = (gmina or "").strip().lower()
+    prev = state.last_printed.get(key, "")
+    curr = re.sub(r"\s+", " ", (title or "")).strip().lower()
+    if curr and curr == prev:
+        return False
+    state.last_printed[key] = curr
+    return True
+
+
+def save_diag(diag_rows, diag_errors):
+    """Zapisuje diagnostykę do CSV."""
+    try:
+        def _do():
+            new_file = not DIAG_GMINY_CSV.exists()
+            with open(DIAG_GMINY_CSV, "a", encoding="utf-8", newline="") as f:
+                w = csv.writer(f)
+                if new_file:
+                    w.writerow(["datetime", "gmina", "start_url", "status",
+                                "phase1_seeds", "phase2_pages_ok", "notes", "counts_json"])
+                for r in (diag_rows or []):
+                    w.writerow([
+                        r.get("datetime"), r.get("gmina"), r.get("start_url"),
+                        r.get("status"), r.get("phase1_seeds"), r.get("phase2_pages_ok"),
+                        " | ".join(r.get("notes", []) or [])[:900],
+                        json.dumps(r.get("counts", {}), ensure_ascii=False)[:5000],
+                    ])
+            new_file2 = not DIAG_ERRORS_CSV.exists()
+            with open(DIAG_ERRORS_CSV, "a", encoding="utf-8", newline="") as f:
+                w = csv.writer(f)
+                if new_file2:
+                    w.writerow(["datetime", "gmina", "stage", "kind", "status", "url", "err"])
+                for e in (diag_errors or []):
+                    w.writerow([
+                        now_iso(), e.get("gmina"), e.get("stage"), e.get("kind"),
+                        e.get("status"), (e.get("url") or "")[:400], (e.get("err") or "")[:300],
+                    ])
+        retry_io(_do, tries=6, base_sleep=0.7)
+    except Exception as ex:
+        print(f"⚠️ save_diag failed: {ex}")
+
+
+def write_summary(diag_rows, new_items_for_mail):
+    """Zapisuje podsumowanie runu do pliku tekstowego."""
+    try:
+        total = len(diag_rows or [])
+        ok = sum(1 for r in (diag_rows or []) if r.get("status") == "OK")
+        start_fail = sum(1 for r in (diag_rows or []) if r.get("status") == "START_FAIL")
+        lines = [
+            f"BIP WATCHER v2.17 SUMMARY @ {now_iso()}",
+            f"gminy_total={total} ok={ok} start_fail={start_fail}",
+            f"mail_items={len(new_items_for_mail or [])}",
+            "",
+            "TOP hits:",
+        ]
+        for x in (new_items_for_mail or [])[:500]:
+            lines.append("- " + re.sub(r"\s+", " ", x).strip())
+        def _do():
+            with open(SUMMARY_FILE, "w", encoding="utf-8") as f:
+                f.write("\n".join(lines))
+        retry_io(_do, tries=6, base_sleep=0.7)
+        print(f"🧾 Summary saved: {SUMMARY_FILE}")
+    except Exception as ex:
+        print(f"⚠️ write_summary failed: {ex}")
+
+
 def panic_save_checkpoint_sync(reason: str = "SIGTERM"):
-    """
-    NAPRAWA v2.16: Krytyczny zapis synchroniczny — wywoływany przy sygnale lub końcu runa.
-    Zapisuje cache/frontiers/retry/dead + diag.
-    W GHA: commituje plik do repozytorium (branch cache-store).
-    """
+    """Krytyczny zapis synchroniczny przy sygnale lub końcu runa."""
     try:
         if not USE_CACHE:
             return
-
         if os.getenv("GITHUB_ACTIONS") and get_shard_index() >= 0:
             shard = get_shard_index()
             out = {"schema": CACHE_SCHEMA}
@@ -589,29 +652,25 @@ def panic_save_checkpoint_sync(reason: str = "SIGTERM"):
             out["gmina_frontiers"] = state.gmina_frontiers or {}
             out["gmina_retry"] = state.gmina_retry or {}
             out["dead_urls"] = getattr(state, "dead_urls", {})
-
             filename = BASE_DIR / f"cache_shard_{shard}.json"
             tmp = str(filename) + ".tmp"
             with open(tmp, "w", encoding="utf-8") as f:
                 json.dump(out, f, indent=2, ensure_ascii=False)
             os.replace(tmp, filename)
             print(f"🧯 PANIC SAVE (shard) OK [{reason}]: {filename}", flush=True)
-
-            # NAPRAWA v2.16: commituj też do repo (synchronicznie)
             _git_commit_file(filename, f"Panic-save shard {shard} [{reason}] [skip ci]")
         else:
             save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds)
             print(f"🧯 PANIC SAVE (cache.json) OK [{reason}]", flush=True)
-
         try:
             save_diag(state.diag_rows, state.diag_errors)
             print(f"🧯 PANIC SAVE (diag) OK [{reason}]", flush=True)
         except Exception as e:
             print(f"⚠️ PANIC diag save failed: {e}", flush=True)
-
     except Exception as e:
         print(f"⚠️ PANIC SAVE FAILED [{reason}]: {e}", flush=True)
 
+# ===================== URL NORMALIZATION =====================
 def normalize_url(url: str) -> str:
     try:
         p = urlparse(url)
@@ -718,7 +777,14 @@ def anchor_is_ignored(text: str) -> bool:
     return any(x in t for x in IGNORE_ANCHOR_TEXT)
 
 def should_skip_href(abs_href: str) -> bool:
+    """
+    v2.17: dodano filtr paginacji (_PAGINATION_RE) który ucina nieskończone
+    kolejki URL-i generowanych przez ?page=N, /page/N/ itp.
+    """
     u = (abs_href or "").lower()
+    # Filtr paginacji — NOWY w v2.17
+    if _PAGINATION_RE.search(abs_href or ""):
+        return True
     for pattern in IGNORE_URL_PATH_PATTERNS:
         if re.search(pattern, u):
             return True
@@ -970,8 +1036,9 @@ def _strip_dynamic_noise(txt: str) -> str:
 
 def _soup_fast_text(soup: BeautifulSoup, max_chars: int = FAST_TEXT_MAX_CHARS) -> str:
     """
-    v2.16: Wycina TYLKO script/style/noscript oraz footer.
-    Nav, header, aside — zostawiane (mogą zawierać ogłoszenia).
+    v2.17 (z v2.16): Wycina TYLKO script/style/noscript/footer/header/nav.
+    NIE używa _pick_main_container który gubił ogłoszenia w sidebarach BIP-ów.
+    Prosta ekstrakcja całego tekstu strony = bardziej niezawodna dla polskich BIP-ów.
     """
     try:
         if not soup:
@@ -1092,23 +1159,9 @@ LISTING_URL_HINTS = [
     "ostatnio_dodane", "ostatnio_zaktualizowane",
 ]
 
-JS_EXTRA_SEED_PATHS = [
-    "/rss", "/feed", "/rss.xml", "/feed.xml",
-    "/wp-json", "/wp-json/wp/v2/posts",
-    "/api", "/api/ogloszenia", "/api/announcements",
-    "/sitemap.xml.gz", "/sitemap_index.xml.gz", "/sitemap.php",
-    "/sitemap.xml?page=1", "/sitemap.xml?page=2",
-    "/ogloszenia.xml", "/ogloszenia.rss",
-    "/kategorie.xml", "/kategorie.rss",
-    "/bip-sitemap.xml", "/bip-sitemap_index.xml",
-    "/index.php?id=ostatnio_dodane",
-    "/index.php?id=ostatnio_zaktualizowane",
-    "/index.php?id=1",
-    "/dokumenty",
-    "/dokumenty/kategorie",
-]
-
 # ===================== START URL VARIANTS =====================
+START_AUX_HINTS = ["/robots.txt", "/sitemap.xml", "/sitemap_index.xml"]
+
 def _www_variants(netloc: str):
     n = (netloc or "").strip()
     if not n:
@@ -1180,12 +1233,18 @@ def load_cache_v2():
         c = _empty_cache()
         return c, set(), {}, {}, {}, {}, {}
 
-    if not CACHE_FILE.exists():
+    shard = get_shard_index()
+    if os.getenv("GITHUB_ACTIONS") and shard >= 0:
+        cache_path = BASE_DIR / f"cache_shard_{shard}.json"
+    else:
+        cache_path = CACHE_FILE
+
+    if not cache_path.exists():
         c = _empty_cache()
         return c, set(), {}, {}, {}, {}, {}
 
     try:
-        with open(CACHE_FILE, "r", encoding="utf-8") as f:
+        with open(cache_path, "r", encoding="utf-8") as f:
             c = json.load(f) or {}
 
         if "schema" not in c and "found_items" in c:
@@ -1235,7 +1294,6 @@ def save_cache_v2(raw_cache, urls_seen_set, content_seen, gmina_seeds):
     out["gmina_frontiers"] = state.gmina_frontiers or {}
     out["gmina_retry"] = state.gmina_retry or {}
     out["dead_urls"] = getattr(state, "dead_urls", {})
-
     tmp = str(CACHE_FILE) + ".tmp"
     def _do_save():
         with open(tmp, "w", encoding="utf-8") as f:
@@ -1251,12 +1309,10 @@ def purge_old_cache(raw_cache: dict, urls_seen_set: set, content_seen: dict, gmi
     for h in to_del:
         urls_seen_set.discard(h)
         urls_dict.pop(h, None)
-
     seed_cutoff = datetime.now() - timedelta(days=SEED_CACHE_TTL_DAYS)
     to_del_seeds = [k for k, meta in list((gmina_seeds or {}).items()) if _ts_older_than((meta or {}).get("ts", ""), seed_cutoff)]
     for k in to_del_seeds:
         gmina_seeds.pop(k, None)
-
     if to_del or to_del_seeds:
         print(f"🧹 Purged: {len(to_del)} URL, {len(to_del_seeds)} seeds")
 
@@ -1443,6 +1499,24 @@ async def fetch_start_matrix(session_default, session_ipv4, url, diag):
 
     return last_fail if last_fail else (None, url, "fail", None, "", "no_strategy_worked", None)
 
+_BINARY_MAGIC = [
+    b"%PDF", b"\xD0\xCF\x11\xE0", b"PK\x03\x04", b"\x1F\x8B",
+    b"BM", b"\xFF\xD8\xFF", b"\x89PNG", b"GIF8",
+]
+
+_BINARY_CTYPE_RE = re.compile(
+    r"(application/pdf|application/msword|application/vnd\.|"
+    r"application/octet|application/zip|application/x-|"
+    r"image/|audio/|video/)",
+    re.IGNORECASE
+)
+
+_BINARY_URL_SUFFIX_RE = re.compile(
+    r"\.(pdf|docx?|xlsx?|pptx?|odt|rtf|zip|rar|7z|gml|tiff?|dwg|dxf|jpg|jpeg|png|gif|mp4|mp3)$"
+    r"|pdf$|docx?$|xlsx?$",
+    re.IGNORECASE
+)
+
 def _is_binary_response(ctype: str, data: bytes, url: str) -> bool:
     if _BINARY_CTYPE_RE.search(ctype or ""):
         return True
@@ -1499,24 +1573,6 @@ async def fetch(session: aiohttp.ClientSession, url: str, extra_headers: dict = 
                 return None, url, "exc", None, "", str(e), 0
             continue
     return None, url, "exc", None, "", "fetch_failed", 0
-
-_BINARY_MAGIC = [
-    b"%PDF", b"\xD0\xCF\x11\xE0", b"PK\x03\x04", b"\x1F\x8B",
-    b"BM", b"\xFF\xD8\xFF", b"\x89PNG", b"GIF8",
-]
-
-_BINARY_CTYPE_RE = re.compile(
-    r"(application/pdf|application/msword|application/vnd\.|"
-    r"application/octet|application/zip|application/x-|"
-    r"image/|audio/|video/)",
-    re.IGNORECASE
-)
-
-_BINARY_URL_SUFFIX_RE = re.compile(
-    r"\.(pdf|docx?|xlsx?|pptx?|odt|rtf|zip|rar|7z|gml|tiff?|dwg|dxf|jpg|jpeg|png|gif|mp4|mp3)$"
-    r"|pdf$|docx?$|xlsx?$",
-    re.IGNORECASE
-)
 
 async def fetch_conditional(session: aiohttp.ClientSession, url: str, extra_headers: dict = None):
     url = normalize_url(url)
@@ -1625,32 +1681,16 @@ def iter_links_fast(soup: BeautifulSoup, base_url: str):
             continue
 
 # ============================================================
-# PODMIEŃ wszystko od linii zaczynającej się od:
-#   "async def phase1_full_crawl("
-# aż do końca funkcji worker (włącznie z ostatnim "queue.task_done()")
-# ============================================================
-
-# ============================================================
-# STAŁE KONFIGURACJI FRONTIERU
-# ============================================================
-
-FULL_FRONTIER_MAX_URLS = 500_000   # maks URL-i w frontierze discovery
-FRONTIER_CHECKPOINT_EVERY = 500    # co ile stron zapisujemy frontier na dysk
-
-
-# ============================================================
 # POMOCNICZE — stan cyklu gminy
 # ============================================================
 
 def gmina_cycle_key(gkey: str) -> str:
     return f"cycle_{gkey}"
 
-
 def is_frontier_complete(gkey: str) -> bool:
     """True jeśli Phase1 zakończyła się w całości i frontier jest kompletny."""
     meta = state.gmina_seeds.get(gmina_cycle_key(gkey), {})
     return bool(meta.get("frontier_complete", False))
-
 
 def mark_frontier_complete(gkey: str, total_urls: int):
     """Zapisuje flagę że frontier jest kompletny po udanej Phase1."""
@@ -1661,14 +1701,12 @@ def mark_frontier_complete(gkey: str, total_urls: int):
         "ts": now_iso(),
     }
 
-
 def mark_frontier_reset(gkey: str):
     """Usuwa flagę — następny run zrobi nową Phase1."""
     state.gmina_seeds.pop(gmina_cycle_key(gkey), None)
 
-
 # ============================================================
-# PHASE 1 — pełny crawl domeny, zbiera WSZYSTKIE linki
+# PHASE 1 — BFS z limitem głębokości 3
 # ============================================================
 
 async def phase1_full_crawl(
@@ -1680,23 +1718,34 @@ async def phase1_full_crawl(
     diag,
 ) -> tuple:
     """
-    Crawluje całą domenę BFS-em i zwraca listę wszystkich znalezionych URL-i.
-    Ta lista staje się kompletnym frontierem dla Phase2.
-
-    Gwarancja: jeśli funkcja dojdzie do końca (nie zostanie przerwana),
-    frontier zawiera każdy URL który był osiągalny z domeny startowej.
-
-    Wywoływana tylko gdy:
-    - gmina nie ma frontieru (pierwsze uruchomienie)
-    - poprzedni cykl Phase2 się zakończył (frontier wyczerpany)
-    - poprzednia Phase1 została przerwana (frontier_complete=False)
+    v2.17: BFS z ograniczeniem głębokości do PHASE1_MAX_DEPTH (domyślnie 3).
+    
+    Zamiast crawlować całą domenę (co prowadziło do 65k+ URL-i dla niektórych BIP-ów),
+    eksplorujemy tylko do głębokości 3 od strony startowej.
+    
+    Głębokość 3 od home page pokrywa praktycznie wszystkie ogłoszenia BIP:
+      depth 0: strona główna
+      depth 1: kategorie, działy (ogłoszenia, planowanie, środowisko...)
+      depth 2: listy ogłoszeń w kategorii
+      depth 3: konkretne ogłoszenie/decyzja
+    
+    URL-e z depth > MAX_DEPTH trafiają do frontieru jako znane (będą sprawdzone
+    przez Phase2) ale ich linki nie są dalej eksplorowane w Phase1.
+    
+    Phase2 podczas skanowania odkrywa nowe linki i dopisuje je do frontieru,
+    więc strony głębsze niż 3 też zostaną sprawdzone — ale stopniowo,
+    w kolejnych runach, bez blokowania Phase1.
     """
     if state.shutdown_requested:
         return [], {"status": "SHUTDOWN"}
 
-    seeds = {}       # url -> score (wyższy = ważniejszy, trafi na początek frontieru)
-    visited = set()  # URL-e już dodane do kolejki Phase1 (żeby nie odwiedzać dwa razy)
+    # seeds: url -> score (wyższy = ważniejszy, trafi na początek frontieru)
+    seeds = {}
+    # visited: canonical URL-e już wstawione do kolejki BFS
+    visited = set()
+    # BFS queue: (url, depth)
     q = deque()
+
     html0 = final0 = None
     kind0 = "fail"
     status0 = None
@@ -1748,14 +1797,14 @@ async def phase1_full_crawl(
     def allow_url(u: str) -> bool:
         return same_base_domain(urlparse(u).netloc.lower(), allowed_host)
 
-    # ---- Zbierz URL-e z sitemapy (szybkie źródło dodatkowych linków) ----
+    # ---- Zbierz URL-e z sitemapy ----
     try:
         base_site = urlunparse((
             urlparse(final0).scheme,
             urlparse(final0).netloc,
             "/", "", "", ""
         ))
-        sitemap_urls = await collect_sitemap_urls(session_crawl, base_site, diag, max_urls=10_000)
+        sitemap_urls = await collect_sitemap_urls(session_crawl, base_site, diag, max_urls=5000)
         sitemap_added = 0
         for u in sitemap_urls:
             if allow_url(u) and not should_skip_href(u):
@@ -1763,6 +1812,8 @@ async def phase1_full_crawl(
                 if cu:
                     score = 20 if any(h in u.lower() for h in LISTING_URL_HINTS) else 10
                     seeds[u] = max(seeds.get(u, 0), score)
+                    if cu not in visited:
+                        visited.add(cu)
                     sitemap_added += 1
         diag["notes"].append(f"SITEMAP_SEEDS={sitemap_added}")
         print(f"  🗺️  Sitemap [{gmina}]: znaleziono {sitemap_added} URL-i", flush=True)
@@ -1770,39 +1821,45 @@ async def phase1_full_crawl(
         diag["notes"].append(f"SITEMAP_FAILED: {str(ex)[:80]}")
         print(f"  ⚠️  Sitemap [{gmina}]: błąd — {str(ex)[:80]}", flush=True)
 
-    # ---- Pełny BFS crawl domeny ----
-    q.append(final0)
+    # ---- BFS z ograniczeniem głębokości ----
+    q.append((final0, 0))
     visited.add(_canon(final0))
     seeds[final0] = seeds.get(final0, 5)
 
     pages_crawled = 0
-    phase1_interrupted = False
 
     print(
         f"  🕷️  Phase1 start [{gmina}] @ {allowed_host} "
-        f"| sitemap_seeds={len(seeds)}",
+        f"| sitemap_seeds={len(seeds)} | max_depth={PHASE1_MAX_DEPTH}",
         flush=True
     )
 
     while q and not state.shutdown_requested:
-        # Limit czasowy — zostaw czas na Phase2 w tym samym runie
+        # Limit czasowy — Phase1 ma max 35% czasu runa
         if RUN_DEADLINE_MIN > 0 and (time.time() - GLOBAL_T0) > (RUN_DEADLINE_MIN * 60 * 0.35):
-            phase1_interrupted = True
             diag["notes"].append(f"PHASE1_TIME_LIMIT pages={pages_crawled} seeds={len(seeds)} q_remaining={len(q)}")
             print(
                 f"  ⏱️  Phase1 PRZERWANA — limit czasu [{gmina}]: "
                 f"stron_crawled={pages_crawled} | zebrano={len(seeds)} URL | "
-                f"pozostało_w_kolejce={len(q)} | "
                 f"czas={round((time.time()-GLOBAL_T0)/60,1)}min",
                 flush=True
             )
             break
 
-        url = normalize_url(q.popleft())
+        url, depth = q.popleft()
+        url = normalize_url(url)
+
+        # URL-e na głębokości > MAX_DEPTH znamy (trafiły do seeds przez linki),
+        # ale nie crawlujemy ich dalej w Phase1 — Phase2 je sprawdzi
+        if depth > PHASE1_MAX_DEPTH:
+            cu = _canon(url)
+            if cu and not any(url.lower().endswith(ext) for ext in ATT_EXT):
+                seeds[cu] = seeds.get(cu, 1)
+            continue
+
         html, final, kind, status, ctype, err, ms = await fetch(session_crawl, url)
 
         if kind != "html" or not html:
-            # Nawet strony z błędem trafiają do frontieru — Phase2 spróbuje ponownie
             cu = _canon(url)
             if cu and not any(url.lower().endswith(ext) for ext in ATT_EXT):
                 seeds[cu] = seeds.get(cu, 1)
@@ -1811,13 +1868,14 @@ async def phase1_full_crawl(
 
         pages_crawled += 1
 
-        if pages_crawled % 200 == 0:
+        if pages_crawled % 100 == 0:
             elapsed = round((time.time() - start_time) / 60, 1)
             print(
                 f"  🕷️  Phase1 [{gmina}] "
                 f"strony_crawled={pages_crawled} | "
                 f"url_zebrane={len(seeds)} | "
                 f"kolejka={len(q)} | "
+                f"depth_current={depth} | "
                 f"czas={elapsed}min",
                 flush=True
             )
@@ -1833,61 +1891,52 @@ async def phase1_full_crawl(
             if not cu:
                 continue
 
-            # Każdy link HTML z domeny trafia do puli URL-i
             if not any(abs_u.lower().endswith(ext) for ext in ATT_EXT):
                 ul = abs_u.lower()
                 score = 15 if any(h in ul for h in LISTING_URL_HINTS) else 1
                 seeds[abs_u] = max(seeds.get(abs_u, 0), score)
 
-            # Do kolejki BFS — żeby odkryć kolejne linki
+            # Do kolejki BFS tylko jeśli nie widzieliśmy i nie przekraczamy depth+1
             if cu not in visited:
                 visited.add(cu)
-                q.append(abs_u)
+                next_depth = depth + 1
+                q.append((abs_u, next_depth))
 
-        # Limit bezpieczeństwa — żeby nie puchnąć w nieskończoność
-        if len(seeds) >= FULL_FRONTIER_MAX_URLS:
-            diag["notes"].append(f"PHASE1_MAX_FRONTIER_REACHED={len(seeds)}")
+        # Limit bezpieczeństwa
+        if len(seeds) >= PHASE1_MAX_URLS:
+            diag["notes"].append(f"PHASE1_MAX_URLS_REACHED={len(seeds)}")
             print(
-                f"  ⚠️  Phase1 [{gmina}]: osiągnięto limit {FULL_FRONTIER_MAX_URLS} URL — kończę zbieranie",
+                f"  ⚠️  Phase1 [{gmina}]: osiągnięto limit {PHASE1_MAX_URLS} URL — kończę zbieranie",
                 flush=True
             )
-            phase1_interrupted = True
             break
 
     # ---- Posortuj — wysokopriorytetowe (ogłoszenia) na początku ----
     all_urls = sorted(seeds.keys(), key=lambda u: -seeds.get(u, 0))
 
-    if not phase1_interrupted:
-        print(
-            f"  ✅ Phase1 KOMPLETNA [{gmina}]: "
-            f"stron_crawled={pages_crawled} | "
-            f"url_w_frontierze={len(all_urls)} | "
-            f"czas={round((time.time()-start_time)/60,1)}min",
-            flush=True
-        )
-        diag["notes"].append(f"PHASE1_COMPLETE pages={pages_crawled} frontier={len(all_urls)}")
-    else:
-        print(
-            f"  ⚠️  Phase1 NIEKOMPLETNA [{gmina}]: "
-            f"stron_crawled={pages_crawled} | "
-            f"url_zebrane={len(all_urls)} | "
-            f"frontier NIE jest gwarantowany jako kompletny",
-            flush=True
-        )
-        diag["notes"].append(f"PHASE1_INCOMPLETE pages={pages_crawled} frontier={len(all_urls)}")
+    phase1_complete = not state.shutdown_requested
+
+    print(
+        f"  ✅ Phase1 {'KOMPLETNA' if phase1_complete else 'PRZERWANA'} [{gmina}]: "
+        f"stron_crawled={pages_crawled} | "
+        f"url_w_frontierze={len(all_urls)} | "
+        f"czas={round((time.time()-start_time)/60,1)}min",
+        flush=True
+    )
+    diag["notes"].append(f"PHASE1_{'COMPLETE' if phase1_complete else 'INCOMPLETE'} pages={pages_crawled} frontier={len(all_urls)}")
 
     return all_urls, {
         "status": "OK",
         "allowed_host": allowed_host,
         "start_final": final0,
         "seeds": len(all_urls),
-        "phase1_complete": not phase1_interrupted,
+        "phase1_complete": phase1_complete,
         "pages_crawled": pages_crawled,
     }
 
 
 # ============================================================
-# PHASE 2 — sprawdza zawartość każdego URL z frontieru
+# PHASE 2 — sprawdza zawartość + odkrywa nowe linki
 # ============================================================
 
 async def phase2_focus(
@@ -1898,14 +1947,13 @@ async def phase2_focus(
     diag,
 ) -> tuple:
     """
-    Pobiera frontier z state.gmina_frontiers[gkey] i sprawdza każdy URL
-    pod kątem NOWE / ZMIANA / HIT / NO_MATCH.
-
-    NIE odkrywa nowych linków — korzysta wyłącznie z frontieru zbudowanego
-    przez Phase1. Dzięki temu mamy gwarancję kompletności.
-
-    Kontynuuje między runami: jeśli czas się skończy, zapisuje gdzie jest
-    i następny run zaczyna od tego miejsca.
+    v2.17:
+    - Pobiera frontier z state.gmina_frontiers[gkey]
+    - Sprawdza każdy URL pod kątem NOWE / ZMIANA / HIT / NO_MATCH
+    - ODKRYWA NOWE LINKI podczas skanowania i dopisuje je do frontieru
+      (jak w starych wersjach — gwarantuje że strony pominięte przez Phase1
+       też zostaną znalezione)
+    - Kontynuuje między runami: zapisuje gdzie skończyła
     """
     if state.shutdown_requested:
         return [], {"status": "SHUTDOWN"}
@@ -1937,7 +1985,7 @@ async def phase2_focus(
 
     total_in_frontier = len(q)
 
-    # ---- Retry z poprzedniego runu (priorytet — na początku kolejki) ----
+    # ---- Retry z poprzedniego runu ----
     retry_list = (state.gmina_retry or {}).get(gkey, []) or []
     retry_added = 0
     for u in retry_list:
@@ -1950,7 +1998,6 @@ async def phase2_focus(
     if retry_added:
         print(f"  🔁 Retry: {retry_added} URL dodanych na początek kolejki ({gmina})", flush=True)
 
-    # Wyczyść retry — nowe błędy będą dopisywane w trakcie tego runu
     if isinstance(state.gmina_retry, dict):
         state.gmina_retry[gkey] = []
 
@@ -1967,6 +2014,7 @@ async def phase2_focus(
 
     pages_ok = 0
     pages_skipped_ttl = 0
+    new_links_added = 0
 
     while q and not state.shutdown_requested:
         if RUN_DEADLINE_MIN > 0 and (time.time() - GLOBAL_T0) > (RUN_DEADLINE_MIN * 60):
@@ -1975,19 +2023,19 @@ async def phase2_focus(
 
         url, depth = q.popleft()
 
-        # Checkpoint co N stron — zapisz gdzie jesteśmy
+        # Checkpoint co N stron
         if pages_ok > 0 and pages_ok % FRONTIER_CHECKPOINT_EVERY == 0:
             async with state.cache_lock:
                 state.gmina_frontiers[gkey] = [[u, d] for u, d in q]
             remaining = len(q)
-            done_count = total_in_frontier - remaining
-            done_pct = round(done_count / max(total_in_frontier, 1) * 100, 1)
+            done_count = total_in_frontier - remaining + new_links_added
             elapsed = round((time.time() - GLOBAL_T0) / 60, 1)
             print(
                 f"  📊 [{gmina}] "
                 f"strony_ok={pages_ok} | "
                 f"pominięte_ttl={pages_skipped_ttl} | "
-                f"pozostało={remaining} ({done_pct}% zrobione) | "
+                f"nowe_linki={new_links_added} | "
+                f"pozostało={remaining} | "
                 f"czas={elapsed}min",
                 flush=True
             )
@@ -1996,7 +2044,6 @@ async def phase2_focus(
         if not url:
             continue
 
-        # Załączniki pomijamy — interesują nas tylko strony HTML
         if any(url.lower().endswith(ext) for ext in ATT_EXT):
             continue
 
@@ -2004,7 +2051,7 @@ async def phase2_focus(
         prev_pre = content_seen.get(url_dedup)
         is_listing = is_listing_url(url) or is_home_url(url)
 
-        # TTL — przy TTL=0 (domyślne) zawsze sprawdzamy ponownie
+        # TTL check
         if USE_CACHE and prev_pre and not is_listing:
             status_prev = prev_pre.get("status")
             if status_prev in {"NOWE", "ZMIANA", "HIT"}:
@@ -2028,7 +2075,7 @@ async def phase2_focus(
                     pages_skipped_ttl += 1
                     continue
 
-        # Conditional headers (304 Not Modified)
+        # Conditional headers
         extra_headers = {}
         if prev_pre and prev_pre.get("etag"):
             extra_headers["If-None-Match"] = prev_pre["etag"]
@@ -2060,7 +2107,7 @@ async def phase2_focus(
             diag["counts"]["not_modified"] += 1
             continue
 
-        # ---- Blocked (WAF / limit połączeń) ----
+        # ---- Blocked ----
         if kind == "blocked":
             diag["counts"]["blocked_13"] += 1
             retry_add(gkey, retry_seen, final_c)
@@ -2176,14 +2223,18 @@ async def phase2_focus(
             else:
                 diag["counts"]["dedup_skipped"] += 1
 
-        # LINK HITS — tylko dla stron które już mają keyword
-        if ok_any and ENABLE_LINK_HITS:
-            for abs_u, txt in iter_links_fast(soup, final_c):
-                cu = _canon(abs_u)
-                if not cu or not allow_url(cu) or cu in dead_set:
-                    continue
-                if is_download_url(cu):
-                    continue
+        # ---- Odkrywanie nowych linków (v2.17) ----
+        # Phase2 dopisuje nowe linki do KOŃCA frontieru — tak jak stare wersje.
+        # Dzięki temu strony głębsze niż 3 też zostaną sprawdzone.
+        for abs_u, txt in iter_links_fast(soup, final_c):
+            cu = _canon(abs_u)
+            if not cu or not allow_url(cu) or cu in dead_set:
+                continue
+            if cu in seen_in_frontier:
+                continue
+
+            # LINK HITS — raportuj linki z keyword w tytule
+            if ok_any and ENABLE_LINK_HITS and not is_download_url(cu):
                 filename = urlparse(cu).path.split("/")[-1]
                 ok_link, kw_link = keyword_match_in_blob(f"{txt} {filename}")
                 if ok_link:
@@ -2205,17 +2256,20 @@ async def phase2_focus(
                             found.append((gmina, kw_link, (txt or filename)[:240], cu, "NOWE"))
                             diag["counts"]["link_hits_new"] += 1
 
+            # Dodaj do frontieru — Phase2 sprawdzi w kolejnych iteracjach/runach
+            seen_in_frontier.add(cu)
+            q.append((cu, depth + 1))
+            new_links_added += 1
+
     # ---- Finalny zapis frontieru ----
     async with state.cache_lock:
         if q:
             state.gmina_frontiers[gkey] = [[u, d] for u, d in list(q)]
             remaining = len(q)
-            done_count = total_in_frontier - remaining
-            done_pct = round(done_count / max(total_in_frontier, 1) * 100, 1)
             print(
                 f"  💾 Frontier zapisany [{gmina}]: "
                 f"pozostało={remaining} URL | "
-                f"zrobiono={done_count} ({done_pct}%) | "
+                f"nowe_linki_dodane={new_links_added} | "
                 f"ten_run={pages_ok} stron",
                 flush=True
             )
@@ -2224,7 +2278,7 @@ async def phase2_focus(
             mark_frontier_reset(gkey)
             print(
                 f"  🏁 Frontier wyczerpany [{gmina}]: "
-                f"sprawdzono={pages_ok} stron w tym runie | "
+                f"sprawdzono={pages_ok} stron | "
                 f"pominięto_ttl={pages_skipped_ttl} | "
                 f"znaleziono={len(found)} trafień | "
                 f"PEŁNY CYKL ZAKOŃCZONY — następny run: nowa Phase1",
@@ -2240,6 +2294,7 @@ async def phase2_focus(
         "stop_reason": "SHUTDOWN" if state.shutdown_requested else "QUEUE_EMPTY",
         "frontier_len": len(q),
         "retry_len": retry_final,
+        "new_links_added": new_links_added,
     }
 
 
@@ -2280,7 +2335,6 @@ async def worker(
 
             print(f"\n🔎 [{name}] START: {gmina} -> {start_url}", flush=True)
 
-            # ---- Ustal gkey i stan cyklu ----
             gkey_approx = gmina_cache_key(gmina, start_url)
             has_frontier = bool((state.gmina_frontiers or {}).get(gkey_approx))
             frontier_complete = is_frontier_complete(gkey_approx)
@@ -2289,22 +2343,18 @@ async def worker(
             found = []
 
             if has_frontier and frontier_complete:
-                # ================================================
-                # ŚCIEŻKA A: Frontier kompletny → tylko Phase2
-                # Phase1 była już zrobiona w poprzednim runie.
-                # ================================================
+                # Ścieżka A: frontier kompletny → tylko Phase2
+                frontier_size = len((state.gmina_frontiers or {}).get(gkey_approx, []))
                 print(
                     f"  ▶️  [{name}] {gmina}: kontynuacja Phase2 "
-                    f"(frontier kompletny, {len((state.gmina_frontiers or {}).get(gkey_approx, []))} URL pozostało)",
+                    f"(frontier kompletny, {frontier_size} URL pozostało)",
                     flush=True
                 )
-
                 cached_seeds = state.gmina_seeds.get(gkey_approx, {})
                 allowed_host = cached_seeds.get(
                     "allowed_host",
                     urlparse(normalize_url(start_url)).netloc.lower()
                 )
-
                 found, p2meta = await phase2_focus(
                     gmina=gmina,
                     session_crawl=session_crawl,
@@ -2315,10 +2365,7 @@ async def worker(
                 p1meta = {"status": "SKIP", "seeds": 0, "phase1_complete": True}
 
             else:
-                # ================================================
-                # ŚCIEŻKA B: Brak frontieru lub niekompletny
-                # → Phase1 od nowa, potem Phase2
-                # ================================================
+                # Ścieżka B: brak frontieru lub niekompletny → Phase1 od nowa
                 if not has_frontier:
                     reason = "brak frontieru (pierwszy run lub nowy cykl)"
                 else:
@@ -2353,11 +2400,9 @@ async def worker(
                 gkey = gmina_cache_key(gmina, "https://" + allowed_host)
                 phase1_complete = p1meta.get("phase1_complete", False)
 
-                # Zapisz frontier
                 async with state.cache_lock:
                     state.gmina_frontiers[gkey] = [[u, 0] for u in all_urls]
 
-                # Zapisz allowed_host do seed cache (potrzebne w ścieżce A)
                 state.gmina_seeds[gkey_approx] = {
                     "allowed_host": allowed_host,
                     "start_final": p1meta.get("start_final", ""),
@@ -2375,11 +2420,9 @@ async def worker(
                         flush=True
                     )
                 else:
-                    # Phase1 przerwana — frontier może być niekompletny
-                    # NIE oznaczamy jako complete — następny run zrobi Phase1 od nowa
                     print(
                         f"  ⚠️  [{name}] {gmina}: Phase1 NIEKOMPLETNA — "
-                        f"frontier={len(all_urls)} URL (może brakować części stron) | "
+                        f"frontier={len(all_urls)} URL | "
                         f"Phase2 uruchomiona z tym co jest | "
                         f"następny run: ponowna Phase1",
                         flush=True
@@ -2399,6 +2442,7 @@ async def worker(
             retry_len = int((p2meta or {}).get("retry_len", 0) or 0)
             pages_ok = int((p2meta or {}).get("pages_ok", 0) or 0)
             pages_skipped = int((p2meta or {}).get("pages_skipped_ttl", 0) or 0)
+            new_links = int((p2meta or {}).get("new_links_added", 0) or 0)
             status_run = "OK" if (not stop_reason or stop_reason == "QUEUE_EMPTY") else "INCOMPLETE"
 
             state.diag_rows.append({
@@ -2411,6 +2455,7 @@ async def worker(
                     f"frontier_len={frontier_len}",
                     f"retry_len={retry_len}",
                     f"pages_skipped_ttl={pages_skipped}",
+                    f"new_links_added={new_links}",
                 ],
                 "counts": dict(diag.get("counts", {})),
             })
@@ -2436,7 +2481,6 @@ async def worker(
                 except Exception as ex:
                     print(f"⚠️ checkpoint save failed: {ex}", flush=True)
 
-            # ---- Finalny print workera ----
             cycle_info = ""
             if frontier_len > 0:
                 total_approx = frontier_len + pages_ok
@@ -2448,6 +2492,7 @@ async def worker(
                 f"znalezione={len(found or [])} | "
                 f"phase2_strony={pages_ok} | "
                 f"pominięte_ttl={pages_skipped} | "
+                f"nowe_linki={new_links} | "
                 f"frontier_pozostało={frontier_len} | "
                 f"retry={retry_len}"
                 f"{cycle_info}",
@@ -2455,23 +2500,14 @@ async def worker(
             )
 
             if frontier_len == 0:
-                print(
-                    f"   🏁 [{gmina}] Pełny cykl zakończony — "
-                    f"następny run: nowa Phase1",
-                    flush=True
-                )
+                print(f"   🏁 [{gmina}] Pełny cykl zakończony — następny run: nowa Phase1", flush=True)
             elif p1meta and p1meta.get("status") == "SKIP":
-                print(
-                    f"   ▶️  [{gmina}] Phase2 kontynuuje "
-                    f"({frontier_len} URL pozostało do sprawdzenia)",
-                    flush=True
-                )
+                print(f"   ▶️  [{gmina}] Phase2 kontynuuje ({frontier_len} URL pozostało)", flush=True)
             else:
                 complete_flag = "✅ kompletna" if p1meta and p1meta.get("phase1_complete") else "⚠️ niekompletna"
                 print(
                     f"   📋 [{gmina}] Phase1 {complete_flag} | "
-                    f"Phase2 kontynuuje w kolejnych runach "
-                    f"({frontier_len} URL pozostało)",
+                    f"Phase2 kontynuuje w kolejnych runach ({frontier_len} URL pozostało)",
                     flush=True
                 )
 
@@ -2536,10 +2572,9 @@ async def main():
         print("ℹ️ Brak gmin w tym shardzie.")
         return
 
-    # WYDAJNOŚĆ v2.16: podkręcone limity połączeń
     conn_kwargs = dict(
-        limit=CONCURRENT_REQUESTS,          # 50
-        limit_per_host=LIMIT_PER_HOST,      # 6
+        limit=CONCURRENT_REQUESTS,
+        limit_per_host=LIMIT_PER_HOST,
         ttl_dns_cache=600,
         enable_cleanup_closed=True,
         ssl=False
@@ -2560,12 +2595,6 @@ async def main():
         checkpoint_counter = {"done": 0}
 
         async def periodic_checkpoint():
-            """
-            NAPRAWA v2.16:
-            - co CHECKPOINT_EVERY_SEC sekund zapisuje i commituje shard
-            - gdy shutdown_requested=True: robi 1 ostatni zapis, potem kończy
-            - NIE robi os._exit() — pozwala main() dokończyć sprzątanie
-            """
             every = env_int("CHECKPOINT_EVERY_SEC", 300)
             while not state.shutdown_requested:
                 await asyncio.sleep(every)
@@ -2582,7 +2611,6 @@ async def main():
                 except Exception as ex:
                     print(f"⚠️ periodic checkpoint failed: {ex}", flush=True)
 
-            # Finalny zapis po shutdown
             print("🔚 Periodic checkpoint: finalny zapis po shutdown...", flush=True)
             try:
                 if USE_CACHE:
@@ -2663,10 +2691,3 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
-
-
-
-
-
-
-
