@@ -1825,6 +1825,25 @@ async def phase2_focus(gmina: str, seed_urls, session_crawl, allowed_host: str,
     # Zapisz początkowy frontier po wczytaniu saved_frontier i retry
     await update_frontier()
     # -----------------------------------------
+
+                         
+    await update_frontier()
+    # -----------------------------------------
+
+
+    # Jeśli frontier był pusty (gmina w pełni przeskanowana) – zaczynamy od wszystkich znanych stron
+    if not saved_frontier:
+        print(f"  🔄 Pełny skan zakończony – ponowne sprawdzenie wszystkich stron ({gmina})", flush=True)
+        for url_hash, meta in list(content_seen.items()):
+            if meta.get("gmina") != gmina:
+                continue
+            url = meta.get("url")
+            if not url:
+                continue
+            cu = canonical_url(url)
+            if cu and cu not in visited and cu not in dead_set:
+                visited.add(cu)
+                q.append((cu, 0))   # depth 0 – strona do ponownego sprawdzenia
                          
     # Jeśli NIE ma kontynuacji, startuj od seedów
     if not saved_frontier:
@@ -2467,6 +2486,7 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
 
