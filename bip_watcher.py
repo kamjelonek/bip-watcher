@@ -257,7 +257,6 @@ _PAGINATION_RE = re.compile(
     r"|/page/\d+"
     r"|/strona/\d+"
     r"|[?&]p=\d+"
-    r"|/lista/\d+(?:[/?]|$)"    # /lista/40, /lista/40/, /lista/40?foo — rejestry BIP
     r"|/wersja/\d*(?:[/?_]|$)", # /wersja/1, /wersja/, /wersja__ — archiwum wersji
     re.IGNORECASE
 )
@@ -323,7 +322,6 @@ _JUNK_LINK_TITLE_RE = re.compile(
     | ^\d+$
     | ^(19|20)\d{2}$                                                    # sam rok: 2024, 2019 itp.
     | ^(pobierz|download|files?|add|get|view|open|click|tutaj|here)\s*[\d\.\-/]*$
-    | ^[ivxlcdm]+\s+sesja                                               # XIII sesja, IV sesja itp.
     | ^\w+\s+\d+\s*(roku?|r\.?)$                                        # "styczeń 2024 r." itp.
     """,
     re.VERBOSE | re.IGNORECASE
@@ -2270,7 +2268,7 @@ async def phase2_focus(
             if cu in seen_in_frontier:
                 continue
 
-            if ok_any and ENABLE_LINK_HITS and not is_download_url(cu):
+            if ENABLE_LINK_HITS and not is_download_url(cu):
                 filename = urlparse(cu).path.split("/")[-1]
                 ok_link, kw_link = keyword_match_in_blob(f"{txt} {filename}")
                 if ok_link:
