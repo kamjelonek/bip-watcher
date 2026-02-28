@@ -1,9 +1,8 @@
-name: BIP Watcher Weekly
+name: BIP Watcher Daily
 
 on:
   schedule:
-    - cron: "0 6 * * 1"   # poniedziałek 6:00 UTC
-    - cron: "0 6 * * 4"   # czwartek 6:00 UTC
+    - cron: "0 6 * * *"   # codziennie 6:00 UTC (8:00 czasu polskiego latem, 7:00 zimą)
   workflow_dispatch:
     inputs:
       full_reset:
@@ -153,7 +152,6 @@ jobs:
 
   # ============================================================
   # KROK 3: Skan — 1 job = 1 gmina
-  # WYDAJNOŚĆ v2.16: max-parallel 10 -> 20
   # ============================================================
   scan:
     name: Scan shard ${{ matrix.shard }}
@@ -165,7 +163,7 @@ jobs:
 
     strategy:
       fail-fast: false
-      max-parallel: 30         # v2.16: 10 -> 20
+      max-parallel: 30
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
 
     steps:
@@ -222,7 +220,6 @@ jobs:
           fi
 
       # ============================================================
-      # NAPRAWA v2.16: exec python zamiast python
       # exec zastępuje bash procesem Pythona — dzięki temu Cancel
       # workflow wysyła SIGTERM bezpośrednio do Pythona, który
       # obsługuje go w signal_handler() i może zrobić czysty zapis.
