@@ -847,13 +847,9 @@ def anchor_is_ignored(text: str) -> bool:
 
 def should_skip_href(abs_href: str) -> bool:
     """
-    v2.17: dodano filtr paginacji (_PAGINATION_RE).
-    v2.18: _PAGINATION_RE rozszerzony o /lista/N, /wersja/N, pg=
-           IGNORE_URL_PATH_PATTERNS rozszerzony o /wersja[_/]
+    v2.19: usunięto _PAGINATION_RE — blokował listy ogłoszeń BIP z page=, strona=, /lista/N
     """
     u = (abs_href or "").lower()
-    if _PAGINATION_RE.search(abs_href or ""):
-        return True
     for pattern in IGNORE_URL_PATH_PATTERNS:
         if re.search(pattern, u):
             return True
@@ -2725,4 +2721,5 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
