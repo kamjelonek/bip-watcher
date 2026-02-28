@@ -1,15 +1,20 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.17 - PRODUCTION
-Zmiany v2.17 vs v2.16:
-- NAPRAWA KRYTYCZNA: dodano brakujące funkcje _consecutive_dedup_check, save_diag, write_summary
-  (bez nich Phase2 crashowała natychmiast — zero wyników od wdrożenia v2.16)
-- NAPRAWA KRYTYCZNA: Phase1 BFS ograniczony do głębokości 3
-  (poprzednio crawlował całą domenę bez limitu — Nowy Dwór 65k URL-i w 112 min)
-- NAPRAWA: filtr paginacji w should_skip_href — ?page=, /page/N/ itp.
-- NAPRAWA: Phase2 odkrywa nowe linki podczas skanowania i dodaje je do frontieru
-  (jak w starych wersjach — gwarantuje że strony dodane po Phase1 też trafią do scanu)
-- _soup_fast_text: wersja z v2.16 (bez _pick_main_container który gubił ogłoszenia w sidebarach)
+BIP WATCHER v2.18 - PRODUCTION
+Zmiany v2.18 vs v2.17:
+- KEYWORDS: zastąpiono krótkie/ryzykowne frazy pełnymi wyrażeniami planistycznymi
+  (eliminacja false positives od pojedynczych słów: "miejscowego", "wiatr", "turbina" itp.)
+  Zachowano "wiatrow" i "fotowolta" jako unikalne prefiksy branżowe bez ryzyka false positive.
+- STRICT_ONLY: rozszerzono o krótkie słowa które wymagają word-boundary (wz, oze, ris)
+- _PAGINATION_RE: dodano /lista/N oraz /wersja/N (paginacja rejestrów zmian BIP)
+- IGNORE_URL_PATH_PATTERNS: dodano /wersja[_/] (URL-e typu /wersja__ z BIP Kętrzyn)
+- _GENERIC_TITLE_PATTERNS: dodano typowe śmieciowe tytuły BIP
+  ("najnowsze informacje", "najnowsze", "więcej informacji", "lista zmian" itp.)
+- is_junk_link_title: podniesiono minimalną długość tytułu z 12 do 15 znaków
+- RESET_CACHE: poprawka — w main() dodano obsługę ENV RESET_CACHE=true (oprócz =1)
+  (workflow GitHub używa wartości "true"/"false" z choice input)
+- pg= dodano do _PAGINATION_RE (paginacja platformy biuletyn.net)
+- UWAGA: nie zmieniono żadnej logiki crawlowania, Phase1, Phase2, cache ani YAML
 """
 
 import os, sys, csv, json, hashlib, asyncio, re, time, smtplib, warnings, socket, random, signal
@@ -107,21 +112,65 @@ EMAIL_TO = "planowanie@wpd-polska.pl"
 ENABLE_EMAIL = False
 
 # ===================== KEYWORDS =====================
+# v2.18: zastąpiono krótkie/ryzykowne słowa pełnymi frazami planistycznymi.
+# Zasada: im dłuższa fraza, tym mniejsze ryzyko fałszywego dopasowania.
+# Zachowano kolejność od najbardziej specyficznych do ogólnych — keyword_match_in_blob
+# zwraca pierwsze dopasowanie, więc bardziej specyficzne frazy mają priorytet.
+#
+# Usunięto: "miejscowego", "wiatr", "turbina", "plan miejscowy", "plan ogólny" (samo),
+#           "studium uwarunkowań" (samo), "decyzja środowiskowa" (samo)
+# Dodano:   pełne odmiany gramatyczne kluczowych fraz planistycznych i branżowych
 KEYWORDS = [
-    "miejscowy plan", "plan miejscowy", "miejscowego",
+    # ── MPZP ──────────────────────────────────────────────────────────────────
     "miejscowy plan zagospodarowania przestrzennego",
-    "projekt mpzp", "miejscowego planu zagospodarowania przestrzennego",
-    "plan ogólny", "plan ogolny", "planu ogólnego",
-    "studium uwarunkowań", "studium uwarunkowan",
-    "warunki zabudowy", "decyzja o warunkach zabudowy", "decyzje o warunkach zabudowy",
-    "decyzja środowiskowa", "decyzje środowiskowe",
-    "decyzja o środowiskowych uwarunkowaniach", "środowiskowych uwarunkowaniach",
+    "miejscowego planu zagospodarowania przestrzennego",
+    "miejscowych planów zagospodarowania przestrzennego",
+    "miejscowych planow zagospodarowania przestrzennego",
+    "planu zagospodarowania przestrzennego",
+    "plan zagospodarowania przestrzennego",
+    "projekt mpzp",
+    # ── Plan ogólny ───────────────────────────────────────────────────────────
+    "plan ogólny gminy",
+    "plan ogólny miasta",
+    "planu ogólnego gminy",
+    "planu ogólnego miasta",
+    "plan ogólny",
+    "planu ogólnego",
+    "plan ogolny",
+    "planu ogolnego",
+    # ── Studium ───────────────────────────────────────────────────────────────
+    "studium uwarunkowań i kierunków zagospodarowania przestrzennego",
+    "studium uwarunkowan i kierunkow zagospodarowania przestrzennego",
+    "studium uwarunkowań",
+    "studium uwarunkowan",
+    # ── Warunki zabudowy ──────────────────────────────────────────────────────
+    "decyzja o warunkach zabudowy",
+    "decyzji o warunkach zabudowy",
+    "decyzje o warunkach zabudowy",
+    "warunki zabudowy",
+    # ── Decyzja środowiskowa ──────────────────────────────────────────────────
+    "decyzja o środowiskowych uwarunkowaniach",
+    "decyzji o środowiskowych uwarunkowaniach",
+    "decyzja o srodowiskowych uwarunkowaniach",
+    "decyzji o srodowiskowych uwarunkowaniach",
+    "środowiskowych uwarunkowaniach",
+    "srodowiskowych uwarunkowaniach",
     "raport o oddziaływaniu na środowisko",
-    "elektrownia wiatrowa", "farma wiatrowa", "wiatr", "wiatrow", "turbina",
-    "fotowolta", "farma fotowoltaiczna", "magazyn energii",
+    # ── Energetyka wiatrowa ───────────────────────────────────────────────────
+    "elektrownia wiatrowa",
+    "elektrowni wiatrowej",
+    "park wiatrowy",
+    "farma wiatrowa",
+    "farmy wiatrowej",
+    "wiatrow",          # prefiks: wiatrowych, wiatrowej, wiatrowy — bez ryzyka fp
+    # ── Fotowoltaika / magazyny ───────────────────────────────────────────────
+    "fotowolta",        # prefiks: fotowoltaika, fotowoltaiczny — unikalny
+    "farma fotowoltaiczna",
+    "magazyn energii",
 ]
 
-STRICT_ONLY = {"wz"}
+# Słowa wymagające ścisłego dopasowania (word boundary) — krótkie lub wieloznaczne
+STRICT_ONLY = {"wz", "oze", "ris"}
 
 def keyword_match_in_blob(blob: str):
     t = re.sub(r"\s+", " ", (blob or "")).strip().lower()
@@ -154,6 +203,7 @@ IGNORE_URL_PATH_PATTERNS = [
     r"prognoza.pogody",
     r"prognoza_pogody",
     r"/wersja/\d+/?$",
+    r"/wersja[_/]",     # v2.18: łapie /wersja__, /wersja/ (BIP Kętrzyn i podobne)
 ]
 
 IGNORE_ANCHOR_TEXT = [
@@ -200,12 +250,15 @@ _DOWNLOAD_SUFFIX_RE = re.compile(
 )
 
 # ===================== PAGINATION FILTER =====================
-# v2.17: filtruje nieskończoną paginację która niszczyła Phase1
+# v2.18: dodano /lista/\d+ (rejestry zmian BIP Trzebielino i podobne),
+#         /wersja/\d* (archiwalne wersje stron), pg= (biuletyn.net)
 _PAGINATION_RE = re.compile(
-    r"[?&](page|strona|p|offset|start|from|skip)=\d+"
+    r"[?&](page|strona|p|offset|start|from|skip|pg)=\d+"
     r"|/page/\d+"
     r"|/strona/\d+"
-    r"|[?&]p=\d+",
+    r"|[?&]p=\d+"
+    r"|/lista/\d+(?:[/?]|$)"    # /lista/40, /lista/40/, /lista/40?foo — rejestry BIP
+    r"|/wersja/\d*(?:[/?_]|$)", # /wersja/1, /wersja/, /wersja__ — archiwum wersji
     re.IGNORECASE
 )
 
@@ -224,6 +277,8 @@ def is_download_url(u: str) -> bool:
     return False
 
 # ===================== GENERIC TITLE FILTER =====================
+# v2.18: dodano typowe śmieciowe tytuły BIP, które wcześniej przechodziły
+# przez is_junk_link_title() ze względu na długość > 12 znaków
 _GENERIC_TITLE_PATTERNS = [
     "biuletyn informacji publicznej", "biuletyn informacji", "archiwum bip",
     "bip archiwum", "strona główna", "strona glowna", "aktualności", "aktualnosci",
@@ -235,6 +290,18 @@ _GENERIC_TITLE_PATTERNS = [
     "tagi", "archiwum", "newsletter", "galeria", "multimedia", "przetargi",
     "zamówienia", "zamowienia", "rada gminy", "rada miasta", "zarząd", "zarzad",
     "burmistrz", "wójt", "wojt", "starosta",
+    # v2.18: nowe wzorce śmieciowych tytułów obserwowane w logach
+    "najnowsze informacje",
+    "najnowsze",
+    "więcej informacji",
+    "wiecej informacji",
+    "lista zmian",
+    "rejestr zmian strony",
+    "historia zmian",
+    "projekty unijne",
+    "projekty europejskie",
+    "dla mediów",
+    "dla mediow",
 ]
 
 def is_generic_page_title(title: str) -> bool:
@@ -254,7 +321,10 @@ _JUNK_LINK_TITLE_RE = re.compile(
     | ^[\d\s\.\-/\\]+$
     | ^[a-z0-9_\-]+\.[a-z]{2,4}$
     | ^\d+$
+    | ^(19|20)\d{2}$                                                    # sam rok: 2024, 2019 itp.
     | ^(pobierz|download|files?|add|get|view|open|click|tutaj|here)\s*[\d\.\-/]*$
+    | ^[ivxlcdm]+\s+sesja                                               # XIII sesja, IV sesja itp.
+    | ^\w+\s+\d+\s*(roku?|r\.?)$                                        # "styczeń 2024 r." itp.
     """,
     re.VERBOSE | re.IGNORECASE
 )
@@ -269,7 +339,8 @@ def is_junk_link_title(title: str, url: str = "") -> bool:
     lt = t.lower()
     if is_generic_page_title(t):
         return True
-    if len(t) < 12:
+    # v2.18: podniesiono z 12 do 15 — eliminuje krótkie teksty ("2024", "XIII sesja...")
+    if len(t) < 15:
         return True
     if _JUNK_LINK_TITLE_RE.match(t):
         return True
@@ -291,7 +362,7 @@ LIMIT_PER_HOST = env_int("LIMIT_PER_HOST", 6)
 
 # v2.17: Phase1 ograniczona głębokością, nie liczbą stron
 PHASE1_MAX_DEPTH = env_int("PHASE1_MAX_DEPTH", 3)      # BFS max głębokość
-PHASE1_MAX_URLS = env_int("PHASE1_MAX_URLS", 999999)     # bezpieczny limit URL-i per gmina
+PHASE1_MAX_URLS = env_int("PHASE1_MAX_URLS", 999999)   # bezpieczny limit URL-i per gmina
 
 PHASE2_MAX_DEPTH = 4
 PHASE2_MAX_PAGES = 999999
@@ -563,7 +634,7 @@ def retry_io(action, tries: int = 5, base_sleep: float = 0.6):
     if last_exc:
         raise last_exc
 
-# ===================== BRAKUJĄCE FUNKCJE (v2.17) =====================
+# ===================== FUNKCJE POMOCNICZE =====================
 
 def _consecutive_dedup_check(gmina: str, title: str) -> bool:
     """
@@ -618,7 +689,7 @@ def write_summary(diag_rows, new_items_for_mail):
         ok = sum(1 for r in (diag_rows or []) if r.get("status") == "OK")
         start_fail = sum(1 for r in (diag_rows or []) if r.get("status") == "START_FAIL")
         lines = [
-            f"BIP WATCHER v2.17 SUMMARY @ {now_iso()}",
+            f"BIP WATCHER v2.18 SUMMARY @ {now_iso()}",
             f"gminy_total={total} ok={ok} start_fail={start_fail}",
             f"mail_items={len(new_items_for_mail or [])}",
             "",
@@ -778,11 +849,11 @@ def anchor_is_ignored(text: str) -> bool:
 
 def should_skip_href(abs_href: str) -> bool:
     """
-    v2.17: dodano filtr paginacji (_PAGINATION_RE) który ucina nieskończone
-    kolejki URL-i generowanych przez ?page=N, /page/N/ itp.
+    v2.17: dodano filtr paginacji (_PAGINATION_RE).
+    v2.18: _PAGINATION_RE rozszerzony o /lista/N, /wersja/N, pg=
+           IGNORE_URL_PATH_PATTERNS rozszerzony o /wersja[_/]
     """
     u = (abs_href or "").lower()
-    # Filtr paginacji — NOWY w v2.17
     if _PAGINATION_RE.search(abs_href or ""):
         return True
     for pattern in IGNORE_URL_PATH_PATTERNS:
@@ -1036,7 +1107,7 @@ def _strip_dynamic_noise(txt: str) -> str:
 
 def _soup_fast_text(soup: BeautifulSoup, max_chars: int = FAST_TEXT_MAX_CHARS) -> str:
     """
-    v2.17 (z v2.16): Wycina TYLKO script/style/noscript/footer/header/nav.
+    v2.17/v2.18: Wycina TYLKO script/style/noscript/footer/header/nav.
     NIE używa _pick_main_container który gubił ogłoszenia w sidebarach BIP-ów.
     Prosta ekstrakcja całego tekstu strony = bardziej niezawodna dla polskich BIP-ów.
     """
@@ -1160,8 +1231,6 @@ LISTING_URL_HINTS = [
 ]
 
 # ===================== START URL VARIANTS =====================
-START_AUX_HINTS = ["/robots.txt", "/sitemap.xml", "/sitemap_index.xml"]
-
 def _www_variants(netloc: str):
     n = (netloc or "").strip()
     if not n:
@@ -1718,20 +1787,17 @@ async def phase1_full_crawl(
     diag,
 ) -> tuple:
     """
-    v2.17: BFS z ograniczeniem głębokości do PHASE1_MAX_DEPTH (domyślnie 3).
-    
-    Zamiast crawlować całą domenę (co prowadziło do 65k+ URL-i dla niektórych BIP-ów),
-    eksplorujemy tylko do głębokości 3 od strony startowej.
-    
+    BFS z ograniczeniem głębokości do PHASE1_MAX_DEPTH (domyślnie 3).
+
     Głębokość 3 od home page pokrywa praktycznie wszystkie ogłoszenia BIP:
       depth 0: strona główna
       depth 1: kategorie, działy (ogłoszenia, planowanie, środowisko...)
       depth 2: listy ogłoszeń w kategorii
       depth 3: konkretne ogłoszenie/decyzja
-    
+
     URL-e z depth > MAX_DEPTH trafiają do frontieru jako znane (będą sprawdzone
     przez Phase2) ale ich linki nie są dalej eksplorowane w Phase1.
-    
+
     Phase2 podczas skanowania odkrywa nowe linki i dopisuje je do frontieru,
     więc strony głębsze niż 3 też zostaną sprawdzone — ale stopniowo,
     w kolejnych runach, bez blokowania Phase1.
@@ -1739,11 +1805,8 @@ async def phase1_full_crawl(
     if state.shutdown_requested:
         return [], {"status": "SHUTDOWN"}
 
-    # seeds: url -> score (wyższy = ważniejszy, trafi na początek frontieru)
     seeds = {}
-    # visited: canonical URL-e już wstawione do kolejki BFS
     visited = set()
-    # BFS queue: (url, depth)
     q = deque()
 
     html0 = final0 = None
@@ -1755,7 +1818,6 @@ async def phase1_full_crawl(
     tried = 0
     start_time = time.time()
 
-    # ---- Znajdź działającą stronę startową ----
     for su in candidate_start_urls(start_url):
         if (time.time() - start_time) > START_TOTAL_TIMEOUT_SEC:
             diag["notes"].append(f"START_TIMEOUT after {int(time.time()-start_time)}s")
@@ -1797,7 +1859,6 @@ async def phase1_full_crawl(
     def allow_url(u: str) -> bool:
         return same_base_domain(urlparse(u).netloc.lower(), allowed_host)
 
-    # ---- Zbierz URL-e z sitemapy ----
     try:
         base_site = urlunparse((
             urlparse(final0).scheme,
@@ -1821,7 +1882,6 @@ async def phase1_full_crawl(
         diag["notes"].append(f"SITEMAP_FAILED: {str(ex)[:80]}")
         print(f"  ⚠️  Sitemap [{gmina}]: błąd — {str(ex)[:80]}", flush=True)
 
-    # ---- BFS z ograniczeniem głębokości ----
     q.append((final0, 0))
     visited.add(_canon(final0))
     seeds[final0] = seeds.get(final0, 5)
@@ -1835,7 +1895,6 @@ async def phase1_full_crawl(
     )
 
     while q and not state.shutdown_requested:
-        # Limit czasowy — Phase1 ma max 35% czasu runa
         if RUN_DEADLINE_MIN > 0 and (time.time() - GLOBAL_T0) > (RUN_DEADLINE_MIN * 60 * 0.35):
             diag["notes"].append(f"PHASE1_TIME_LIMIT pages={pages_crawled} seeds={len(seeds)} q_remaining={len(q)}")
             print(
@@ -1849,8 +1908,6 @@ async def phase1_full_crawl(
         url, depth = q.popleft()
         url = normalize_url(url)
 
-        # URL-e na głębokości > MAX_DEPTH znamy (trafiły do seeds przez linki),
-        # ale nie crawlujemy ich dalej w Phase1 — Phase2 je sprawdzi
         if depth > PHASE1_MAX_DEPTH:
             cu = _canon(url)
             if cu and not any(url.lower().endswith(ext) for ext in ATT_EXT):
@@ -1896,13 +1953,11 @@ async def phase1_full_crawl(
                 score = 15 if any(h in ul for h in LISTING_URL_HINTS) else 1
                 seeds[abs_u] = max(seeds.get(abs_u, 0), score)
 
-            # Do kolejki BFS tylko jeśli nie widzieliśmy i nie przekraczamy depth+1
             if cu not in visited:
                 visited.add(cu)
                 next_depth = depth + 1
                 q.append((abs_u, next_depth))
 
-        # Limit bezpieczeństwa
         if len(seeds) >= PHASE1_MAX_URLS:
             diag["notes"].append(f"PHASE1_MAX_URLS_REACHED={len(seeds)}")
             print(
@@ -1911,9 +1966,7 @@ async def phase1_full_crawl(
             )
             break
 
-    # ---- Posortuj — wysokopriorytetowe (ogłoszenia) na początku ----
     all_urls = sorted(seeds.keys(), key=lambda u: -seeds.get(u, 0))
-
     phase1_complete = not state.shutdown_requested
 
     print(
@@ -1947,12 +2000,9 @@ async def phase2_focus(
     diag,
 ) -> tuple:
     """
-    v2.17:
     - Pobiera frontier z state.gmina_frontiers[gkey]
     - Sprawdza każdy URL pod kątem NOWE / ZMIANA / HIT / NO_MATCH
-    - ODKRYWA NOWE LINKI podczas skanowania i dopisuje je do frontieru
-      (jak w starych wersjach — gwarantuje że strony pominięte przez Phase1
-       też zostaną znalezione)
+    - Odkrywa nowe linki podczas skanowania i dopisuje je do frontieru
     - Kontynuuje między runami: zapisuje gdzie skończyła
     """
     if state.shutdown_requested:
@@ -1964,7 +2014,6 @@ async def phase2_focus(
     dead_set = set(state.dead_urls.get(dead_key, []) or [])
     retry_seen = set()
 
-    # ---- Wczytaj frontier ----
     raw_frontier = (state.gmina_frontiers or {}).get(gkey, []) or []
     if not raw_frontier:
         print(f"  ⚠️  Phase2 [{gmina}]: brak frontieru (gkey={gkey[:8]}...) — pomijam", flush=True)
@@ -1985,7 +2034,6 @@ async def phase2_focus(
 
     total_in_frontier = len(q)
 
-    # ---- Retry z poprzedniego runu ----
     retry_list = (state.gmina_retry or {}).get(gkey, []) or []
     retry_added = 0
     for u in retry_list:
@@ -2023,12 +2071,10 @@ async def phase2_focus(
 
         url, depth = q.popleft()
 
-        # Checkpoint co N stron
         if pages_ok > 0 and pages_ok % FRONTIER_CHECKPOINT_EVERY == 0:
             async with state.cache_lock:
                 state.gmina_frontiers[gkey] = [[u, d] for u, d in q]
             remaining = len(q)
-            done_count = total_in_frontier - remaining + new_links_added
             elapsed = round((time.time() - GLOBAL_T0) / 60, 1)
             print(
                 f"  📊 [{gmina}] "
@@ -2051,7 +2097,6 @@ async def phase2_focus(
         prev_pre = content_seen.get(url_dedup)
         is_listing = is_listing_url(url) or is_home_url(url)
 
-        # TTL check
         if USE_CACHE and prev_pre and not is_listing:
             status_prev = prev_pre.get("status")
             if status_prev in {"NOWE", "ZMIANA", "HIT"}:
@@ -2075,7 +2120,6 @@ async def phase2_focus(
                     pages_skipped_ttl += 1
                     continue
 
-        # Conditional headers
         extra_headers = {}
         if prev_pre and prev_pre.get("etag"):
             extra_headers["If-None-Match"] = prev_pre["etag"]
@@ -2093,7 +2137,6 @@ async def phase2_focus(
         if final_c != url:
             diag["counts"]["redirected"] += 1
 
-        # ---- 304 Not Modified ----
         if kind == "not_modified":
             async with state.cache_lock:
                 if url_dedup_final in content_seen:
@@ -2107,7 +2150,6 @@ async def phase2_focus(
             diag["counts"]["not_modified"] += 1
             continue
 
-        # ---- Blocked ----
         if kind == "blocked":
             diag["counts"]["blocked_13"] += 1
             retry_add(gkey, retry_seen, final_c)
@@ -2129,7 +2171,6 @@ async def phase2_focus(
                     content_seen[url_dedup] = entry.copy()
             continue
 
-        # ---- Błędy HTTP ----
         if kind != "html" or not html:
             if status in (404, 410):
                 dead_add(dead_key, dead_set, final_c)
@@ -2156,7 +2197,6 @@ async def phase2_focus(
                 diag["counts"]["failed_urls"] += 1
             continue
 
-        # ---- HTML OK — sprawdź zawartość ----
         pages_ok += 1
         soup = safe_soup(html)
         if not soup:
@@ -2178,7 +2218,6 @@ async def phase2_focus(
         if not page_title:
             page_title = final_c
 
-        # Status strony
         if prev is None:
             status_new = "NOWE" if ok_any else "NO_MATCH"
         else:
@@ -2223,9 +2262,7 @@ async def phase2_focus(
             else:
                 diag["counts"]["dedup_skipped"] += 1
 
-        # ---- Odkrywanie nowych linków (v2.17) ----
-        # Phase2 dopisuje nowe linki do KOŃCA frontieru — tak jak stare wersje.
-        # Dzięki temu strony głębsze niż 3 też zostaną sprawdzone.
+        # Odkrywanie nowych linków — Phase2 dopisuje do KOŃCA frontieru
         for abs_u, txt in iter_links_fast(soup, final_c):
             cu = _canon(abs_u)
             if not cu or not allow_url(cu) or cu in dead_set:
@@ -2233,7 +2270,6 @@ async def phase2_focus(
             if cu in seen_in_frontier:
                 continue
 
-            # LINK HITS — raportuj linki z keyword w tytule
             if ok_any and ENABLE_LINK_HITS and not is_download_url(cu):
                 filename = urlparse(cu).path.split("/")[-1]
                 ok_link, kw_link = keyword_match_in_blob(f"{txt} {filename}")
@@ -2256,12 +2292,10 @@ async def phase2_focus(
                             found.append((gmina, kw_link, (txt or filename)[:240], cu, "NOWE"))
                             diag["counts"]["link_hits_new"] += 1
 
-            # Dodaj do frontieru — Phase2 sprawdzi w kolejnych iteracjach/runach
             seen_in_frontier.add(cu)
             q.append((cu, depth + 1))
             new_links_added += 1
 
-    # ---- Finalny zapis frontieru ----
     async with state.cache_lock:
         if q:
             state.gmina_frontiers[gkey] = [[u, d] for u, d in list(q)]
@@ -2343,7 +2377,6 @@ async def worker(
             found = []
 
             if has_frontier and frontier_complete:
-                # Ścieżka A: frontier kompletny → tylko Phase2
                 frontier_size = len((state.gmina_frontiers or {}).get(gkey_approx, []))
                 print(
                     f"  ▶️  [{name}] {gmina}: kontynuacja Phase2 "
@@ -2365,7 +2398,6 @@ async def worker(
                 p1meta = {"status": "SKIP", "seeds": 0, "phase1_complete": True}
 
             else:
-                # Ścieżka B: brak frontieru lub niekompletny → Phase1 od nowa
                 if not has_frontier:
                     reason = "brak frontieru (pierwszy run lub nowy cykl)"
                 else:
@@ -2436,7 +2468,6 @@ async def worker(
                     diag=diag,
                 )
 
-            # ---- Wspólne zakończenie ----
             stop_reason = (p2meta or {}).get("stop_reason") or ""
             frontier_len = int((p2meta or {}).get("frontier_len", 0) or 0)
             retry_len = int((p2meta or {}).get("retry_len", 0) or 0)
@@ -2469,7 +2500,6 @@ async def worker(
                     state.new_items_for_mail.append(mail_line)
                     log_new_item(g, t, u, kw)
 
-            # Checkpoint
             checkpoint_counter["done"] = int(checkpoint_counter.get("done", 0)) + 1
             if USE_CACHE and (checkpoint_counter["done"] % CACHE_CHECKPOINT_EVERY_N_GMINY == 0):
                 try:
@@ -2537,8 +2567,11 @@ async def worker(
 
 # ===================== MAIN =====================
 async def main():
-    if os.getenv("RESET_CACHE", "0").strip() == "1":
-        print("🗑️  RESET_CACHE=1 — czyszczę cache...")
+    # v2.18: obsługa RESET_CACHE — akceptuje zarówno "1" jak i "true"
+    # (GitHub Actions workflow używa wartości "true"/"false" z choice input)
+    reset_val = os.getenv("RESET_CACHE", "0").strip().lower()
+    if reset_val in ("1", "true", "yes"):
+        print("🗑️  RESET_CACHE — czyszczę cache...")
         if CACHE_FILE.exists():
             CACHE_FILE.unlink()
             print(f"   ✅ Usunięto: {CACHE_FILE}")
@@ -2691,4 +2724,3 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
-
