@@ -1104,16 +1104,19 @@ def _strip_dynamic_noise(txt: str) -> str:
     return txt
 
 def _soup_fast_text(soup: BeautifulSoup, max_chars: int = FAST_TEXT_MAX_CHARS) -> str:
-    """
-    v2.17/v2.18: Wycina TYLKO script/style/noscript/footer/header/nav.
-    NIE używa _pick_main_container który gubił ogłoszenia w sidebarach BIP-ów.
-    Prosta ekstrakcja całego tekstu strony = bardziej niezawodna dla polskich BIP-ów.
-    """
     try:
         if not soup:
             return ""
-        for tag in soup(["script", "style", "noscript", "footer", "header", "nav"]):
+        for tag in soup(["script", "style", "noscript"]):
             tag.decompose()
+        has_main_content = bool(
+            soup.find("main") or
+            soup.find(id=re.compile(r"(content|tresc|main|article)", re.I)) or
+            soup.find(class_=re.compile(r"(content|tresc|main|article)", re.I))
+        )
+        if has_main_content:
+            for tag in soup(["nav", "header", "footer", "aside"]):
+                tag.decompose()
         txt = re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip()
         txt = _strip_dynamic_noise(txt)
         return txt[:max_chars]
@@ -2722,3 +2725,4 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
