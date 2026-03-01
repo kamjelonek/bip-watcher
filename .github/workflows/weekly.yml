@@ -1,9 +1,8 @@
-name: BIP Watcher Weekly
+name: BIP Watcher Daily
 
 on:
   schedule:
-    - cron: "0 6 * * 1"   # poniedziałek 6:00 UTC
-    - cron: "0 6 * * 4"   # czwartek 6:00 UTC
+    - cron: "0 6 * * *"   # codziennie 6:00 UTC (8:00 czasu polskiego latem, 7:00 zimą)
   workflow_dispatch:
     inputs:
       full_reset:
@@ -17,7 +16,7 @@ on:
 
 concurrency:
   group: bip-watcher
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -31,11 +30,11 @@ jobs:
   init_cache_store:
     name: Init cache-store branch
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 320
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 1  # FIX: była wartość 0, wystarczy ostatni commit
+          fetch-depth: 1
 
       - name: Create cache-store branch if missing
         shell: bash
@@ -66,14 +65,14 @@ jobs:
   reset_cache_store:
     name: FULL RESET cache-store
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 320
     needs: [init_cache_store]
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.full_reset == 'true'
     steps:
       - uses: actions/checkout@v4
         with:
           ref: cache-store
-          fetch-depth: 1  # FIX: była wartość 0, wystarczy ostatni commit
+          fetch-depth: 1
 
       - name: Wipe all shards and master
         shell: bash
@@ -101,9 +100,9 @@ jobs:
   setup:
     name: Build shard matrix
     runs-on: ubuntu-latest
-    timeout-minutes: 5
-    needs: [init_cache_store, reset_cache_store]
-    if: always() && needs.init_cache_store.result == 'success'
+    timeout-minutes: 315
+    needs: [init_cache_store]
+    if: needs.init_cache_store.result == 'success'
     outputs:
       matrix: ${{ steps.build.outputs.matrix }}
       total: ${{ steps.build.outputs.total }}
@@ -142,7 +141,6 @@ jobs:
                       rows.append((name, url))
 
           total = len(rows)
-          # 1 shard = 1 gmina, indeksy 0..N-1
           matrix = json.dumps({"shard": list(range(total))})
 
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
@@ -153,19 +151,19 @@ jobs:
           PY
 
   # ============================================================
-  # KROK 3: Skan — 1 job = 1 gmina, max 10 równolegle
+  # KROK 3: Skan — 1 job = 1 gmina
   # ============================================================
   scan:
     name: Scan shard ${{ matrix.shard }}
     runs-on: ubuntu-latest
     continue-on-error: true
-    timeout-minutes: 355
+    timeout-minutes: 325
     needs: [setup]
     if: needs.setup.result == 'success' && needs.setup.outputs.total != '0'
 
     strategy:
       fail-fast: false
-      max-parallel: 10
+      max-parallel: 30
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
 
     steps:
@@ -177,7 +175,7 @@ jobs:
         with:
           ref: cache-store
           path: cache-store
-          fetch-depth: 1  # FIX: była wartość 0 — główna przyczyna wolnego startu
+          fetch-depth: 1
 
       - uses: actions/setup-python@v5
         with:
@@ -209,34 +207,48 @@ jobs:
           urls  = len(c.get('urls_seen', {}))
           cont  = len(c.get('content_seen', {}))
           seeds = len(c.get('gmina_seeds', {}))
+          front = len(c.get('gmina_frontiers', {}))
           dead  = sum(len(v) for v in c.get('dead_urls', {}).values())
-          print(f'📦 Cache restored: {urls} URLs, {cont} content, {seeds} seeds, {dead} dead')
+          print(f'📦 Cache restored: {urls} URLs, {cont} content, {seeds} seeds, {front} frontiers, {dead} dead')
+          front_data = c.get('gmina_frontiers', {})
+          for k, v in list(front_data.items())[:3]:
+              print(f'  🗺️  frontier {k[:16]}: {len(v)} URL')
           "
           else
             echo "ℹ️ Brak poprzedniego sharda $SHARD_INDEX — startujemy świeżo"
-            echo '{"schema":13,"urls_seen":{},"content_seen":{},"gmina_seeds":{},"gmina_frontiers":{},"gmina_retry":{},"dead_urls":{}}' > data/cache.json
+            echo '{"schema":14,"urls_seen":{},"content_seen":{},"gmina_seeds":{},"gmina_frontiers":{},"gmina_retry":{},"dead_urls":{}}' > data/cache.json
           fi
 
+      # ============================================================
+      # exec zastępuje bash procesem Pythona — dzięki temu Cancel
+      # workflow wysyła SIGTERM bezpośrednio do Pythona, który
+      # obsługuje go w signal_handler() i może zrobić czysty zapis.
+      # ============================================================
       - name: Run watcher
         continue-on-error: true
-        timeout-minutes: 325
+        timeout-minutes: 320
         env:
           PYTHONUNBUFFERED: "1"
           SHARD_TOTAL: ${{ needs.setup.outputs.total }}
           SHARD_INDEX: "${{ matrix.shard }}"
-          RUN_DEADLINE_MIN: "315"
+          RUN_DEADLINE_MIN: "320"
           CONCURRENT_GMINY: "1"
-          CONCURRENT_REQUESTS: "30"
-          LIMIT_PER_HOST: "4"
+          CONCURRENT_REQUESTS: "60"
+          LIMIT_PER_HOST: "8"
           RATE_MIN_DELAY: "0.3"
           CHECKPOINT_EVERY_SEC: "300"
           RESET_CACHE: ${{ github.event.inputs.full_reset || 'false' }}
+        shell: bash
         run: |
           python bip_watcher.py
 
+      # ============================================================
+      # Zapis sharda — bez konfliktów git
+      # reset --hard do czystego stanu zdalnego, potem tylko nasz plik
+      # ============================================================
       - name: Compress and commit shard to cache-store
         if: always()
-        timeout-minutes: 25
+        timeout-minutes: 6
         shell: bash
         env:
           SHARD_INDEX: "${{ matrix.shard }}"
@@ -244,7 +256,6 @@ jobs:
           set -e
 
           SHARD_JSON="data/cache_shard_${SHARD_INDEX}.json"
-          SHARD_GZ_DEST="cache-store/shards/cache_shard_${SHARD_INDEX}.json.gz"
 
           if [ ! -f "$SHARD_JSON" ]; then
             echo "ℹ️ Brak $SHARD_JSON — nic do zapisania"
@@ -252,8 +263,8 @@ jobs:
           fi
 
           mkdir -p cache-store/shards
-          gzip -9 -c "$SHARD_JSON" > "$SHARD_GZ_DEST"
-          SIZE=$(du -h "$SHARD_GZ_DEST" | cut -f1)
+          gzip -9 -c "$SHARD_JSON" > "cache-store/shards/cache_shard_${SHARD_INDEX}.json.gz"
+          SIZE=$(du -h "cache-store/shards/cache_shard_${SHARD_INDEX}.json.gz" | cut -f1)
           echo "✅ Shard $SHARD_INDEX skompresowany: $SIZE"
 
           cd cache-store
@@ -262,9 +273,13 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           COMMITTED=0
-          for i in $(seq 1 10); do
+          for i in $(seq 1 20); do
+            echo "--- Próba $i/20 dla sharda $SHARD_INDEX ---"
+
             git fetch origin cache-store 2>/dev/null || true
-            git rebase origin/cache-store 2>/dev/null || git pull --rebase origin cache-store 2>/dev/null || true
+            git reset --hard origin/cache-store
+
+            gzip -9 -c "../${SHARD_JSON}" > "shards/cache_shard_${SHARD_INDEX}.json.gz"
 
             git add "shards/cache_shard_${SHARD_INDEX}.json.gz"
 
@@ -282,13 +297,13 @@ jobs:
               break
             fi
 
-            echo "⚠️ Push retry #$i (konflikt) — cofam commit i próbuję ponownie..."
+            echo "⚠️ Push retry #$i — cofam i próbuję ponownie..."
             git reset HEAD~1
-            sleep $((i * 3 + RANDOM % 5))
+            sleep $(( (RANDOM % 15) + i * 2 + SHARD_INDEX % 7 ))
           done
 
           if [ "$COMMITTED" -eq 0 ]; then
-            echo "❌ Nie udało się zapisać sharda $SHARD_INDEX po 10 próbach!"
+            echo "❌ Nie udało się zapisać sharda $SHARD_INDEX po 20 próbach!"
             exit 1
           fi
 
@@ -313,14 +328,14 @@ jobs:
     runs-on: ubuntu-latest
     needs: [scan]
     if: always()
-    timeout-minutes: 60
+    timeout-minutes: 320
 
     steps:
       - uses: actions/checkout@v4
         with:
           ref: cache-store
           path: cache-store
-          fetch-depth: 1  # FIX: była wartość 0
+          fetch-depth: 1
 
       - uses: actions/setup-python@v5
         with:
@@ -340,7 +355,7 @@ jobs:
           REQUIRED = ["schema","urls_seen","content_seen","gmina_seeds",
                       "gmina_frontiers","gmina_retry","dead_urls"]
 
-          merged = {k: ({} if k != "schema" else 13) for k in REQUIRED}
+          merged = {k: ({} if k != "schema" else 14) for k in REQUIRED}
 
           shard_files = sorted(glob.glob(str(SHARDS / "cache_shard_*.json.gz")))
           print(f"Mergowanie {len(shard_files)} shardów...")
@@ -385,8 +400,9 @@ jobs:
           urls_n  = len(merged.get("urls_seen", {}))
           cont_n  = len(merged.get("content_seen", {}))
           seeds_n = len(merged.get("gmina_seeds", {}))
+          front_n = len(merged.get("gmina_frontiers", {}))
           dead_n  = sum(len(v) for v in merged.get("dead_urls", {}).values())
-          print(f"✅ Merge: {urls_n} URLs, {cont_n} content, {seeds_n} seeds, {dead_n} dead")
+          print(f"✅ Merge: {urls_n} URLs, {cont_n} content, {seeds_n} seeds, {front_n} frontiers, {dead_n} dead")
           PY
 
       - name: Split + commit master cache
