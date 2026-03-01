@@ -163,7 +163,7 @@ jobs:
 
     strategy:
       fail-fast: false
-      max-parallel: 30
+      max-parallel: 20  # FIX: było 30 — zmniejszono żeby ograniczyć konflikty git push
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
 
     steps:
@@ -219,11 +219,6 @@ jobs:
             echo '{"schema":14,"urls_seen":{},"content_seen":{},"gmina_seeds":{},"gmina_frontiers":{},"gmina_retry":{},"dead_urls":{}}' > data/cache.json
           fi
 
-      # ============================================================
-      # exec zastępuje bash procesem Pythona — dzięki temu Cancel
-      # workflow wysyła SIGTERM bezpośrednio do Pythona, który
-      # obsługuje go w signal_handler() i może zrobić czysty zapis.
-      # ============================================================
       - name: Run watcher
         continue-on-error: true
         timeout-minutes: 320
@@ -242,13 +237,9 @@ jobs:
         run: |
           python bip_watcher.py
 
-      # ============================================================
-      # Zapis sharda — bez konfliktów git
-      # reset --hard do czystego stanu zdalnego, potem tylko nasz plik
-      # ============================================================
       - name: Compress and commit shard to cache-store
         if: always()
-        timeout-minutes: 6
+        timeout-minutes: 12  # FIX: było 6 — zwiększono bo przy 20 równoległych pushach retry mogą trwać dłużej
         shell: bash
         env:
           SHARD_INDEX: "${{ matrix.shard }}"
@@ -464,7 +455,9 @@ jobs:
           SHARDS      = Path("cache-store/shards")
           shard_files = sorted(glob.glob(str(SHARDS / "cache_shard_*.json.gz")))
           now_utc     = datetime.now(timezone.utc)
-          CUTOFF_H    = 12
+
+          # FIX: zwiększono z 12 na 26 godzin
+          CUTOFF_H = 26
 
           results   = defaultdict(lambda: {"nowe": [], "zmiana": []})
           shards_ok = 0
@@ -485,10 +478,11 @@ jobs:
                   if status not in ("NOWE", "ZMIANA"):
                       continue
 
-                  found_at_str = meta.get("found_at", "")
-                  if found_at_str:
+                  # FIX: last_checked zamiast found_at
+                  checked_str = meta.get("last_checked") or meta.get("found_at", "")
+                  if checked_str:
                       try:
-                          fa = datetime.fromisoformat(found_at_str.replace("Z", "+00:00"))
+                          fa = datetime.fromisoformat(checked_str.replace("Z", "+00:00"))
                           if fa.tzinfo is None:
                               fa = fa.replace(tzinfo=timezone.utc)
                           if (now_utc - fa).total_seconds() / 3600 > CUTOFF_H:
