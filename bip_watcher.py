@@ -359,7 +359,7 @@ CONCURRENT_REQUESTS = env_int("CONCURRENT_REQUESTS", 50)
 LIMIT_PER_HOST = env_int("LIMIT_PER_HOST", 6)
 
 # v2.17: Phase1 ograniczona głębokością, nie liczbą stron
-PHASE1_MAX_DEPTH = env_int("PHASE1_MAX_DEPTH", 4)      # BFS max głębokość
+PHASE1_MAX_DEPTH = env_int("PHASE1_MAX_DEPTH", 3)      # BFS max głębokość
 PHASE1_MAX_URLS = env_int("PHASE1_MAX_URLS", 999999)   # bezpieczny limit URL-i per gmina
 
 PHASE2_MAX_DEPTH = 4
@@ -2721,6 +2721,7 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
 
