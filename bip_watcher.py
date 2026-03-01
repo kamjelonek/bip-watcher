@@ -281,13 +281,13 @@ def is_download_url(u: str) -> bool:
 _GENERIC_TITLE_PATTERNS = [
     "biuletyn informacji publicznej", "biuletyn informacji", "archiwum bip",
     "bip archiwum", "strona główna", "strona glowna", "aktualności", "aktualnosci",
-    "ogłoszenia", "ogloszenia", "redakcja", "rejestr zmian", "mapa strony",
+    "redakcja", "rejestr zmian", "mapa strony",
     "mapa serwisu", "szukaj", "wyszukiwarka", "kontakt", "start", "home",
     "biznes", "informacje", "informacja", "dla mieszkańców", "dla mieszkancow",
     "urząd", "urzad", "gmina", "miasto", "powiat", "więcej", "wiecej",
     "czytaj więcej", "czytaj wiecej", "zobacz więcej", "wszystkie", "kategoria",
     "tagi", "archiwum", "newsletter", "galeria", "multimedia", "przetargi",
-    "zamówienia", "zamowienia", "rada gminy", "rada miasta", "zarząd", "zarzad",
+    "zamówienia", "zamowienia", "rada miasta", "zarząd", "zarzad",
     "burmistrz", "wójt", "wojt", "starosta",
     # v2.18: nowe wzorce śmieciowych tytułów obserwowane w logach
     "najnowsze informacje",
@@ -310,7 +310,7 @@ def is_generic_page_title(title: str) -> bool:
     for pat in _GENERIC_TITLE_PATTERNS:
         if t == pat:
             return True
-        if t.startswith(pat) and len(t) < len(pat) + 60:
+        if t.startswith(pat) and len(t) < len(pat) + 15:
             return True
     return False
 
@@ -338,7 +338,7 @@ def is_junk_link_title(title: str, url: str = "") -> bool:
     if is_generic_page_title(t):
         return True
     # v2.18: podniesiono z 12 do 15 — eliminuje krótkie teksty ("2024", "XIII sesja...")
-    if len(t) < 15:
+    if len(t) < 10:
         return True
     if _JUNK_LINK_TITLE_RE.match(t):
         return True
@@ -633,19 +633,6 @@ def retry_io(action, tries: int = 5, base_sleep: float = 0.6):
         raise last_exc
 
 # ===================== FUNKCJE POMOCNICZE =====================
-
-def _consecutive_dedup_check(gmina: str, title: str) -> bool:
-    """
-    Zwraca True jeśli warto zaraportować (tytuł różny od poprzedniego dla tej gminy).
-    Zapobiega spamowi gdy ta sama strona pojawia się wielokrotnie w frontierze.
-    """
-    key = (gmina or "").strip().lower()
-    prev = state.last_printed.get(key, "")
-    curr = re.sub(r"\s+", " ", (title or "")).strip().lower()
-    if curr and curr == prev:
-        return False
-    state.last_printed[key] = curr
-    return True
 
 
 def save_diag(diag_rows, diag_errors):
@@ -2251,11 +2238,8 @@ async def phase2_focus(
             diag["counts"][f"hit_{status_new.lower()}"] += 1
             if final_c not in state.reported_urls_this_run:
                 state.reported_urls_this_run.add(final_c)
-                if _consecutive_dedup_check(gmina, page_title):
-                    print_hit(f"🟢 {status_new}", gmina, kw_any, page_title)
-                    found.append((gmina, kw_any, page_title, final_c, status_new))
-                else:
-                    diag["counts"]["consecutive_dedup_skipped"] += 1
+                print_hit(f"🟢 {status_new}", gmina, kw_any, page_title)
+                found.append((gmina, kw_any, page_title, final_c, status_new))
             else:
                 diag["counts"]["dedup_skipped"] += 1
 
@@ -2284,10 +2268,9 @@ async def phase2_focus(
                                 "att_sig": "", "status": "NOWE",
                             }
                         state.reported_urls_this_run.add(cu)
-                        if _consecutive_dedup_check(gmina, txt or filename):
-                            print_hit("🟢 NOWE (LINK)", gmina, kw_link, txt or filename)
-                            found.append((gmina, kw_link, (txt or filename)[:240], cu, "NOWE"))
-                            diag["counts"]["link_hits_new"] += 1
+                        print_hit("🟢 NOWE (LINK)", gmina, kw_link, txt or filename)
+                        found.append((gmina, kw_link, (txt or filename)[:240], cu, "NOWE"))
+                        diag["counts"]["link_hits_new"] += 1
 
             seen_in_frontier.add(cu)
             q.append((cu, depth + 1))
@@ -2721,6 +2704,7 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
 
