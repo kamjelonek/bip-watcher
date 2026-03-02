@@ -629,6 +629,110 @@ def is_block_page(text: str) -> bool:
             return True
     return False
 
+def needs_playwright(url: str, result: tuple) -> bool:
+    """
+    result = (html, final_url, kind, status, ctype, err, ms) z fetch_aiohttp
+    Zwraca True, jeśli warto spróbować pobrać stronę przez Playwright.
+    """
+    html, final_url, kind, status, ctype, err, ms = result
+
+    # Jeśli zapytanie aiohttp się nie powiodło (timeout, błąd sieci, 5xx) – próbuj Playwright
+    if kind in ("timeout", "exc") or status in (403, 429, 500, 502, 503):
+        return True
+
+    # Jeśli to nie HTML – nie ma sensu (Playwright też nie wygeneruje)
+    if kind != "html" or not html:
+        return False
+
+    # --- Heurystyki oparte na treści HTML ---
+    low = html.lower()
+    soup = None
+
+    # 1. Markery frameworków JS (SPA)
+    js_markers = [
+        'id="root"', "id='root'", 'id="app"', "id='app'",
+        "__next_data__", "next.js", "data-reactroot", "react",
+        "nuxt", "__nuxt", "vue", "webpack", "vite", "angular"
+    ]
+    if any(marker in low for marker in js_markers):
+        return True
+
+    # 2. Bardzo mało tekstu, dużo skryptów
+    try:
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(html, "lxml")
+        text = soup.get_text(" ", strip=True)
+        scripts = soup.find_all("script")
+        if len(text) < 300 and len(scripts) >= 5:
+            return True
+        scripts_with_src = len([s for s in scripts if s.get("src")])
+        if len(text) < 1000 and scripts_with_src > 10:
+            return True
+    except Exception:
+        pass
+
+    # 3. Strona z parametrami (np. ?id=, action=) i bardzo mało linków
+    if any(p in url.lower() for p in ["?id=", "&id=", "action=", "kategoria="]):
+        if soup is None:
+            try:
+                soup = BeautifulSoup(html, "lxml")
+            except:
+                soup = None
+        if soup:
+            links = soup.find_all("a", href=True)
+            if len(links) < 10:   # mało linków jak na stronę z listą – możliwe JS
+                return True
+
+    # 4. Specyficzne domeny (np. cały system lubelski)
+    if "bip.lubelskie.pl" in url:
+        return True
+
+    return False
+
+async def fetch_with_playwright(url: str) -> tuple:
+    """
+    Pobiera stronę używając Playwright (pełne renderowanie JS).
+    Zwraca krotkę identyczną jak fetch() z aiohttp:
+    (html, final_url, kind, status, ctype, err, ms)
+    """
+    from playwright.async_api import async_playwright
+
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        page = await browser.new_page()
+        try:
+            t0 = time.time()
+            await page.goto(url, wait_until="networkidle", timeout=30000)
+            content = await page.content()
+            final_url = page.url
+            ms = round((time.time() - t0) * 1000)
+            return content, final_url, "html", 200, "text/html", None, ms
+        except Exception as e:
+            return None, url, "exc", None, "", str(e), 0
+        finally:
+            await browser.close()
+
+async def fetch_with_fallback(session: aiohttp.ClientSession, url: str, extra_headers: dict = None):
+    """
+    Próbuje pobrać stronę przez aiohttp. Jeśli odpowiedź sugeruje dynamiczną treść (JS)
+    lub wystąpił błąd, próbuje przez Playwright.
+    """
+    # Najpierw standardowe aiohttp
+    result = await fetch(session, url, extra_headers)   # to jest Twoja obecna funkcja fetch
+    html, final, kind, status, ctype, err, ms = result
+
+    # Decyzja czy użyć Playwright
+    if needs_playwright(url, result):
+        print(f"  🔄 Używam Playwright dla: {url}")
+        pw_result = await fetch_with_playwright(url)
+        # Jeśli Playwright się udał, zwróć jego wynik, inaczej zwróć oryginalny
+        if pw_result[0] is not None:
+            return pw_result
+        else:
+            return result
+    else:
+        return result
+
 def retry_io(action, tries: int = 5, base_sleep: float = 0.6):
     last_exc = None
     for i in range(tries):
@@ -1191,7 +1295,7 @@ async def collect_spa_fallback_urls(
             break
         try:
             url = normalize_url(urljoin(base_site_url, hint))
-            html, final, kind, status, ctype, err, ms = await fetch(session, url)
+            html, final, kind, status, ctype, err, ms = await fetch_with_fallback(session, url)
             if kind != "html" or not html:
                 continue
             soup = safe_soup(html)
@@ -2113,7 +2217,7 @@ async def phase1_full_crawl(
                 seeds[cu] = seeds.get(cu, 1)
             continue
 
-        html, final, kind, status, ctype, err, ms = await fetch(session_crawl, url)
+        html, final, kind, status, ctype, err, ms = await fetch_with_fallback(session_crawl, url)
 
         if kind != "html" or not html:
             cu = _canon(url)
@@ -2326,9 +2430,9 @@ async def phase2_focus(
         if prev_pre and prev_pre.get("last_modified"):
             extra_headers["If-Modified-Since"] = prev_pre["last_modified"]
 
-        html, final, kind, status, ctype, err, ms, resp_meta = await fetch_conditional(
-            session_crawl, url, extra_headers
-        )
+        html, final, kind, status, ctype, err, ms = await fetch_with_fallback(session_crawl, url, extra_headers)
+        # fetch_with_fallback nie zwraca resp_meta, więc musimy to obsłużyć – np. ustawić puste
+        resp_meta = {}
 
         final_c = _canon(final or url)
         url_dedup_final = sha1(canonical_url(final_c))
@@ -2919,6 +3023,7 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
 
