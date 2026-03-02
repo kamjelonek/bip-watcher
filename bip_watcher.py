@@ -710,6 +710,47 @@ async def fetch_with_playwright(url: str) -> tuple:
         finally:
             await browser.close()
 
+async def crawl_with_playwright(start_url: str, allowed_host: str, max_depth: int = 2) -> set:
+    """
+    Wykonuje BFS na głębokość max_depth używając Playwright.
+    Zwraca zbiór unikalnych, znormalizowanych URL-i (w formie canonical).
+    """
+    from playwright.async_api import async_playwright
+    visited = set()
+    queue = deque([(start_url, 0)])
+    found_urls = set()
+
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        while queue and not state.shutdown_requested:
+            url, depth = queue.popleft()
+            if depth > max_depth:
+                continue
+            if url in visited:
+                continue
+            visited.add(url)
+            try:
+                page = await browser.new_page()
+                await page.goto(url, wait_until="domcontentloaded", timeout=60000)
+                # Pobierz wszystkie linki
+                links = await page.eval_on_selector_all('a[href]', 'els => els.map(e => e.href)')
+                for link in links:
+                    abs_url = urljoin(url, link)
+                    if not is_valid_url(abs_url):
+                        continue
+                    parsed = urlparse(abs_url)
+                    if not same_base_domain(parsed.netloc, allowed_host):
+                        continue
+                    cu = _canon(abs_url)
+                    if cu and cu not in visited:
+                        found_urls.add(cu)
+                        queue.append((abs_url, depth + 1))
+                await page.close()
+            except Exception as e:
+                print(f"  ⚠️ Playwright crawl error {url}: {e}")
+        await browser.close()
+    return found_urls
+
 async def fetch_with_fallback(session: aiohttp.ClientSession, url: str, extra_headers: dict = None):
     """
     Próbuje pobrać stronę przez aiohttp. Jeśli odpowiedź sugeruje dynamiczną treść (JS)
@@ -1199,43 +1240,7 @@ async def collect_sitemap_urls(session: aiohttp.ClientSession, base_site_url: st
 # Działa dla KAŻDEGO systemu BIP — lista endpointów pokrywa typowe polskie systemy.
 
 SPA_FALLBACK_HINTS = [
-    # Mapy serwisu — różne systemy BIP
-    "/?id=724",              # bip.lubelskie.pl — znana mapa serwisu (ID może się różnić)
-    "/mapa-serwisu",
-    "/mapa-strony",
-    "/mapa_strony",
-    "/sitemap",
-    "/site-map",
-    "/wszystkie-wpisy",
-    "/wszystkie_wpisy",
-    # Ostatnio dodane / zaktualizowane
-    "/ostatnio-dodane",
-    "/ostatnio_dodane",
-    "/?action=recently_added",
-    "/?action=latest",
-    "/?widok=ostatnio_dodane",
-    # Widok kompaktowy / lista wszystkich artykułów
-    "/?action=compact",
-    "/?widok=kompaktowy",
-    "/widok-kompaktowy",
-    # Ogłoszenia i decyzje — bezpośrednie wejście
-    "/ogloszenia",
-    "/obwieszczenia",
-    "/aktualnosci",
-    "/aktualności",
-    # Planowanie przestrzenne — bezpośrednie wejście
-    "/planowanie",
     "/planowanie-przestrzenne",
-    "/planowanie_przestrzenne",
-    "/prawo-miejscowe",
-    "/prawo_miejscowe",
-    "/mpzp",
-    "/studium",
-    # Środowisko / decyzje środowiskowe
-    "/ochrona-srodowiska",
-    "/ochrona_srodowiska",
-    "/decyzje-srodowiskowe",
-    "/decyzje_srodowiskowe",
 ]
 
 
@@ -2145,7 +2150,7 @@ async def phase1_full_crawl(
     internal_link_count = _count_internal_links(soup0, allowed_host) if soup0 else 0
     diag["notes"].append(f"HOME_INTERNAL_LINKS={internal_link_count}")
 
-# ── Zawsze uruchamiamy SPA fallback, aby odkryć dodatkowe ścieżki ─────────
+    # ── Zawsze uruchamiamy SPA fallback, aby odkryć dodatkowe ścieżki ─────────
     print(
         f"  🔍 SPA fallback (always) [{gmina}]: próbuję {len(SPA_FALLBACK_HINTS)} endpointów...",
         flush=True
@@ -2177,6 +2182,28 @@ async def phase1_full_crawl(
     else:
         print(f"  ⚠️  SPA fallback [{gmina}]: brak wyników — BFS może być niepełny", flush=True)
     # ── koniec SPA FALLBACK ──────────────────────────────────────────────────
+
+    # --- AWARYJNE SKANOWANIE PLAYWRIGHT DLA PODEJRZANYCH DOMEN ---
+    # Jeśli domena jest znana z dynamicznego generowania treści (np. bip.lubelskie.pl),
+    # wykonaj płytkie BFS przez Playwright, aby zebrać linki z menu.
+    if "bip.lubelskie.pl" in allowed_host:
+        print(f"  🕸️  Wykryto domenę bip.lubelskie.pl – uruchamiam Playwright BFS (głębokość 2)")
+        pw_urls = await crawl_with_playwright(final0, allowed_host, max_depth=2)
+        pw_added = 0
+        for u in pw_urls:
+            cu = _canon(u)
+            if cu and cu not in visited:
+                visited.add(cu)
+                # Nadaj wyższy priorytet (15), aby były przetworzone wcześniej
+                seeds[u] = max(seeds.get(u, 0), 15)
+                q.append((u, 1))  # depth=1, bo pochodzą ze strony głównej
+                pw_added += 1
+        diag["notes"].append(f"PLAYWRIGHT_BFS_SEEDS={pw_added}")
+        if pw_added > 0:
+            print(f"  ✅ Playwright BFS dodał {pw_added} URL-i do frontieru", flush=True)
+        else:
+            print(f"  ⚠️ Playwright BFS nie dodał żadnych URL-i", flush=True)
+    # --- KONIEC AWARYJNEGO SKANOWANIA ---
 
     # Strona główna zawsze na początku kolejki
     cu0 = _canon(final0)
@@ -2291,7 +2318,6 @@ async def phase1_full_crawl(
         "phase1_complete": phase1_complete,
         "pages_crawled": pages_crawled,
     }
-
 
 # ============================================================
 # PHASE 2 — sprawdza zawartość + odkrywa nowe linki
@@ -3021,6 +3047,7 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
 
