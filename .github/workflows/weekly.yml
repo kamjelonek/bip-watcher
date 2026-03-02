@@ -2,7 +2,7 @@ name: BIP Watcher Daily
 
 on:
   schedule:
-    - cron: "0 6 * * *"   # codziennie 6:00 UTC (8:00 czasu polskiego latem, 7:00 zimą)
+    - cron: "0 6 * * *"
   workflow_dispatch:
     inputs:
       full_reset:
@@ -163,7 +163,7 @@ jobs:
 
     strategy:
       fail-fast: false
-      max-parallel: 20  # FIX: było 30 — zmniejszono żeby ograniczyć konflikty git push
+      max-parallel: 20
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
 
     steps:
@@ -181,10 +181,25 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('**/requirements.txt') }}
+
+      - name: Install system dependencies for Playwright
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnss3 libatk-bridge2.0-0 libdrm2 libxkbcommon0 libgbm1 libasound2
+
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
+      - name: Install Playwright browsers
+        run: |
+          playwright install chromium
 
       - name: Restore shard cache from cache-store
         shell: bash
@@ -239,7 +254,7 @@ jobs:
 
       - name: Compress and commit shard to cache-store
         if: always()
-        timeout-minutes: 12  # FIX: było 6 — zwiększono bo przy 20 równoległych pushach retry mogą trwać dłużej
+        timeout-minutes: 12
         shell: bash
         env:
           SHARD_INDEX: "${{ matrix.shard }}"
@@ -456,7 +471,6 @@ jobs:
           shard_files = sorted(glob.glob(str(SHARDS / "cache_shard_*.json.gz")))
           now_utc     = datetime.now(timezone.utc)
 
-          # FIX: zwiększono z 12 na 26 godzin
           CUTOFF_H = 26
 
           results   = defaultdict(lambda: {"nowe": [], "zmiana": []})
@@ -478,7 +492,6 @@ jobs:
                   if status not in ("NOWE", "ZMIANA"):
                       continue
 
-                  # FIX: last_checked zamiast found_at
                   checked_str = meta.get("last_checked") or meta.get("found_at", "")
                   if checked_str:
                       try:
