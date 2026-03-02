@@ -683,18 +683,13 @@ def needs_playwright(url: str, result: tuple) -> bool:
             if len(links) < 10:   # mało linków jak na stronę z listą – możliwe JS
                 return True
 
-    # 4. Specyficzne domeny (np. cały system lubelski)
-    if "bip.lubelskie.pl" in url:
-        return True
+    # 4. (USUNIĘTO) Specyficzne domeny – teraz Playwright będzie używany tylko awaryjnie
+    # if "bip.lubelskie.pl" in url:
+    #     return True
 
     return False
 
 async def fetch_with_playwright(url: str) -> tuple:
-    """
-    Pobiera stronę używając Playwright (pełne renderowanie JS).
-    Zwraca krotkę identyczną jak fetch() z aiohttp:
-    (html, final_url, kind, status, ctype, err, ms)
-    """
     from playwright.async_api import async_playwright
 
     async with async_playwright() as p:
@@ -702,7 +697,10 @@ async def fetch_with_playwright(url: str) -> tuple:
         page = await browser.new_page()
         try:
             t0 = time.time()
-            await page.goto(url, wait_until="networkidle", timeout=30000)
+            # Zwiększ timeout, użyj 'domcontentloaded' zamiast 'networkidle'
+            await page.goto(url, wait_until="domcontentloaded", timeout=60000)
+            # Opcjonalnie: poczekaj na pojawienie się linków
+            await page.wait_for_selector('a', timeout=10000)
             content = await page.content()
             final_url = page.url
             ms = round((time.time() - t0) * 1000)
@@ -3023,6 +3021,7 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
 
