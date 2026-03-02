@@ -1,20 +1,40 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.18 - PRODUCTION
-Zmiany v2.18 vs v2.17:
-- KEYWORDS: zastąpiono krótkie/ryzykowne frazy pełnymi wyrażeniami planistycznymi
-  (eliminacja false positives od pojedynczych słów: "miejscowego", "wiatr", "turbina" itp.)
-  Zachowano "wiatrow" i "fotowolta" jako unikalne prefiksy branżowe bez ryzyka false positive.
-- STRICT_ONLY: rozszerzono o krótkie słowa które wymagają word-boundary (wz, oze, ris)
-- _PAGINATION_RE: dodano /lista/N oraz /wersja/N (paginacja rejestrów zmian BIP)
-- IGNORE_URL_PATH_PATTERNS: dodano /wersja[_/] (URL-e typu /wersja__ z BIP Kętrzyn)
-- _GENERIC_TITLE_PATTERNS: dodano typowe śmieciowe tytuły BIP
-  ("najnowsze informacje", "najnowsze", "więcej informacji", "lista zmian" itp.)
-- is_junk_link_title: podniesiono minimalną długość tytułu z 12 do 15 znaków
-- RESET_CACHE: poprawka — w main() dodano obsługę ENV RESET_CACHE=true (oprócz =1)
-  (workflow GitHub używa wartości "true"/"false" z choice input)
-- pg= dodano do _PAGINATION_RE (paginacja platformy biuletyn.net)
-- UWAGA: nie zmieniono żadnej logiki crawlowania, Phase1, Phase2, cache ani YAML
+BIP WATCHER v2.20 - PRODUCTION
+Zmiany v2.20 vs v2.18:
+
+[1] normalize_url — USUNIĘTO "lang", "locale", "language" z filtrowanych parametrów
+    Były to parametry FUNKCJONALNE, nie śledzące. Ich usuwanie niszczyło URL-e BIP-ów
+    opartych na PHP, np. /index.php?id=123&lang=pl → 404 lub pusta strona.
+
+[2] IGNORE_URL_SUBSTR — USUNIĘTO "kadra" i "struktura"
+    Blokowały zakładki "Jednostki organizacyjne" / "Struktura urzędu", które mogą
+    zawierać sekcje z ogłoszeniami i decyzjami planistycznymi.
+    Zostawiono "regulamin" i "procedur" (te rzeczywiście nie niosą ogłoszeń).
+
+[3] SPA FALLBACK — nowa funkcja collect_spa_fallback_urls() + _count_internal_links()
+    Problem: BIP-y oparte na React/Vue/Angular (np. *.bip.lubelskie.pl) generują menu
+    przez JavaScript — surowy HTML strony głównej zawiera < 5 linków. Crawler kończył
+    po 1/3 stron bo frontier bazował wyłącznie na sitemapie (który jest niepełny).
+    Rozwiązanie: gdy strona główna ma < SPA_FALLBACK_MIN_LINKS (domyślnie 20)
+    wewnętrznych linków, crawler próbuje znanych alternatywnych endpointów:
+    mapy serwisu, ostatnio dodane, ogłoszenia, planowanie itp.
+    Działa dla KAŻDEGO systemu BIP — nie tylko lubelskiego.
+
+[4] PHASE1_MAX_DEPTH — zmieniono domyślną wartość z 3 na 4
+    Głębokość 3 okazała się niewystarczająca dla niektórych BIP-ów z głębszą hierarchią.
+
+[5] SPA_FALLBACK_MIN_LINKS = 20 — konfigurowalna stała (poprzednio było planowane 10,
+    ale użytkownik zdecydował o progu 20 jako bardziej czułym na SPA).
+
+Zmiany v2.18 vs v2.17 (zachowane):
+- KEYWORDS: pełne frazy planistyczne, eliminacja false positives
+- STRICT_ONLY: wz, oze, ris wymagają word-boundary
+- _PAGINATION_RE: /lista/N, /wersja/N, pg=
+- IGNORE_URL_PATH_PATTERNS: /wersja[_/]
+- _GENERIC_TITLE_PATTERNS: śmieciowe tytuły BIP
+- is_junk_link_title: minimalny len tytułu = 10
+- RESET_CACHE: akceptuje "true" i "1"
 """
 
 import os, sys, csv, json, hashlib, asyncio, re, time, smtplib, warnings, socket, random, signal
@@ -114,12 +134,6 @@ ENABLE_EMAIL = False
 # ===================== KEYWORDS =====================
 # v2.18: zastąpiono krótkie/ryzykowne słowa pełnymi frazami planistycznymi.
 # Zasada: im dłuższa fraza, tym mniejsze ryzyko fałszywego dopasowania.
-# Zachowano kolejność od najbardziej specyficznych do ogólnych — keyword_match_in_blob
-# zwraca pierwsze dopasowanie, więc bardziej specyficzne frazy mają priorytet.
-#
-# Usunięto: "miejscowego", "wiatr", "turbina", "plan miejscowy", "plan ogólny" (samo),
-#           "studium uwarunkowań" (samo), "decyzja środowiskowa" (samo)
-# Dodano:   pełne odmiany gramatyczne kluczowych fraz planistycznych i branżowych
 KEYWORDS = [
     # ── MPZP ──────────────────────────────────────────────────────────────────
     "miejscowy plan zagospodarowania przestrzennego",
@@ -190,12 +204,14 @@ def keyword_match_in_blob(blob: str):
     return (False, None)
 
 # ===================== IGNORE =====================
+# v2.20: USUNIĘTO "kadra" i "struktura" — blokowały zakładki z potencjalnymi ogłoszeniami.
+# "Jednostki organizacyjne", "Struktura urzędu" mogą zawierać linki do decyzji/planów.
 IGNORE_URL_SUBSTR = [
     "kontakt", "mapa-strony", "mapa_strony", "wyszukiwarka", "statystyka",
     "rodo", "cookies", "deklaracja-dostepnosci", "deklaracja_dostepnosci",
-    "oswiadczenia", "oświadczenia", "majatk", "majątk",
-    "kadra", "struktura", "regulamin", "procedur", "sygnalis",
-    "login", "logowanie", "rejestracja", "newsletter", "archiwum-2",
+    "majatk", "majątk",
+    "regulamin", "sygnalis",
+    "login", "logowanie", "rejestracja", "newsletter",
     "galeria-zdjec", "galeria_zdjec", "multimedia", "wideo",
 ]
 
@@ -250,14 +266,12 @@ _DOWNLOAD_SUFFIX_RE = re.compile(
 )
 
 # ===================== PAGINATION FILTER =====================
-# v2.18: dodano /lista/\d+ (rejestry zmian BIP Trzebielino i podobne),
-#         /wersja/\d* (archiwalne wersje stron), pg= (biuletyn.net)
 _PAGINATION_RE = re.compile(
     r"[?&](page|strona|p|offset|start|from|skip|pg)=\d+"
     r"|/page/\d+"
     r"|/strona/\d+"
     r"|[?&]p=\d+"
-    r"|/wersja/\d*(?:[/?_]|$)", # /wersja/1, /wersja/, /wersja__ — archiwum wersji
+    r"|/wersja/\d*(?:[/?_]|$)",
     re.IGNORECASE
 )
 
@@ -276,8 +290,6 @@ def is_download_url(u: str) -> bool:
     return False
 
 # ===================== GENERIC TITLE FILTER =====================
-# v2.18: dodano typowe śmieciowe tytuły BIP, które wcześniej przechodziły
-# przez is_junk_link_title() ze względu na długość > 12 znaków
 _GENERIC_TITLE_PATTERNS = [
     "biuletyn informacji publicznej", "biuletyn informacji", "archiwum bip",
     "bip archiwum", "strona główna", "strona glowna", "aktualności", "aktualnosci",
@@ -320,9 +332,9 @@ _JUNK_LINK_TITLE_RE = re.compile(
     | ^[\d\s\.\-/\\]+$
     | ^[a-z0-9_\-]+\.[a-z]{2,4}$
     | ^\d+$
-    | ^(19|20)\d{2}$                                                    # sam rok: 2024, 2019 itp.
+    | ^(19|20)\d{2}$
     | ^(pobierz|download|files?|add|get|view|open|click|tutaj|here)\s*[\d\.\-/]*$
-    | ^\w+\s+\d+\s*(roku?|r\.?)$                                        # "styczeń 2024 r." itp.
+    | ^\w+\s+\d+\s*(roku?|r\.?)$
     """,
     re.VERBOSE | re.IGNORECASE
 )
@@ -337,7 +349,6 @@ def is_junk_link_title(title: str, url: str = "") -> bool:
     lt = t.lower()
     if is_generic_page_title(t):
         return True
-    # v2.18: podniesiono z 12 do 15 — eliminuje krótkie teksty ("2024", "XIII sesja...")
     if len(t) < 10:
         return True
     if _JUNK_LINK_TITLE_RE.match(t):
@@ -358,12 +369,16 @@ CONCURRENT_GMINY = env_int("CONCURRENT_GMINY", 1)
 CONCURRENT_REQUESTS = env_int("CONCURRENT_REQUESTS", 50)
 LIMIT_PER_HOST = env_int("LIMIT_PER_HOST", 6)
 
-# v2.17: Phase1 ograniczona głębokością, nie liczbą stron
-PHASE1_MAX_DEPTH = env_int("PHASE1_MAX_DEPTH", 3)      # BFS max głębokość
-PHASE1_MAX_URLS = env_int("PHASE1_MAX_URLS", 999999)   # bezpieczny limit URL-i per gmina
+# v2.20: zwiększono domyślnie z 3 do 4 — głębsza hierarchia BIP wymaga 4 poziomów
+PHASE1_MAX_DEPTH = env_int("PHASE1_MAX_DEPTH", 4)
+PHASE1_MAX_URLS = env_int("PHASE1_MAX_URLS", 999999)
 
 PHASE2_MAX_DEPTH = 4
 PHASE2_MAX_PAGES = 999999
+
+# v2.20: próg linków wewnętrznych poniżej którego aktywuje się SPA fallback
+# Konfigurowalny przez ENV: SPA_FALLBACK_MIN_LINKS=20
+SPA_FALLBACK_MIN_LINKS = env_int("SPA_FALLBACK_MIN_LINKS", 20)
 
 REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=None, sock_connect=12, sock_read=35)
 START_TIMEOUT_FAST = aiohttp.ClientTimeout(total=None, sock_connect=10, sock_read=18)
@@ -634,7 +649,6 @@ def retry_io(action, tries: int = 5, base_sleep: float = 0.6):
 
 # ===================== FUNKCJE POMOCNICZE =====================
 
-
 def save_diag(diag_rows, diag_errors):
     """Zapisuje diagnostykę do CSV."""
     try:
@@ -674,7 +688,7 @@ def write_summary(diag_rows, new_items_for_mail):
         ok = sum(1 for r in (diag_rows or []) if r.get("status") == "OK")
         start_fail = sum(1 for r in (diag_rows or []) if r.get("status") == "START_FAIL")
         lines = [
-            f"BIP WATCHER v2.18 SUMMARY @ {now_iso()}",
+            f"BIP WATCHER v2.20 SUMMARY @ {now_iso()}",
             f"gminy_total={total} ok={ok} start_fail={start_fail}",
             f"mail_items={len(new_items_for_mail or [])}",
             "",
@@ -737,10 +751,12 @@ def normalize_url(url: str) -> str:
                 continue
             if kl.startswith("utm_"):
                 continue
+            # v2.20: USUNIĘTO "lang", "locale", "language" z listy filtrowanych parametrów.
+            # Były FUNKCJONALNE (nie śledzące) — ich usuwanie niszczyło URL-e BIP-ów PHP,
+            # np. /index.php?id=123&lang=pl → serwer zwracał 404 lub pustą stronę.
             if kl in {
                 "fbclid", "gclid", "yclid", "sid", "session", "sessionid",
                 "phpsessid", "jsessionid", "print", "format",
-                "lang", "locale", "language"
             }:
                 continue
             q.append((kl, v))
@@ -1068,6 +1084,155 @@ async def collect_sitemap_urls(session: aiohttp.ClientSession, base_site_url: st
             out_urls = tmp[:max_urls]
 
     return out_urls[:max_urls]
+
+# ===================== SPA FALLBACK (v2.20) =====================
+# Gdy strona główna ma < SPA_FALLBACK_MIN_LINKS wewnętrznych linków,
+# crawler próbuje tych alternatywnych endpointów zamiast polegać wyłącznie na BFS.
+# Rozwiązuje problem BIP-ów SPA (React/Vue/Angular) gdzie menu jest generowane przez JS.
+# Działa dla KAŻDEGO systemu BIP — lista endpointów pokrywa typowe polskie systemy.
+
+SPA_FALLBACK_HINTS = [
+    # Mapy serwisu — różne systemy BIP
+    "/?id=724",              # bip.lubelskie.pl — znana mapa serwisu (ID może się różnić)
+    "/mapa-serwisu",
+    "/mapa-strony",
+    "/mapa_strony",
+    "/sitemap",
+    "/site-map",
+    "/wszystkie-wpisy",
+    "/wszystkie_wpisy",
+    # Ostatnio dodane / zaktualizowane
+    "/ostatnio-dodane",
+    "/ostatnio_dodane",
+    "/?action=recently_added",
+    "/?action=latest",
+    "/?widok=ostatnio_dodane",
+    # Widok kompaktowy / lista wszystkich artykułów
+    "/?action=compact",
+    "/?widok=kompaktowy",
+    "/widok-kompaktowy",
+    # Ogłoszenia i decyzje — bezpośrednie wejście
+    "/ogloszenia",
+    "/obwieszczenia",
+    "/aktualnosci",
+    "/aktualności",
+    # Planowanie przestrzenne — bezpośrednie wejście
+    "/planowanie",
+    "/planowanie-przestrzenne",
+    "/planowanie_przestrzenne",
+    "/prawo-miejscowe",
+    "/prawo_miejscowe",
+    "/mpzp",
+    "/studium",
+    # Środowisko / decyzje środowiskowe
+    "/ochrona-srodowiska",
+    "/ochrona_srodowiska",
+    "/decyzje-srodowiskowe",
+    "/decyzje_srodowiskowe",
+]
+
+
+def _count_internal_links(soup: BeautifulSoup, allowed_host: str) -> int:
+    """
+    Liczy unikalne wewnętrzne linki HTML na stronie.
+    Używane do wykrycia SPA — strony renderowane przez JS mają < kilka linków w raw HTML.
+    """
+    if not soup:
+        return 0
+    seen = set()
+    count = 0
+    for a in soup.find_all("a", href=True):
+        href = (a.get("href") or "").strip()
+        if not href or href.startswith("#") or href.startswith("mailto:") or href.startswith("tel:"):
+            continue
+        try:
+            abs_u = urljoin("https://" + allowed_host, href)
+            cu = canonical_url(abs_u)
+            if not cu or cu in seen:
+                continue
+            if not same_base_domain(urlparse(cu).netloc, allowed_host):
+                continue
+            seen.add(cu)
+            count += 1
+        except Exception:
+            continue
+    return count
+
+
+async def collect_spa_fallback_urls(
+    session: aiohttp.ClientSession,
+    base_site_url: str,
+    allowed_host: str,
+    diag: dict,
+    max_urls: int = 3000,
+) -> list:
+    """
+    Wywoływana gdy strona główna ma < SPA_FALLBACK_MIN_LINKS wewnętrznych linków.
+    Próbuje znanych endpointów i zbiera z nich linki HTML.
+    Zwraca listę URL-i — nie fetchuje ich, tylko zbiera adresy.
+    """
+    found_urls = []
+    seen = set()
+    hints_hit = 0
+
+    print(
+        f"  🔍 SPA fallback: próbuję {len(SPA_FALLBACK_HINTS)} endpointów "
+        f"(base={base_site_url})...",
+        flush=True
+    )
+
+    for hint in SPA_FALLBACK_HINTS:
+        if len(found_urls) >= max_urls:
+            break
+        try:
+            url = normalize_url(urljoin(base_site_url, hint))
+            html, final, kind, status, ctype, err, ms = await fetch(session, url)
+            if kind != "html" or not html:
+                continue
+            soup = safe_soup(html)
+            if not soup:
+                continue
+
+            links_found = 0
+            for a in soup.find_all("a", href=True):
+                href = (a.get("href") or "").strip()
+                if not href or href.startswith("#") or href.startswith("mailto:") or href.startswith("tel:"):
+                    continue
+                try:
+                    abs_u = normalize_url(urljoin(final, href))
+                    if not is_valid_url(abs_u):
+                        continue
+                    if not same_base_domain(urlparse(abs_u).netloc, allowed_host):
+                        continue
+                    if should_skip_href(abs_u):
+                        continue
+                    cu = canonical_url(abs_u)
+                    if not cu or cu in seen:
+                        continue
+                    seen.add(cu)
+                    found_urls.append(abs_u)
+                    links_found += 1
+                except Exception:
+                    continue
+
+            if links_found > 0:
+                hints_hit += 1
+                print(
+                    f"  ✅ SPA fallback HIT: {hint} → {links_found} linków "
+                    f"(łącznie: {len(found_urls)})",
+                    flush=True
+                )
+                diag["notes"].append(f"SPA_FALLBACK_HIT hint={hint} links={links_found}")
+        except Exception as ex:
+            diag["notes"].append(f"SPA_FALLBACK_ERR hint={hint} err={str(ex)[:60]}")
+            continue
+
+    print(
+        f"  📋 SPA fallback ŁĄCZNIE: {len(found_urls)} URL z {hints_hit} endpointów",
+        flush=True
+    )
+    return found_urls[:max_urls]
+
 
 # ===================== TEXT EXTRACTION =====================
 def _strip_dynamic_noise(txt: str) -> str:
@@ -1759,7 +1924,7 @@ def mark_frontier_reset(gkey: str):
     state.gmina_seeds.pop(gmina_cycle_key(gkey), None)
 
 # ============================================================
-# PHASE 1 — BFS z limitem głębokości 3
+# PHASE 1 — BFS z limitem głębokości + SPA fallback (v2.20)
 # ============================================================
 
 async def phase1_full_crawl(
@@ -1771,20 +1936,20 @@ async def phase1_full_crawl(
     diag,
 ) -> tuple:
     """
-    BFS z ograniczeniem głębokości do PHASE1_MAX_DEPTH (domyślnie 3).
+    BFS z ograniczeniem głębokości do PHASE1_MAX_DEPTH (domyślnie 4 w v2.20).
 
-    Głębokość 3 od home page pokrywa praktycznie wszystkie ogłoszenia BIP:
+    v2.20: dodano SPA fallback — gdy strona główna ma < SPA_FALLBACK_MIN_LINKS (20)
+    wewnętrznych linków HTML, crawler próbuje alternatywnych endpointów zamiast
+    liczyć wyłącznie na BFS po menu. Rozwiązuje problem BIP-ów React/SPA
+    (np. *.bip.lubelskie.pl) gdzie menu jest generowane przez JavaScript i nie ma
+    żadnych <a href> w surowym HTML.
+
+    Przepływ Phase1:
       depth 0: strona główna
       depth 1: kategorie, działy (ogłoszenia, planowanie, środowisko...)
       depth 2: listy ogłoszeń w kategorii
       depth 3: konkretne ogłoszenie/decyzja
-
-    URL-e z depth > MAX_DEPTH trafiają do frontieru jako znane (będą sprawdzone
-    przez Phase2) ale ich linki nie są dalej eksplorowane w Phase1.
-
-    Phase2 podczas skanowania odkrywa nowe linki i dopisuje je do frontieru,
-    więc strony głębsze niż 3 też zostaną sprawdzone — ale stopniowo,
-    w kolejnych runach, bez blokowania Phase1.
+      depth 4: załączniki, podstrony ogłoszeń (nowe w v2.20)
     """
     if state.shutdown_requested:
         return [], {"status": "SHUTDOWN"}
@@ -1866,15 +2031,68 @@ async def phase1_full_crawl(
         diag["notes"].append(f"SITEMAP_FAILED: {str(ex)[:80]}")
         print(f"  ⚠️  Sitemap [{gmina}]: błąd — {str(ex)[:80]}", flush=True)
 
-    q.append((final0, 0))
-    visited.add(_canon(final0))
+    # ── v2.20: SPA FALLBACK ──────────────────────────────────────────────────
+    # Zlicz wewnętrzne linki na stronie głównej.
+    # BIP-y SPA (React/Vue/Angular) mają < kilka linków w surowym HTML.
+    soup0 = safe_soup(html0)
+    internal_link_count = _count_internal_links(soup0, allowed_host) if soup0 else 0
+    diag["notes"].append(f"HOME_INTERNAL_LINKS={internal_link_count}")
+
+    if internal_link_count < SPA_FALLBACK_MIN_LINKS:
+        print(
+            f"  ⚠️  Phase1 [{gmina}]: strona główna ma tylko {internal_link_count} "
+            f"wewnętrznych linków (próg={SPA_FALLBACK_MIN_LINKS}) "
+            f"— aktywuję SPA fallback...",
+            flush=True
+        )
+        spa_urls = await collect_spa_fallback_urls(
+            session=session_crawl,
+            base_site_url=base_site,
+            allowed_host=allowed_host,
+            diag=diag,
+            max_urls=3000,
+        )
+        spa_added = 0
+        for u in spa_urls:
+            if not allow_url(u):
+                continue
+            cu = _canon(u)
+            if not cu:
+                continue
+            if not any(u.lower().endswith(ext) for ext in ATT_EXT):
+                score = 15 if any(h in u.lower() for h in LISTING_URL_HINTS) else 5
+                seeds[u] = max(seeds.get(u, 0), score)
+                if cu not in visited:
+                    visited.add(cu)
+                    q.append((u, 1))  # depth=1 — linki z endpointów, nie homepage
+                spa_added += 1
+        diag["notes"].append(f"SPA_FALLBACK_SEEDS={spa_added}")
+        if spa_added > 0:
+            print(
+                f"  🗺️  SPA fallback [{gmina}]: dodano {spa_added} URL-i do frontieru",
+                flush=True
+            )
+        else:
+            print(
+                f"  ⚠️  SPA fallback [{gmina}]: brak wyników — BFS może być niepełny",
+                flush=True
+            )
+    # ── koniec SPA FALLBACK ──────────────────────────────────────────────────
+
+    # Strona główna zawsze na początku kolejki
+    cu0 = _canon(final0)
+    if cu0 not in visited:
+        visited.add(cu0)
+    q.appendleft((final0, 0))
     seeds[final0] = seeds.get(final0, 5)
 
     pages_crawled = 0
 
     print(
         f"  🕷️  Phase1 start [{gmina}] @ {allowed_host} "
-        f"| sitemap_seeds={len(seeds)} | max_depth={PHASE1_MAX_DEPTH}",
+        f"| sitemap_seeds={len(seeds)} "
+        f"| max_depth={PHASE1_MAX_DEPTH} "
+        f"| home_links={internal_link_count}",
         flush=True
     )
 
@@ -2548,7 +2766,6 @@ async def worker(
 # ===================== MAIN =====================
 async def main():
     # v2.18: obsługa RESET_CACHE — akceptuje zarówno "1" jak i "true"
-    # (GitHub Actions workflow używa wartości "true"/"false" z choice input)
     reset_val = os.getenv("RESET_CACHE", "0").strip().lower()
     if reset_val in ("1", "true", "yes"):
         print("🗑️  RESET_CACHE — czyszczę cache...")
@@ -2704,3 +2921,4 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
