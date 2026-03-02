@@ -796,6 +796,11 @@ def is_listing_url(u: str) -> bool:
         "/rss", "/feed", "rss.xml", "feed.xml",
         "wyszuk", "szukaj", "search", "query=", "filter", "filtr",
         "ostatnio_dodane", "ostatnio_zaktualizowane",
+        # Dodatkowe wzorce dla lepszego pokrycia
+        "action=", "widok=",
+        "/ogloszenia", "/obwieszczenia", "/planowanie", "/mpzp", "/studium",
+        "/decyzje", "/uchwaly", "/prawo-miejscowe",
+        "?id=",   # uwaga: ogólne, ale może pomóc w głębszej eksploracji
     ])
 
 def is_phase1_listing(u: str) -> bool:
@@ -2038,45 +2043,37 @@ async def phase1_full_crawl(
     internal_link_count = _count_internal_links(soup0, allowed_host) if soup0 else 0
     diag["notes"].append(f"HOME_INTERNAL_LINKS={internal_link_count}")
 
-    if internal_link_count < SPA_FALLBACK_MIN_LINKS:
-        print(
-            f"  ⚠️  Phase1 [{gmina}]: strona główna ma tylko {internal_link_count} "
-            f"wewnętrznych linków (próg={SPA_FALLBACK_MIN_LINKS}) "
-            f"— aktywuję SPA fallback...",
-            flush=True
-        )
-        spa_urls = await collect_spa_fallback_urls(
-            session=session_crawl,
-            base_site_url=base_site,
-            allowed_host=allowed_host,
-            diag=diag,
-            max_urls=3000,
-        )
-        spa_added = 0
-        for u in spa_urls:
-            if not allow_url(u):
-                continue
-            cu = _canon(u)
-            if not cu:
-                continue
-            if not any(u.lower().endswith(ext) for ext in ATT_EXT):
-                score = 15 if any(h in u.lower() for h in LISTING_URL_HINTS) else 5
-                seeds[u] = max(seeds.get(u, 0), score)
-                if cu not in visited:
-                    visited.add(cu)
-                    q.append((u, 1))  # depth=1 — linki z endpointów, nie homepage
+# ── Zawsze uruchamiamy SPA fallback, aby odkryć dodatkowe ścieżki ─────────
+    print(
+        f"  🔍 SPA fallback (always) [{gmina}]: próbuję {len(SPA_FALLBACK_HINTS)} endpointów...",
+        flush=True
+    )
+    spa_urls = await collect_spa_fallback_urls(
+        session=session_crawl,
+        base_site_url=base_site,
+        allowed_host=allowed_host,
+        diag=diag,
+        max_urls=3000,
+    )
+    spa_added = 0
+    for u in spa_urls:
+        if not allow_url(u):
+            continue
+        cu = _canon(u)
+        if not cu:
+            continue
+        if not any(u.lower().endswith(ext) for ext in ATT_EXT):
+            score = 15 if any(h in u.lower() for h in LISTING_URL_HINTS) else 5
+            seeds[u] = max(seeds.get(u, 0), score)
+            if cu not in visited:
+                visited.add(cu)
+                q.append((u, 1))
                 spa_added += 1
-        diag["notes"].append(f"SPA_FALLBACK_SEEDS={spa_added}")
-        if spa_added > 0:
-            print(
-                f"  🗺️  SPA fallback [{gmina}]: dodano {spa_added} URL-i do frontieru",
-                flush=True
-            )
-        else:
-            print(
-                f"  ⚠️  SPA fallback [{gmina}]: brak wyników — BFS może być niepełny",
-                flush=True
-            )
+    diag["notes"].append(f"SPA_FALLBACK_SEEDS={spa_added}")
+    if spa_added > 0:
+        print(f"  🗺️  SPA fallback [{gmina}]: dodano {spa_added} URL-i do frontieru", flush=True)
+    else:
+        print(f"  ⚠️  SPA fallback [{gmina}]: brak wyników — BFS może być niepełny", flush=True)
     # ── koniec SPA FALLBACK ──────────────────────────────────────────────────
 
     # Strona główna zawsze na początku kolejki
@@ -2157,7 +2154,11 @@ async def phase1_full_crawl(
 
             if cu not in visited:
                 visited.add(cu)
-                next_depth = depth + 1
+                # Jeśli URL jest listingiem, zwiększ głębokość o 2
+                if is_listing_url(abs_u):
+                    next_depth = depth + 2
+                else:
+                    next_depth = depth + 1
                 q.append((abs_u, next_depth))
 
         if len(seeds) >= PHASE1_MAX_URLS:
@@ -2921,4 +2922,5 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
