@@ -2293,9 +2293,6 @@ async def phase2_focus(
         if not url:
             continue
 
-        if any(url.lower().endswith(ext) for ext in ATT_EXT):
-            continue
-
         url_dedup = sha1(canonical_url(url))
         prev_pre = content_seen.get(url_dedup)
         is_listing = is_listing_url(url) or is_home_url(url)
@@ -2922,5 +2919,6 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
