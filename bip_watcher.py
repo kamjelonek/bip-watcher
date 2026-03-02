@@ -2184,24 +2184,10 @@ async def phase1_full_crawl(
     # ── koniec SPA FALLBACK ──────────────────────────────────────────────────
 
     # --- AWARYJNE SKANOWANIE PLAYWRIGHT DLA PODEJRZANYCH DOMEN ---
-    # Jeśli domena jest znana z dynamicznego generowania treści (np. bip.lubelskie.pl),
-    # wykonaj płytkie BFS przez Playwright, aby zebrać linki z menu.
+    # Uruchom Playwright BFS, jeśli strona główna wygląda na aplikację JS LUB domena jest lubelska
     if detect_js_app(html0) or "bip.lubelskie.pl" in allowed_host:
-    print(f"  🕸️  Wykryto aplikację JS lub domenę bip.lubelskie.pl – uruchamiam Playwright BFS (głębokość 2)")
-    pw_urls = await crawl_with_playwright(final0, allowed_host, max_depth=2)
-    pw_added = 0
-    for u in pw_urls:
-        cu = _canon(u)
-        if cu and cu not in visited:
-            visited.add(cu)
-            seeds[u] = max(seeds.get(u, 0), 15)
-            q.append((u, 1))
-            pw_added += 1
-    diag["notes"].append(f"PLAYWRIGHT_BFS_SEEDS={pw_added}")
-    if pw_added > 0:
-        print(f"  ✅ Playwright BFS dodał {pw_added} URL-i do frontieru", flush=True)
-    else:
-        print(f"  ⚠️ Playwright BFS nie dodał żadnych URL-i", flush=True)
+        print(f"  🕸️  Wykryto aplikację JS lub domenę bip.lubelskie.pl – uruchamiam Playwright BFS (głębokość 3)")
+        pw_urls = await crawl_with_playwright(final0, allowed_host, max_depth=3)  # zmienione na 3
         pw_added = 0
         for u in pw_urls:
             cu = _canon(u)
@@ -3060,6 +3046,7 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
 
