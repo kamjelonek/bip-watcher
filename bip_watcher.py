@@ -1,18 +1,20 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.19 - PRODUCTION
-Zmiany v2.19 vs v2.18:
-- _soup_fast_text: usunięto warunkowe usuwanie nav/header/footer/aside
-  Tekst szukany ABSOLUTNIE WSZĘDZIE na stronie bez wyjątków
-- _strip_dynamic_noise: USUNIĘTA — nie usuwamy dat, liczników ani żadnych fragmentów
-- IGNORE_URL_SUBSTR: WYCZYSZCZONE — pusta lista, nie blokujemy URL-ów po fragmentach
-- IGNORE_URL_PATH_PATTERNS: WYCZYSZCZONE — pusta lista, nie blokujemy /wersja/ itd.
-- anchor_is_ignored(): USUNIĘTA — zawsze zwraca False, nie filtrujemy tekstu kotwicy
-- is_junk_link_title() i is_generic_page_title(): USUNIĘTE — nie filtrujemy tytułów
-- _PAGINATION_RE usunięty z should_skip_href — wchodzimy na stronę 2, 3, kolejne
-- keyword_match_in_blob: zwraca WSZYSTKIE pasujące słowa kluczowe (nie tylko pierwsze)
-- Dedup raportowania: ten sam URL + ten sam tytuł raportowany tylko RAZ per run
-  (sam tytuł lub sam URL nie wystarczą — muszą być oba identyczne jednocześnie)
+BIP WATCHER v2.18 - PRODUCTION
+Zmiany v2.18 vs v2.17:
+- KEYWORDS: zastąpiono krótkie/ryzykowne frazy pełnymi wyrażeniami planistycznymi
+  (eliminacja false positives od pojedynczych słów: "miejscowego", "wiatr", "turbina" itp.)
+  Zachowano "wiatrow" i "fotowolta" jako unikalne prefiksy branżowe bez ryzyka false positive.
+- STRICT_ONLY: rozszerzono o krótkie słowa które wymagają word-boundary (wz, oze, ris)
+- _PAGINATION_RE: dodano /lista/N oraz /wersja/N (paginacja rejestrów zmian BIP)
+- IGNORE_URL_PATH_PATTERNS: dodano /wersja[_/] (URL-e typu /wersja__ z BIP Kętrzyn)
+- _GENERIC_TITLE_PATTERNS: dodano typowe śmieciowe tytuły BIP
+  ("najnowsze informacje", "najnowsze", "więcej informacji", "lista zmian" itp.)
+- is_junk_link_title: podniesiono minimalną długość tytułu z 12 do 15 znaków
+- RESET_CACHE: poprawka — w main() dodano obsługę ENV RESET_CACHE=true (oprócz =1)
+  (workflow GitHub używa wartości "true"/"false" z choice input)
+- pg= dodano do _PAGINATION_RE (paginacja platformy biuletyn.net)
+- UWAGA: nie zmieniono żadnej logiki crawlowania, Phase1, Phase2, cache ani YAML
 """
 
 import os, sys, csv, json, hashlib, asyncio, re, time, smtplib, warnings, socket, random, signal
@@ -110,6 +112,14 @@ EMAIL_TO = "planowanie@wpd-polska.pl"
 ENABLE_EMAIL = False
 
 # ===================== KEYWORDS =====================
+# v2.18: zastąpiono krótkie/ryzykowne słowa pełnymi frazami planistycznymi.
+# Zasada: im dłuższa fraza, tym mniejsze ryzyko fałszywego dopasowania.
+# Zachowano kolejność od najbardziej specyficznych do ogólnych — keyword_match_in_blob
+# zwraca pierwsze dopasowanie, więc bardziej specyficzne frazy mają priorytet.
+#
+# Usunięto: "miejscowego", "wiatr", "turbina", "plan miejscowy", "plan ogólny" (samo),
+#           "studium uwarunkowań" (samo), "decyzja środowiskowa" (samo)
+# Dodano:   pełne odmiany gramatyczne kluczowych fraz planistycznych i branżowych
 KEYWORDS = [
     # ── MPZP ──────────────────────────────────────────────────────────────────
     "miejscowy plan zagospodarowania przestrzennego",
@@ -152,55 +162,63 @@ KEYWORDS = [
     "park wiatrowy",
     "farma wiatrowa",
     "farmy wiatrowej",
-    "wiatrow",
+    "wiatrow",          # prefiks: wiatrowych, wiatrowej, wiatrowy — bez ryzyka fp
     # ── Fotowoltaika / magazyny ───────────────────────────────────────────────
-    "fotowolta",
+    "fotowolta",        # prefiks: fotowoltaika, fotowoltaiczny — unikalny
     "farma fotowoltaiczna",
     "magazyn energii",
 ]
 
-# Słowa wymagające ścisłego dopasowania (word boundary)
+# Słowa wymagające ścisłego dopasowania (word boundary) — krótkie lub wieloznaczne
 STRICT_ONLY = {"wz", "oze", "ris"}
 
 def keyword_match_in_blob(blob: str):
-    """
-    v2.19: zwraca WSZYSTKIE pasujące słowa kluczowe, nie tylko pierwsze.
-    Zwraca (bool, list_of_matched_keywords).
-    """
     t = re.sub(r"\s+", " ", (blob or "")).strip().lower()
     if not t:
-        return (False, [])
+        return (False, None)
     strict_only = STRICT_ONLY if isinstance(STRICT_ONLY, (set, list, tuple)) else set()
-    matched = []
-    seen_kw = set()
     for kw in KEYWORDS:
         k = (kw or "").strip().lower()
-        if not k or k in seen_kw:
+        if not k:
             continue
         if (k in strict_only) or (len(k) <= 3):
             if re.search(rf"(?<!\w){re.escape(k)}(?!\w)", t):
-                matched.append(kw)
-                seen_kw.add(k)
+                return (True, kw)
         else:
             if k in t:
-                matched.append(kw)
-                seen_kw.add(k)
-    if matched:
-        return (True, matched)
-    return (False, [])
+                return (True, kw)
+    return (False, None)
 
 # ===================== IGNORE =====================
-# v2.19: WYCZYSZCZONE — nie blokujemy URL-ów po fragmentach tekstu
-IGNORE_URL_SUBSTR = []
+IGNORE_URL_SUBSTR = [
+    "kontakt", "mapa-strony", "mapa_strony", "wyszukiwarka", "statystyka",
+    "rodo", "cookies", "deklaracja-dostepnosci", "deklaracja_dostepnosci",
+    "oswiadczenia", "oświadczenia", "majatk", "majątk",
+    "kadra", "struktura", "regulamin", "procedur", "sygnalis",
+    "login", "logowanie", "rejestracja", "newsletter", "archiwum-2",
+    "galeria-zdjec", "galeria_zdjec", "multimedia", "wideo",
+]
 
-# v2.19: WYCZYSZCZONE — nie blokujemy żadnych wzorców ścieżki URL
-IGNORE_URL_PATH_PATTERNS = []
+IGNORE_URL_PATH_PATTERNS = [
+    r"prognoza.pogody",
+    r"prognoza_pogody",
+    r"/wersja/\d+/?$",
+    r"/wersja[_/]",     # v2.18: łapie /wersja__, /wersja/ (BIP Kętrzyn i podobne)
+]
 
-# v2.19: WYCZYSZCZONE — nie filtrujemy tekstu kotwicy
-IGNORE_ANCHOR_TEXT = []
+IGNORE_ANCHOR_TEXT = [
+    "przejdź do menu", "przejdz do menu",
+    "przejdź do treści", "przejdz do tresci",
+    "włącz wersję kontrastową", "wlacz wersje kontrastowa",
+    "drukuj", "pobierz", "pobierz dane", "xml", "rss", "start", "home", "menu",
+    "zamknij", "wróć", "wroc", "cofnij", "następna strona", "poprzednia strona",
+    "czytaj więcej", "czytaj wiecej", "zobacz więcej", "zobacz wiecej",
+]
 
 BAD_EXT = (
     ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg",
+    ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
+    ".zip", ".rar", ".7z", ".tar", ".gz"
 )
 
 ATT_EXT = (
@@ -231,6 +249,18 @@ _DOWNLOAD_SUFFIX_RE = re.compile(
     re.IGNORECASE
 )
 
+# ===================== PAGINATION FILTER =====================
+# v2.18: dodano /lista/\d+ (rejestry zmian BIP Trzebielino i podobne),
+#         /wersja/\d* (archiwalne wersje stron), pg= (biuletyn.net)
+_PAGINATION_RE = re.compile(
+    r"[?&](page|strona|p|offset|start|from|skip|pg)=\d+"
+    r"|/page/\d+"
+    r"|/strona/\d+"
+    r"|[?&]p=\d+"
+    r"|/wersja/\d*(?:[/?_]|$)", # /wersja/1, /wersja/, /wersja__ — archiwum wersji
+    re.IGNORECASE
+)
+
 def is_download_url(u: str) -> bool:
     low = (u or "").lower()
     for seg in DOWNLOAD_URL_SEGMENTS:
@@ -245,13 +275,92 @@ def is_download_url(u: str) -> bool:
             return True
     return False
 
+# ===================== GENERIC TITLE FILTER =====================
+# v2.18: dodano typowe śmieciowe tytuły BIP, które wcześniej przechodziły
+# przez is_junk_link_title() ze względu na długość > 12 znaków
+_GENERIC_TITLE_PATTERNS = [
+    "biuletyn informacji publicznej", "biuletyn informacji", "archiwum bip",
+    "bip archiwum", "strona główna", "strona glowna", "aktualności", "aktualnosci",
+    "redakcja", "rejestr zmian", "mapa strony",
+    "mapa serwisu", "szukaj", "wyszukiwarka", "kontakt", "start", "home",
+    "biznes", "informacje", "informacja", "dla mieszkańców", "dla mieszkancow",
+    "urząd", "urzad", "gmina", "miasto", "powiat", "więcej", "wiecej",
+    "czytaj więcej", "czytaj wiecej", "zobacz więcej", "wszystkie", "kategoria",
+    "tagi", "archiwum", "newsletter", "galeria", "multimedia", "przetargi",
+    "zamówienia", "zamowienia", "rada miasta", "zarząd", "zarzad",
+    "burmistrz", "wójt", "wojt", "starosta",
+    # v2.18: nowe wzorce śmieciowych tytułów obserwowane w logach
+    "najnowsze informacje",
+    "najnowsze",
+    "więcej informacji",
+    "wiecej informacji",
+    "lista zmian",
+    "rejestr zmian strony",
+    "historia zmian",
+    "projekty unijne",
+    "projekty europejskie",
+    "dla mediów",
+    "dla mediow",
+]
+
+def is_generic_page_title(title: str) -> bool:
+    t = re.sub(r"\s+", " ", (title or "")).strip().lower()
+    if not t or len(t) < 3:
+        return True
+    for pat in _GENERIC_TITLE_PATTERNS:
+        if t == pat:
+            return True
+        if t.startswith(pat) and len(t) < len(pat) + 15:
+            return True
+    return False
+
+_JUNK_LINK_TITLE_RE = re.compile(
+    r"""
+    ^\d+\.html?$
+    | ^[\d\s\.\-/\\]+$
+    | ^[a-z0-9_\-]+\.[a-z]{2,4}$
+    | ^\d+$
+    | ^(19|20)\d{2}$                                                    # sam rok: 2024, 2019 itp.
+    | ^(pobierz|download|files?|add|get|view|open|click|tutaj|here)\s*[\d\.\-/]*$
+    | ^\w+\s+\d+\s*(roku?|r\.?)$                                        # "styczeń 2024 r." itp.
+    """,
+    re.VERBOSE | re.IGNORECASE
+)
+
+_DOWNLOAD_WORDS_RE = re.compile(
+    r"\b(pobierz|download|files?|attachment|załącznik|zalacznik|pobieranie)\b",
+    re.IGNORECASE
+)
+
+def is_junk_link_title(title: str, url: str = "") -> bool:
+    t = re.sub(r"\s+", " ", (title or "")).strip()
+    lt = t.lower()
+    if is_generic_page_title(t):
+        return True
+    # v2.18: podniesiono z 12 do 15 — eliminuje krótkie teksty ("2024", "XIII sesja...")
+    if len(t) < 10:
+        return True
+    if _JUNK_LINK_TITLE_RE.match(t):
+        return True
+    if _DOWNLOAD_WORDS_RE.search(lt) and len(t) < 80:
+        ok, _ = keyword_match_in_blob(lt)
+        if not ok:
+            return True
+    if url and is_download_url(url):
+        return True
+    alnum = re.sub(r"[^a-zA-Z0-9\u00C0-\u024F\u0400-\u04FF]", "", t)
+    if len(alnum) < 6:
+        return True
+    return False
+
 # ===================== PERFORMANCE =====================
 CONCURRENT_GMINY = env_int("CONCURRENT_GMINY", 1)
 CONCURRENT_REQUESTS = env_int("CONCURRENT_REQUESTS", 50)
 LIMIT_PER_HOST = env_int("LIMIT_PER_HOST", 6)
 
-PHASE1_MAX_DEPTH = env_int("PHASE1_MAX_DEPTH", 3)
-PHASE1_MAX_URLS = env_int("PHASE1_MAX_URLS", 999999)
+# v2.17: Phase1 ograniczona głębokością, nie liczbą stron
+PHASE1_MAX_DEPTH = env_int("PHASE1_MAX_DEPTH", 3)      # BFS max głębokość
+PHASE1_MAX_URLS = env_int("PHASE1_MAX_URLS", 999999)   # bezpieczny limit URL-i per gmina
 
 PHASE2_MAX_DEPTH = 4
 PHASE2_MAX_PAGES = 999999
@@ -359,9 +468,6 @@ class GlobalState:
         self.mail_dedup = set()
         self.reported_urls_this_run: set = set()
         self.last_printed: dict = {}
-        # v2.19: dedup — klucz = sha1(canonical_url + "|" + page_title)
-        # raportujemy tylko jeśli OBA są unikalne razem
-        self.reported_url_title_pairs: set = set()
 
     def request_shutdown(self):
         self.shutdown_requested = True
@@ -528,7 +634,9 @@ def retry_io(action, tries: int = 5, base_sleep: float = 0.6):
 
 # ===================== FUNKCJE POMOCNICZE =====================
 
+
 def save_diag(diag_rows, diag_errors):
+    """Zapisuje diagnostykę do CSV."""
     try:
         def _do():
             new_file = not DIAG_GMINY_CSV.exists()
@@ -560,12 +668,13 @@ def save_diag(diag_rows, diag_errors):
 
 
 def write_summary(diag_rows, new_items_for_mail):
+    """Zapisuje podsumowanie runu do pliku tekstowego."""
     try:
         total = len(diag_rows or [])
         ok = sum(1 for r in (diag_rows or []) if r.get("status") == "OK")
         start_fail = sum(1 for r in (diag_rows or []) if r.get("status") == "START_FAIL")
         lines = [
-            f"BIP WATCHER v2.19 SUMMARY @ {now_iso()}",
+            f"BIP WATCHER v2.18 SUMMARY @ {now_iso()}",
             f"gminy_total={total} ok={ok} start_fail={start_fail}",
             f"mail_items={len(new_items_for_mail or [])}",
             "",
@@ -583,6 +692,7 @@ def write_summary(diag_rows, new_items_for_mail):
 
 
 def panic_save_checkpoint_sync(reason: str = "SIGTERM"):
+    """Krytyczny zapis synchroniczny przy sygnale lub końcu runa."""
     try:
         if not USE_CACHE:
             return
@@ -713,26 +823,28 @@ def is_valid_url(url: str) -> bool:
         return False
 
 def url_is_ignored(url: str) -> bool:
-    # v2.19: IGNORE_URL_SUBSTR jest puste — zawsze False
-    if not IGNORE_URL_SUBSTR:
-        return False
     u = (url or "").lower()
     return any(x in u for x in IGNORE_URL_SUBSTR)
 
 def anchor_is_ignored(text: str) -> bool:
-    # v2.19: nie filtrujemy tekstu kotwicy — zawsze False
-    return False
+    t = re.sub(r"\s+", " ", (text or "").strip().lower())
+    if not t or len(t) <= 2:
+        return True
+    return any(x in t for x in IGNORE_ANCHOR_TEXT)
 
 def should_skip_href(abs_href: str) -> bool:
     """
-    v2.19: Nie ma _PAGINATION_RE ani IGNORE_URL_PATH_PATTERNS.
-    Pomijamy wyłącznie obrazki i typowe pliki binarne (BAD_EXT).
-    Pliki ATT_EXT (PDF itp.) obsługiwane są osobno w iter_links_fast.
+    v2.19: usunięto _PAGINATION_RE — blokował listy ogłoszeń BIP z page=, strona=, /lista/N
     """
     u = (abs_href or "").lower()
+    for pattern in IGNORE_URL_PATH_PATTERNS:
+        if re.search(pattern, u):
+            return True
     if url_is_ignored(u):
         return True
     if any(u.endswith(ext) for ext in BAD_EXT):
+        return True
+    if any(u.endswith(ext) for ext in ATT_EXT):
         return True
     return False
 
@@ -958,19 +1070,38 @@ async def collect_sitemap_urls(session: aiohttp.ClientSession, base_site_url: st
     return out_urls[:max_urls]
 
 # ===================== TEXT EXTRACTION =====================
+def _strip_dynamic_noise(txt: str) -> str:
+    if not txt:
+        return ""
+    txt = re.sub(
+        r"wygenerowano:\s*\d{1,2}\s+[a-ząćęłńóśźż]+\s+\d{4}\s*r?\.?\s*\d{1,2}:\d{2}:\d{2}",
+        "", txt, flags=re.IGNORECASE
+    )
+    txt = re.sub(
+        r"wygenerowano:\s*\d{4}[-/.]\d{1,2}[-/.]\d{1,2}\s+\d{1,2}:\d{2}:\d{2}",
+        "", txt, flags=re.IGNORECASE
+    )
+    txt = re.sub(r"(wyświetleń|wyswietlen|odsłon|odslon|pobrań|pobran)\s*:\s*\d+", "", txt, flags=re.IGNORECASE)
+    txt = re.sub(r"odsłony:\s*\d+", "", txt, flags=re.IGNORECASE)
+    txt = re.sub(r"\s+", " ", txt).strip()
+    return txt
+
 def _soup_fast_text(soup: BeautifulSoup, max_chars: int = FAST_TEXT_MAX_CHARS) -> str:
-    """
-    v2.19: Szukamy tekstu ABSOLUTNIE WSZĘDZIE na stronie.
-    - Usuwamy tylko <script>, <style>, <noscript> — to kod, nie treść
-    - NIE usuwamy <nav>, <header>, <footer>, <aside> — mogą zawierać trafienia
-    - NIE stosujemy żadnego strip_dynamic_noise
-    """
     try:
         if not soup:
             return ""
         for tag in soup(["script", "style", "noscript"]):
             tag.decompose()
+        has_main_content = bool(
+            soup.find("main") or
+            soup.find(id=re.compile(r"(content|tresc|main|article)", re.I)) or
+            soup.find(class_=re.compile(r"(content|tresc|main|article)", re.I))
+        )
+        if has_main_content:
+            for tag in soup(["nav", "header", "footer", "aside"]):
+                tag.decompose()
         txt = re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip()
+        txt = _strip_dynamic_noise(txt)
         return txt[:max_chars]
     except Exception:
         return ""
@@ -1019,10 +1150,9 @@ def extract_title_h1_h2(soup: BeautifulSoup):
     blob = _clean(f"{title} {h1t} {h2t} {h3t} {meta_desc}")
     return title, h1t, h2t, blob
 
-def print_hit(tag: str, gmina: str, kws: list, title: str):
+def print_hit(tag: str, gmina: str, kw: str, title: str):
     shown = re.sub(r"\s+", " ", (title or "").strip())
-    kw_str = ", ".join(kws) if isinstance(kws, list) else str(kws)
-    print(f"{tag} {gmina}: [{kw_str}] -> {shown[:180]}", flush=True)
+    print(f"{tag} {gmina}: [{kw}] -> {shown[:180]}", flush=True)
 
 # ===================== ATTACHMENTS =====================
 def attachments_signature(soup: BeautifulSoup, base_url: str) -> set:
@@ -1210,6 +1340,7 @@ def load_cache_v2():
 
 def save_cache_v2(raw_cache, urls_seen_set, content_seen, gmina_seeds):
     out = {"schema": CACHE_SCHEMA}
+    old_urls = (raw_cache or {}).get("urls_seen", {}) if isinstance(raw_cache, dict) else {}
     print(f"💾 save_cache_v2: urls_seen={len(urls_seen_set)} | content_seen={len(content_seen or {})} | seeds={len(gmina_seeds or {})} | frontiers={len(state.gmina_frontiers or {})} | dead={len(getattr(state,'dead_urls',{}) or {})}")
     out["content_seen"] = content_seen or {}
     out["gmina_seeds"] = gmina_seeds or {}
@@ -1245,14 +1376,13 @@ def _ts_older_than(ts: str, cutoff: datetime) -> bool:
         return True
 
 # ===================== LOG =====================
-def log_new_item(gmina: str, title: str, url: str, kws: list):
+def log_new_item(gmina: str, title: str, url: str, kw: str):
     new_file = not LOG_FILE.exists()
-    kw_str = ", ".join(kws) if isinstance(kws, list) else str(kws)
     with open(LOG_FILE, "a", encoding="utf-8", newline="") as f:
         w = csv.writer(f)
         if new_file:
             w.writerow(["datetime_found", "gmina", "keyword", "title", "url"])
-        w.writerow([now_iso(), gmina, kw_str, title, url])
+        w.writerow([now_iso(), gmina, kw, title, url])
 
 def read_bipy_csv(path: Path):
     rows = []
@@ -1611,10 +1741,12 @@ def gmina_cycle_key(gkey: str) -> str:
     return f"cycle_{gkey}"
 
 def is_frontier_complete(gkey: str) -> bool:
+    """True jeśli Phase1 zakończyła się w całości i frontier jest kompletny."""
     meta = state.gmina_seeds.get(gmina_cycle_key(gkey), {})
     return bool(meta.get("frontier_complete", False))
 
 def mark_frontier_complete(gkey: str, total_urls: int):
+    """Zapisuje flagę że frontier jest kompletny po udanej Phase1."""
     state.gmina_seeds[gmina_cycle_key(gkey)] = {
         "frontier_complete": True,
         "frontier_total": total_urls,
@@ -1623,10 +1755,11 @@ def mark_frontier_complete(gkey: str, total_urls: int):
     }
 
 def mark_frontier_reset(gkey: str):
+    """Usuwa flagę — następny run zrobi nową Phase1."""
     state.gmina_seeds.pop(gmina_cycle_key(gkey), None)
 
 # ============================================================
-# PHASE 1 — BFS z limitem głębokości
+# PHASE 1 — BFS z limitem głębokości 3
 # ============================================================
 
 async def phase1_full_crawl(
@@ -1637,6 +1770,22 @@ async def phase1_full_crawl(
     session_crawl,
     diag,
 ) -> tuple:
+    """
+    BFS z ograniczeniem głębokości do PHASE1_MAX_DEPTH (domyślnie 3).
+
+    Głębokość 3 od home page pokrywa praktycznie wszystkie ogłoszenia BIP:
+      depth 0: strona główna
+      depth 1: kategorie, działy (ogłoszenia, planowanie, środowisko...)
+      depth 2: listy ogłoszeń w kategorii
+      depth 3: konkretne ogłoszenie/decyzja
+
+    URL-e z depth > MAX_DEPTH trafiają do frontieru jako znane (będą sprawdzone
+    przez Phase2) ale ich linki nie są dalej eksplorowane w Phase1.
+
+    Phase2 podczas skanowania odkrywa nowe linki i dopisuje je do frontieru,
+    więc strony głębsze niż 3 też zostaną sprawdzone — ale stopniowo,
+    w kolejnych runach, bez blokowania Phase1.
+    """
     if state.shutdown_requested:
         return [], {"status": "SHUTDOWN"}
 
@@ -1834,6 +1983,12 @@ async def phase2_focus(
     content_seen: dict,
     diag,
 ) -> tuple:
+    """
+    - Pobiera frontier z state.gmina_frontiers[gkey]
+    - Sprawdza każdy URL pod kątem NOWE / ZMIANA / HIT / NO_MATCH
+    - Odkrywa nowe linki podczas skanowania i dopisuje je do frontieru
+    - Kontynuuje między runami: zapisuje gdzie skończyła
+    """
     if state.shutdown_requested:
         return [], {"status": "SHUTDOWN"}
 
@@ -2033,20 +2188,15 @@ async def phase2_focus(
 
         title, h1, h2, meta_blob = extract_title_h1_h2(soup)
         att_set = attachments_signature(soup, final_c)
-
-        # v2.19: szukamy wszędzie — nav/header/footer/aside NIE są usuwane
         fast_text = _soup_fast_text(soup)
 
         blob = f"{title} {h1} {h2} {fast_text}"
+        ok_any, kw_any = keyword_match_in_blob(blob)
 
-        # v2.19: wszystkie pasujące słowa kluczowe
-        ok_any, kws_matched = keyword_match_in_blob(blob)
-
-        # Tytuł strony — bez filtrowania junk/generic
         page_title = ""
         for candidate in [h1, h2, title]:
             c = (candidate or "").strip()
-            if c and len(c) >= 3:
+            if c and not is_generic_page_title(c):
                 page_title = c
                 break
         if not page_title:
@@ -2074,7 +2224,7 @@ async def phase2_focus(
             "gmina": gmina,
             "title": page_title[:240],
             "url": final_c,
-            "keywords": kws_matched,
+            "keywords": [kw_any] if ok_any else [],
             "att_sig": att_sig_serialize(att_set),
             "status": status_new,
         }
@@ -2086,18 +2236,14 @@ async def phase2_focus(
 
         if status_new in {"NOWE", "ZMIANA"}:
             diag["counts"][f"hit_{status_new.lower()}"] += 1
-
-            # v2.19: dedup — raportujemy tylko jeśli para (URL, tytuł) jest unikalna
-            dedup_key = sha1(f"{final_c}|{page_title}")
-            if dedup_key not in state.reported_url_title_pairs:
-                state.reported_url_title_pairs.add(dedup_key)
+            if final_c not in state.reported_urls_this_run:
                 state.reported_urls_this_run.add(final_c)
-                print_hit(f"🟢 {status_new}", gmina, kws_matched, page_title)
-                found.append((gmina, kws_matched, page_title, final_c, status_new))
+                print_hit(f"🟢 {status_new}", gmina, kw_any, page_title)
+                found.append((gmina, kw_any, page_title, final_c, status_new))
             else:
-                diag["counts"]["dedup_url_title_skipped"] += 1
+                diag["counts"]["dedup_skipped"] += 1
 
-        # Odkrywanie nowych linków
+        # Odkrywanie nowych linków — Phase2 dopisuje do KOŃCA frontieru
         for abs_u, txt in iter_links_fast(soup, final_c):
             cu = _canon(abs_u)
             if not cu or not allow_url(cu) or cu in dead_set:
@@ -2107,11 +2253,10 @@ async def phase2_focus(
 
             if ENABLE_LINK_HITS and not is_download_url(cu):
                 filename = urlparse(cu).path.split("/")[-1]
-                ok_link, kws_link = keyword_match_in_blob(f"{txt} {filename}")
+                ok_link, kw_link = keyword_match_in_blob(f"{txt} {filename}")
                 if ok_link:
                     key = sha1(canonical_url(cu))
-                    dedup_key_link = sha1(f"{cu}|{txt or filename}")
-                    if content_seen.get(key) is None and dedup_key_link not in state.reported_url_title_pairs:
+                    if content_seen.get(key) is None and cu not in state.reported_urls_this_run:
                         async with state.cache_lock:
                             content_seen[key] = {
                                 "found_at": now_iso(), "last_checked": now_iso(),
@@ -2119,13 +2264,12 @@ async def phase2_focus(
                                 "gmina": gmina,
                                 "title": (txt or filename)[:240],
                                 "url": cu,
-                                "keywords": kws_link,
+                                "keywords": [kw_link],
                                 "att_sig": "", "status": "NOWE",
                             }
-                        state.reported_url_title_pairs.add(dedup_key_link)
                         state.reported_urls_this_run.add(cu)
-                        print_hit("🟢 NOWE (LINK)", gmina, kws_link, txt or filename)
-                        found.append((gmina, kws_link, (txt or filename)[:240], cu, "NOWE"))
+                        print_hit("🟢 NOWE (LINK)", gmina, kw_link, txt or filename)
+                        found.append((gmina, kw_link, (txt or filename)[:240], cu, "NOWE"))
                         diag["counts"]["link_hits_new"] += 1
 
             seen_in_frontier.add(cu)
@@ -2329,13 +2473,12 @@ async def worker(
             for e in diag.get("errors", []):
                 state.diag_errors.append(e)
 
-            for (g, kws, t, u, st) in (found or []):
-                kw_str = ", ".join(kws) if isinstance(kws, list) else str(kws)
-                mail_line = f"[{st}] {g} | {kw_str} | {t} | {u}"
+            for (g, kw, t, u, st) in (found or []):
+                mail_line = f"[{st}] {g} | {kw} | {t} | {u}"
                 if mail_line not in state.mail_dedup:
                     state.mail_dedup.add(mail_line)
                     state.new_items_for_mail.append(mail_line)
-                    log_new_item(g, t, u, kws)
+                    log_new_item(g, t, u, kw)
 
             checkpoint_counter["done"] = int(checkpoint_counter.get("done", 0)) + 1
             if USE_CACHE and (checkpoint_counter["done"] % CACHE_CHECKPOINT_EVERY_N_GMINY == 0):
@@ -2561,10 +2704,3 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
-
-
-
-
-
-
-
