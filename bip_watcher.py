@@ -370,7 +370,7 @@ CONCURRENT_REQUESTS = env_int("CONCURRENT_REQUESTS", 50)
 LIMIT_PER_HOST = env_int("LIMIT_PER_HOST", 6)
 
 # v2.20: zwiększono domyślnie z 3 do 4 — głębsza hierarchia BIP wymaga 4 poziomów
-PHASE1_MAX_DEPTH = env_int("PHASE1_MAX_DEPTH", 4)
+PHASE1_MAX_DEPTH = env_int("PHASE1_MAX_DEPTH", 3)
 PHASE1_MAX_URLS = env_int("PHASE1_MAX_URLS", 999999)
 
 PHASE2_MAX_DEPTH = 4
@@ -710,7 +710,7 @@ async def fetch_with_playwright(url: str) -> tuple:
         finally:
             await browser.close()
 
-async def crawl_with_playwright(start_url: str, allowed_host: str, max_depth: int = 2) -> set:
+async def crawl_with_playwright(start_url: str, allowed_host: str, max_depth: int = 3) -> set:
     """
     Wykonuje BFS na głębokość max_depth używając Playwright.
     Zwraca zbiór unikalnych, znormalizowanych URL-i (w formie canonical).
@@ -3060,6 +3060,7 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
 
