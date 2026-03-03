@@ -2326,15 +2326,15 @@ def mark_frontier_reset(gkey: str):
 #
 # Na każdym kroku BFS:
 #   1. Pobierz stronę przez aiohttp
-#   2. Policz wewnętrzne linki HTML
-#   3. Jeśli linków < MIN_LINKS_THRESHOLD → pobierz TEŻ przez Playwright
-#   4. Scal linki z OBU źródeł — bierzemy WSZYSTKO, nie wybieramy lepszego
+#   2. should_try_playwright() ocenia czy warto też odpytać Playwright:
+#      - URL sugeruje ogłoszenia/planowanie (LISTING_URL_HINTS)
+#        ALE treść jest pusta/krótka lub mało linków → JS nie wyrenderował
+#      - LUB aiohttp w ogóle nie zwróciło HTML (błąd, timeout)
+#   3. Jeśli tak → Playwright pobiera TĘ SAMĄ stronę (networkidle)
+#   4. Scal linki z OBU źródeł — bierzemy WSZYSTKO
 #
-# Efekt: strona może mieć część linków w statycznym HTML (menu),
-# a część generowaną przez JS (lista ogłoszeń) — crawler zbierze jedno i drugie.
+# Logika jest uniwersalna — działa dla każdej gminy bez sztywnych progów.
 # ============================================================
-
-MIN_LINKS_THRESHOLD = env_int("MIN_LINKS_THRESHOLD", 5)
 
 
 def _extract_links_from_html(html: str, base_url: str, allowed_host: str) -> set:
@@ -2350,6 +2350,62 @@ def _extract_links_from_html(html: str, base_url: str, allowed_host: str) -> set
         if cu:
             links.add(cu)
     return links
+
+
+def should_try_playwright(url: str, html: str, aiohttp_kind: str) -> tuple:
+    """
+    Ocenia czy warto odpytać Playwright dla tej strony.
+    Zwraca (bool, reason: str).
+
+    Playwright odpala się gdy:
+    1. aiohttp w ogóle nie zwróciło HTML (błąd, timeout, http_err)
+    2. URL sugeruje że strona powinna zawierać ogłoszenia/listy
+       ALE treść jest podejrzanie pusta lub mało linków wewnętrznych
+       (JS prawdopodobnie nie wyrenderował jeszcze contentu)
+
+    NIE odpala się gdy:
+    - aiohttp zwróciło normalną stronę z treścią — nie ma sensu
+    - URL to zasób statyczny (obrazek, PDF itp.)
+    """
+    url_low = (url or "").lower()
+
+    # Przypadek 1: aiohttp w ogóle nie dostało HTML — zawsze próbuj Playwright
+    if aiohttp_kind != "html":
+        return True, f"aiohttp_failed(kind={aiohttp_kind})"
+
+    # Przypadek 2: sprawdź czy URL sugeruje listę ogłoszeń / planowanie
+    url_relevant = any(h in url_low for h in LISTING_URL_HINTS)
+    if not url_relevant:
+        return False, "url_not_relevant"
+
+    # URL jest relevatny — sprawdź czy treść jest podejrzanie pusta
+    if not html:
+        return True, "empty_html_relevant_url"
+
+    try:
+        soup = safe_soup(html)
+        if not soup:
+            return True, "no_soup_relevant_url"
+
+        # Usuń nawigację żeby nie liczyć menu jako treści
+        for tag in soup(["script", "style", "noscript", "nav", "header", "footer"]):
+            tag.decompose()
+
+        text = re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip()
+        links = soup.find_all("a", href=True)
+
+        # Treść bardzo krótka jak na stronę listingową
+        if len(text) < 300:
+            return True, f"sparse_content(text={len(text)},links={len(links)})"
+
+        # Mało linków wewnętrznych na stronie która powinna mieć listę
+        if len(links) < 8:
+            return True, f"few_links(links={len(links)},text={len(text)})"
+
+    except Exception:
+        return True, "parse_error"
+
+    return False, "ok"
 
 
 async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
@@ -2424,7 +2480,7 @@ async def phase1_full_crawl(
 
     Na każdej stronie:
     - aiohttp pobiera HTML → wyciągamy linki
-    - jeśli linków < MIN_LINKS_THRESHOLD → Playwright pobiera TĘ SAMĄ stronę
+    - jeśli should_try_playwright() → Playwright pobiera TĘ SAMĄ stronę
       i dodajemy jego linki DO PULI (nie zamiast, ale OPRÓCZ)
     - wszystkie zebrane linki trafiają do kolejki BFS i do frontieru
 
@@ -2526,8 +2582,7 @@ async def phase1_full_crawl(
 
     print(
         f"  🕷️  BFS [{gmina}] @ {allowed_host} "
-        f"sitemap_seeds={len(seeds)} max_depth={PHASE1_MAX_DEPTH} "
-        f"min_links_threshold={MIN_LINKS_THRESHOLD}",
+        f"sitemap_seeds={len(seeds)} max_depth={PHASE1_MAX_DEPTH}",
         flush=True
     )
 
@@ -2564,13 +2619,15 @@ async def phase1_full_crawl(
         # --- Linki z aiohttp ---
         aiohttp_links = _extract_links_from_html(html, final, allowed_host)
 
-        # --- Playwright jeśli aiohttp zwróciło za mało linków ---
+        # --- Playwright jeśli strona wygląda jakby JS nie wyrenderował treści ---
         pw_links = set()
-        if len(aiohttp_links) < MIN_LINKS_THRESHOLD:
+        use_pw, pw_reason = should_try_playwright(url, html, kind)
+        if use_pw:
             pw_fetches += 1
             print(
-                f"  🎭 [{gmina}] mało linków aiohttp ({len(aiohttp_links)}) "
-                f"@ depth={depth} {url[:70]} → Playwright",
+                f"  🎭 [{gmina}] Playwright @ depth={depth} "
+                f"reason={pw_reason} aiohttp_links={len(aiohttp_links)} "
+                f"url={url[:65]}",
                 flush=True
             )
             try:
