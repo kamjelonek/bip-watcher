@@ -785,6 +785,81 @@ dynamic_detector = DynamicPageDetector()
 
 # ===================== PLAYWRIGHT HELPERS =====================
 
+# ===================== NOWE FUNKCJE DECYZYJNE =====================
+
+async def _should_use_playwright_phase1(
+    html: str,
+    kind: str,
+    status: int,
+    url: str,
+    aiohttp_links_count: int,
+    depth: int
+) -> tuple[bool, str]:
+    """
+    Decyduje, czy dla Phase1 warto uruchomić Playwright, aby zebrać więcej linków.
+    Zwraca (czy_uruchomić, przyczyna).
+    """
+    # Jeśli aiohttp nie dał HTML – na pewno próbujemy Playwright
+    if kind != "html" or not html:
+        return True, f"aiohttp_failed(kind={kind})"
+
+    # Jeśli strona zwróciła błąd (np. 403, 429) – Playwright może pomóc
+    if status is not None and status != 200:
+        return True, f"http_status={status}"
+
+    # Jeśli linków jest bardzo mało – strona może być renderowana przez JS
+    if aiohttp_links_count < 5:
+        return True, f"few_links({aiohttp_links_count})"
+
+    # Jeśli HTML jest duży, a tekstu mało – podejrzenie SPA
+    if len(html) > 10000:
+        # szybkie przybliżenie tekstu
+        soup = safe_soup(html)
+        if soup:
+            for tag in soup(["script", "style", "noscript"]):
+                tag.decompose()
+            text_len = len(re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip())
+            if text_len < 300:
+                return True, f"spa_suspect(html={len(html)},text={text_len})"
+
+    # Dla listingów (jeśli URL zawiera typowe parametry) możemy być bardziej wymagający
+    listing_hints = ["page=", "strona=", "kategoria", "lista", "archiwum", "/ogloszenia", "/obwieszczenia"]
+    if any(h in url.lower() for h in listing_hints) and aiohttp_links_count < 10:
+        return True, f"listing_few_links({aiohttp_links_count})"
+
+    return False, "ok"
+
+
+async def _should_use_playwright_phase2(
+    html: str,
+    kind: str,
+    status: int,
+    url: str
+) -> tuple[bool, str]:
+    """
+    Decyduje, czy w Phase2 warto pobrać stronę przez Playwright w celu analizy treści.
+    Zwraca (czy_uruchomić, przyczyna).
+    """
+    # Jeśli aiohttp nie zwrócił HTML
+    if kind != "html" or not html:
+        return True, f"aiohttp_failed(kind={kind})"
+
+    # Jeśli status inny niż 200
+    if status is not None and status != 200:
+        return True, f"http_status={status}"
+
+    # Jeśli HTML jest pusty lub ma bardzo mało tekstu
+    if html:
+        soup = safe_soup(html)
+        if soup:
+            for tag in soup(["script", "style", "noscript"]):
+                tag.decompose()
+            text_len = len(re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip())
+            if text_len < 200:
+                return True, f"too_little_text({text_len})"
+
+    return False, "ok"
+
 async def fetch_with_playwright(url: str) -> tuple:
     try:
         from playwright.async_api import async_playwright
@@ -2227,101 +2302,13 @@ def _extract_links_from_html(html: str, base_url: str, allowed_host: str) -> set
     return links
 
 
-def should_try_playwright(
-    url: str,
-    html: str,
-    aiohttp_kind: str,
-    home_links: set = None,
-    home_text: str = "",
-) -> tuple:
-    """
-    Ocenia czy warto odpytać Playwright dla tej strony.
-    Zwraca (bool, reason: str).
-    """
-    url_low = (url or "").lower()
-
-    if aiohttp_kind != "html":
-        return True, f"aiohttp_failed(kind={aiohttp_kind})"
-    if not html:
-        return True, "empty_html"
-
-    html_size = len(html)
-
-    try:
-        soup = safe_soup(html)
-        if not soup:
-            return True, "no_soup"
-
-        for tag in soup(["script", "style", "noscript"]):
-            tag.decompose()
-
-        text = re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip()
-        text_len = len(text)
-
-        if html_size > 10000 and text_len < 400:
-            return True, f"spa_suspect(html={html_size},text={text_len})"
-
-        if home_links and len(home_links) > 10:
-            page_links = {
-                _canon(normalize_url(urljoin(url, a.get("href", ""))))
-                for a in soup.find_all("a", href=True)
-                if a.get("href", "").strip()
-            }
-            page_links.discard(None)
-            page_links.discard("")
-            new_links = page_links - home_links
-            new_links = {u for u in new_links if u}
-            if len(new_links) < 3:
-                return True, f"no_new_links(page={len(page_links)},home={len(home_links)},new={len(new_links)})"
-
-            CONTENT_HINTS = ["p1=szczegoly", "action=details", "document_id=",
-                             "p1=tresc", "p1=pokaz", "p1=lista"]
-            content_new = {u for u in new_links if any(h in u.lower() for h in CONTENT_HINTS)}
-            if len(content_new) == 0 and len(new_links) > 0:
-                return True, f"only_menu_links(new={len(new_links)},content=0)"
-
-            if home_text and len(text) > 100:
-                home_words = set(re.findall(r"[\w\u00c0-\u017e]+", home_text.lower()))
-                page_words = set(re.findall(r"[\w\u00c0-\u017e]+", text.lower()))
-                if home_words and page_words:
-                    overlap = len(page_words & home_words) / len(page_words)
-                    if overlap > 0.92:
-                        return True, f"menu_clone(overlap={overlap:.2f},text={text_len})"
-
-        url_relevant = any(h in url_low for h in LISTING_URL_HINTS)
-        if url_relevant:
-            for tag in soup(["nav", "header", "footer", "aside"]):
-                tag.decompose()
-            content_text = re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip()
-            content_links = soup.find_all("a", href=True)
-            if len(content_text) < 500:
-                return True, f"listing_sparse(text={len(content_text)})"
-            if len(content_links) < 6:
-                return True, f"listing_few_links(links={len(content_links)})"
-
-    except Exception:
-        return True, "parse_error"
-
-    return False, "ok"
-
-
-# [FIX 1] Rozszerzona ekstrakcja linków przez Playwright
-# Obsługuje strony AJAX/BIP gdzie document_id jest w JS, onclick, lub tabeli renderowanej przez JS.
-_DOCUMENT_ID_RE = re.compile(
-    r"document_id[=\\\'\"\:\s]+(\d+)",
-    re.IGNORECASE
-)
-
 async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
     """
-    Pobiera stronę przez Playwright (networkidle) i zwraca zbiór wewnętrznych linków.
-
-    [FIX 1] Rozszerzona logika dla stron AJAX/BIP (np. bip.lubelskie.pl):
-    1. Standardowe <a href> linki (jak poprzednio)
-    2. Linki ukryte w atrybutach onclick, data-href, data-url
-    3. document_id wyciągane z CAŁEGO source strony (wyrenderowanej przez JS)
-       i rekonstruowane do URL ?action=details&document_id=XXXXX
-    4. Dodatkowe czekanie na wypełnienie tabel (AJAX może ładować po networkidle)
+    Zaawansowane zbieranie linków przez Playwright:
+    - przewijanie strony (3 razy),
+    - kliknięcie w elementy rozwijane (dropdowny, zakładki),
+    - zbieranie linków po każdej akcji.
+    Dodatkowo: ekstrakcja document_id z source (dla systemów BIP).
     """
     try:
         from playwright.async_api import async_playwright
@@ -2334,30 +2321,24 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
         try:
             browser = await p.chromium.launch(headless=True)
             page = await browser.new_page()
-            try:
-                await page.route(
-                    "**/*.{png,jpg,jpeg,gif,svg,ico,woff,woff2,ttf,eot,mp4,mp3}",
-                    lambda r: r.abort()
-                )
-                await page.goto(url, wait_until="networkidle", timeout=45000)
+            # Blokuj niepotrzebne zasoby
+            await page.route("**/*.{png,jpg,jpeg,gif,svg,ico,woff,woff2,ttf,eot,mp4,mp3,css}", lambda r: r.abort())
 
-                # [FIX 1] Dodatkowe czekanie — niektóre BIP-y ładują tabelę po networkidle
-                try:
-                    await page.wait_for_selector("table tbody tr", timeout=5000)
-                    await asyncio.sleep(1.0)  # daj czas na wypełnienie tabeli przez AJAX
-                except Exception:
-                    pass  # jeśli brak tabeli — kontynuuj normalnie
+            print(f"    🎭 Playwright nawigacja do: {url[:80]}")
+            await page.goto(url, wait_until="networkidle", timeout=60000)
 
-                final_url = page.url
-
-                # --- Część 1: Standardowe <a href> ---
-                raw_links = await page.eval_on_selector_all(
+            # Funkcja pomocnicza do zbierania linków z bieżącej strony
+            async def collect_links():
+                current_url = page.url
+                # Pobierz wszystkie linki z atrybutem href
+                raw_hrefs = await page.eval_on_selector_all(
                     "a[href]",
                     "els => els.map(e => e.href).filter(h => h && !h.startsWith('javascript:'))"
                 )
-                for href in raw_links:
+                new_links = set()
+                for href in raw_hrefs:
                     try:
-                        abs_u = normalize_url(urljoin(final_url, href))
+                        abs_u = normalize_url(urljoin(current_url, href))
                         if not is_valid_url(abs_u):
                             continue
                         if not same_base_domain(urlparse(abs_u).netloc, allowed_host):
@@ -2366,104 +2347,85 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
                             continue
                         cu = _canon(abs_u)
                         if cu:
-                            links.add(cu)
+                            new_links.add(cu)
                     except Exception:
                         continue
 
-                # --- Część 2: onclick / data-href / data-url ---
-                # [FIX 1] Wyciąga linki z atrybutów JS — typowe dla BIP CMS
-                try:
-                    extra_attrs = await page.eval_on_selector_all(
-                        "[onclick], [data-href], [data-url]",
-                        """els => els.map(e => ({
-                            onclick: e.getAttribute('onclick') || '',
-                            dataHref: e.getAttribute('data-href') || '',
-                            dataUrl: e.getAttribute('data-url') || ''
-                        }))"""
-                    )
-                    for attr_obj in (extra_attrs or []):
-                        for val in [attr_obj.get("onclick", ""), attr_obj.get("dataHref", ""), attr_obj.get("dataUrl", "")]:
-                            if not val:
-                                continue
-                            # Szukaj URL-i w atrybutach onclick (np. location.href='...', window.open('...'))
-                            for m in re.findall(r"['\"]([^'\"]*\?[^'\"]+)['\"]", val):
-                                try:
-                                    abs_u = normalize_url(urljoin(final_url, m))
-                                    if not is_valid_url(abs_u):
-                                        continue
-                                    if not same_base_domain(urlparse(abs_u).netloc, allowed_host):
-                                        continue
-                                    if should_skip_href(abs_u):
-                                        continue
-                                    cu = _canon(abs_u)
-                                    if cu:
-                                        links.add(cu)
-                                except Exception:
-                                    continue
-                except Exception:
-                    pass
-
-                # --- Część 3: document_id z wyrenderowanego source ---
-                # [FIX 1] KLUCZOWA CZĘŚĆ dla bip.lubelskie.pl i podobnych platform.
-                # Po networkidle Playwright ma pełny HTML z tabelą wypełnioną przez JS.
-                # document_id może być w: <td onclick="...">, data-id="...", var docId = ...
+                # Dodatkowo: wyciągnij document_id z source (dla BIP)
                 try:
                     page_source = await page.content()
-                    base_for_reconstruction = urlparse(final_url)
-                    base_url_str = urlunparse((
-                        base_for_reconstruction.scheme,
-                        base_for_reconstruction.netloc,
-                        base_for_reconstruction.path.rsplit("/", 1)[0] + "/",
-                        "", "", ""
-                    ))
-                    # Wyciągnij wszystkie document_id z source
-                    doc_ids = set(_DOCUMENT_ID_RE.findall(page_source))
-                    if doc_ids:
-                        print(
-                            f"  🎭 [document_id] Znaleziono {len(doc_ids)} document_id w source @ {url[:60]}",
-                            flush=True
-                        )
+                    doc_ids = set(re.findall(r'document_id[=\'":\s]+(\d+)', page_source, re.IGNORECASE))
                     for doc_id in doc_ids:
-                        # Rekonstruuj URL bazując na aktualnym URL strony
-                        parsed_current = urlparse(final_url)
-                        # Zachowaj bazowy URL (scheme + netloc + path bez query)
-                        detail_base = urlunparse((
-                            parsed_current.scheme,
-                            parsed_current.netloc,
-                            parsed_current.path,
-                            "", "", ""
-                        ))
-                        detail_url = f"{detail_base}?action=details&document_id={doc_id}"
-                        try:
-                            abs_u = normalize_url(detail_url)
-                            if not is_valid_url(abs_u):
-                                continue
-                            if not same_base_domain(urlparse(abs_u).netloc, allowed_host):
-                                continue
-                            # Nie używamy should_skip_href — document_id to treść, nie attachment
-                            cu = _canon(abs_u)
-                            if cu:
-                                links.add(cu)
-                        except Exception:
-                            continue
+                        parsed = urlparse(current_url)
+                        base = urlunparse((parsed.scheme, parsed.netloc, parsed.path, "", "", ""))
+                        detail_url = f"{base}?action=details&document_id={doc_id}"
+                        cu = _canon(detail_url)
+                        if cu and same_base_domain(urlparse(cu).netloc, allowed_host):
+                            new_links.add(cu)
                 except Exception:
                     pass
 
-            except Exception:
-                pass
-            finally:
+                return new_links
+
+            # Krok 1: zbierz linki po załadowaniu
+            links.update(await collect_links())
+            print(f"    🎭 Po załadowaniu: {len(links)} linków")
+
+            # Krok 2: przewijanie strony (aby załadować leniwe treści)
+            for scroll in range(3):
+                await page.evaluate("window.scrollBy(0, document.body.scrollHeight)")
+                await asyncio.sleep(2)
+                new_links = await collect_links()
+                added = new_links - links
+                if added:
+                    links.update(added)
+                    print(f"    🎭 Po przewinięciu {scroll+1}: +{len(added)} linków")
+                else:
+                    break
+
+            # Krok 3: kliknij w elementy, które mogą rozwijać menu
+            expand_selectors = [
+                "button.dropdown-toggle",
+                "a.dropdown-toggle",
+                ".navbar-toggler",
+                ".menu-toggle",
+                "[aria-expanded='false']",
+                "button:has-text('więcej')",
+                "button:has-text('pokaż')",
+                ".show-more",
+                ".accordion-button",
+                ".nav-link.dropdown-toggle",
+                "summary",  # dla <details>
+                ".btn-link",  # często używane do rozwijania
+            ]
+            for selector in expand_selectors:
                 try:
-                    await page.close()
+                    elements = await page.locator(selector).all()
+                    for el in elements:
+                        if await el.is_visible():
+                            try:
+                                await el.click(timeout=3000)
+                                await asyncio.sleep(1)
+                                new_links = await collect_links()
+                                added = new_links - links
+                                if added:
+                                    links.update(added)
+                                    print(f"    🎭 Po kliknięciu {selector}: +{len(added)} linków")
+                            except Exception:
+                                pass
                 except Exception:
-                    pass
-        except Exception:
-            pass
+                    continue
+
+            # Krok 4: końcowe zbieranie
+            final_links = await collect_links()
+            links.update(final_links)
+            print(f"    🎭 Łącznie zebrano: {len(links)} linków")
+
+        except Exception as e:
+            print(f"    ⚠️ Playwright fetch links error: {e}")
         finally:
             if browser:
-                try:
-                    await browser.close()
-                except Exception:
-                    pass
+                await browser.close()
     return links
 
 
@@ -2640,9 +2602,16 @@ async def phase1_full_crawl(
                 print(f"  📄 DEBUG ERR: {_ex}", flush=True)
 
         pw_links = set()
-        use_pw, pw_reason = should_try_playwright(url, html, kind, home_links=home_links, home_text=home_text_for_phase2)
-        if pages_crawled <= 30:
-            print(f"  🔍 should_pw={use_pw} reason={pw_reason} url={url[:70]}", flush=True)
+        use_pw, pw_reason = await _should_use_playwright_phase1(
+            html=html,
+            kind=kind,
+            status=status,
+            url=final,
+            aiohttp_links_count=len(aiohttp_links),
+            depth=depth
+        )
+        if pages_crawled <= 30 or use_pw:
+            print(f"  🔍 should_pw={use_pw} reason={pw_reason} aiohttp_links={len(aiohttp_links)} url={url[:70]}", flush=True)
         if use_pw:
             pw_fetches += 1
             print(
@@ -2662,6 +2631,7 @@ async def phase1_full_crawl(
                 )
             except Exception as ex:
                 diag["notes"].append(f"PW_ERR {url[:50]}: {str(ex)[:60]}")
+                print(f"    ⚠️ Playwright error: {ex}")
 
         all_links = aiohttp_links | pw_links
 
@@ -2935,7 +2905,12 @@ async def phase2_focus(
             session_crawl, url, extra_headers
         )
 
-        use_pw, pw_reason = should_try_playwright(url, html, kind, home_links=home_links)
+        use_pw, pw_reason = await _should_use_playwright_phase2(
+            html=html,
+            kind=kind,
+            status=status,
+            url=final
+        )
         if use_pw and kind not in ("pdf", "not_modified", "blocked"):
             print(f"  🎭 Phase2 Playwright @ {url[:70]} reason={pw_reason}", flush=True)
             pw_result = await fetch_with_playwright(url)
@@ -3541,3 +3516,4 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
