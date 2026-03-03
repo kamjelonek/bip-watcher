@@ -2615,6 +2615,7 @@ async def phase1_full_crawl(
     pw_fetches = 0
     pw_extra_links = 0
     home_links: set = set()  # linki ze strony głównej — do porównania na podstronach
+    home_text_for_phase2: str = ""  # tekst strony głównej (menu) — do filtrowania w Phase2
 
     print(
         f"  🕷️  BFS [{gmina}] @ {allowed_host} "
@@ -2655,10 +2656,17 @@ async def phase1_full_crawl(
         # --- Linki z aiohttp ---
         aiohttp_links = _extract_links_from_html(html, final, allowed_host)
 
-        # --- Zbierz home_links ze strony głównej (depth=0) ---
+        # --- Zbierz home_links + home_text ze strony głównej (depth=0) ---
         if depth == 0 and not home_links:
             home_links = set(aiohttp_links)
-            print(f"  🏠 [{gmina}] home_links={len(home_links)} (bazowy zestaw linków menu)", flush=True)
+            try:
+                _sh = safe_soup(html)
+                if _sh:
+                    for _t in _sh(["script", "style", "noscript"]): _t.decompose()
+                    home_text_for_phase2 = re.sub(r"\s+", " ", _sh.get_text(" ", strip=True)).strip()
+            except Exception:
+                home_text_for_phase2 = ""
+            print(f"  🏠 [{gmina}] home_links={len(home_links)} home_text={len(home_text_for_phase2)}ch", flush=True)
 
         # --- DEBUG: szczegóły każdej strony (pierwsze 30 stron) ---
         if pages_crawled <= 30:
@@ -2760,6 +2768,7 @@ async def phase1_full_crawl(
         "pw_fetches": pw_fetches,
         "pw_extra_links": pw_extra_links,
         "home_links_list": list(home_links),
+        "home_text": home_text_for_phase2,
     }
 
 # PHASE 2 — sprawdza zawartość + odkrywa nowe linki (v2.21)
