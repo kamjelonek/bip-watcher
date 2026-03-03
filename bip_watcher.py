@@ -187,13 +187,7 @@ KEYWORDS = [
 
 STRICT_ONLY = {"wz", "oze", "ris"}
 
-def keyword_match_in_blob(blob: str, min_count: int = 2):
-    """
-    Szuka keywordów w tekście strony.
-    min_count=2: keyword musi wystąpić co najmniej 2 razy — raz w menu, raz w treści.
-    Zapobiega false positive gdy keyword jest tylko w nawigacji BIP-u.
-    Dla krótkich/ścisłych keywordów (STRICT_ONLY) wystarczy 1 wystąpienie.
-    """
+def keyword_match_in_blob(blob: str):
     t = re.sub(r"\s+", " ", (blob or "")).strip().lower()
     if not t:
         return (False, None)
@@ -206,8 +200,7 @@ def keyword_match_in_blob(blob: str, min_count: int = 2):
             if re.search(rf"(?<!\w){re.escape(k)}(?!\w)", t):
                 return (True, kw)
         else:
-            count = t.count(k)
-            if count >= min_count:
+            if k in t:
                 return (True, kw)
     return (False, None)
 
@@ -2973,17 +2966,25 @@ async def phase2_focus(
         title, h1, h2, meta_blob = extract_title_h1_h2(soup)
         att_set = attachments_signature(soup, final_c)
 
-        fast_text = _soup_fast_text(soup)
-        blob = f"{title} {h1} {h2} {fast_text}"
+        # Zbierz wszystkie nagłówki + cały tekst (skrypty/style usunięte)
+        for tag in soup(["script", "style", "noscript"]):
+            tag.decompose()
+        all_headings = " ".join(
+            re.sub(r"\s+", " ", t.get_text(" ", strip=True))
+            for t in soup.find_all(["h1", "h2", "h3", "h4", "h5"])
+        )
+        full_text = re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip()
+        blob = f"{all_headings} {full_text}"
         ok_any, kw_any = keyword_match_in_blob(blob)
 
 
 
+        # Tytuł: pierwszy nagłówek h1/h2/h3 który nie jest generyczny
         page_title = ""
-        for candidate in [h1, h2, title]:
-            c = (candidate or "").strip()
-            if c and not is_generic_page_title(c):
-                page_title = c
+        for tag in soup.find_all(["h1", "h2", "h3"]):
+            txt = re.sub(r"\s+", " ", (tag.get_text(" ", strip=True) or "")).strip()
+            if txt and not is_generic_page_title(txt) and len(txt) > 10:
+                page_title = txt[:300]
                 break
         if not page_title:
             page_title = final_c
