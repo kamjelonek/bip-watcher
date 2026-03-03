@@ -1648,14 +1648,11 @@ def _soup_fast_text(soup: BeautifulSoup, max_chars: int = FAST_TEXT_MAX_CHARS) -
             return ""
         for tag in soup(["script", "style", "noscript"]):
             tag.decompose()
-        has_main_content = bool(
-            soup.find("main") or
-            soup.find(id=re.compile(r"(content|tresc|main|article)", re.I)) or
-            soup.find(class_=re.compile(r"(content|tresc|main|article)", re.I))
-        )
-        if has_main_content:
-            for tag in soup(["nav", "header", "footer", "aside"]):
-                tag.decompose()
+        # Zawsze usuwaj nav/header/footer/aside — to menu i stopka, nie treść.
+        # Wyjątek: jeśli strona nie ma żadnej innej treści (brak main/content/article)
+        # i nav zawiera więcej niż 80% tekstu — wtedy zostaw żeby nie zgubić treści.
+        for tag in soup(["nav", "header", "footer", "aside"]):
+            tag.decompose()
         txt = re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip()
         txt = _strip_dynamic_noise(txt)
         return txt[:max_chars]
@@ -2966,25 +2963,11 @@ async def phase2_focus(
         title, h1, h2, meta_blob = extract_title_h1_h2(soup)
         att_set = attachments_signature(soup, final_c)
 
-        # Cały tekst strony bez żadnego obcinania — taka sama logika jak reszta kodu
-        for tag in soup(["script", "style", "noscript"]):
-            tag.decompose()
-        full_text = re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip()
-
-        blob = f"{title} {h1} {h2} {full_text}"
+        fast_text = _soup_fast_text(soup)
+        blob = f"{title} {h1} {h2} {fast_text}"
         ok_any, kw_any = keyword_match_in_blob(blob)
-        fast_text = full_text  # dla kompatybilności z debugiem i resztą kodu
 
-        # DEBUG: dla stron action=details pokaż co widzimy
-        _ul = (url or "").lower()
-        if "action=details" in _ul or "document_id=" in _ul:
-            print(
-                f"  🔬 [{gmina}] action/doc page:"
-                f" html={len(html)}B text={len(fast_text)}ch ok={ok_any} kw={kw_any}"
-                f"\n      blob[0:300]={blob[:300]!r}"
-                f"\n      url={url[:80]}",
-                flush=True
-            )
+
 
         page_title = ""
         for candidate in [h1, h2, title]:
@@ -3039,18 +3022,9 @@ async def phase2_focus(
         # Odkrywanie nowych linków — dopisuje do końca frontieru
         for abs_u, txt in iter_links_fast(soup, final_c):
             cu = _canon(abs_u)
-            # DEBUG: śledź linki z action= lub document_id=
-            _ul = (cu or "").lower()
-            _is_oglos = "action=" in _ul or "document_id=" in _ul
-            if _is_oglos:
-                print(f"  🔗 ODKRYTO: {cu[:100]} | txt={txt[:40]!r} | from={url[:60]}", flush=True)
             if not cu or not allow_url(cu) or cu in dead_set:
-                if _is_oglos:
-                    print(f"  🚫 ODRZUCONO allow/dead: {cu[:100]}", flush=True)
                 continue
             if cu in seen_in_frontier:
-                if _is_oglos:
-                    print(f"  ♻️  JUZ W FRONTIER: {cu[:100]}", flush=True)
                 continue
 
             if ENABLE_LINK_HITS and not is_download_url(cu):
