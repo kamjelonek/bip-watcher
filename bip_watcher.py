@@ -187,7 +187,13 @@ KEYWORDS = [
 
 STRICT_ONLY = {"wz", "oze", "ris"}
 
-def keyword_match_in_blob(blob: str):
+def keyword_match_in_blob(blob: str, min_count: int = 2):
+    """
+    Szuka keywordów w tekście strony.
+    min_count=2: keyword musi wystąpić co najmniej 2 razy — raz w menu, raz w treści.
+    Zapobiega false positive gdy keyword jest tylko w nawigacji BIP-u.
+    Dla krótkich/ścisłych keywordów (STRICT_ONLY) wystarczy 1 wystąpienie.
+    """
     t = re.sub(r"\s+", " ", (blob or "")).strip().lower()
     if not t:
         return (False, None)
@@ -200,7 +206,8 @@ def keyword_match_in_blob(blob: str):
             if re.search(rf"(?<!\w){re.escape(k)}(?!\w)", t):
                 return (True, kw)
         else:
-            if k in t:
+            count = t.count(k)
+            if count >= min_count:
                 return (True, kw)
     return (False, None)
 
@@ -1648,11 +1655,14 @@ def _soup_fast_text(soup: BeautifulSoup, max_chars: int = FAST_TEXT_MAX_CHARS) -
             return ""
         for tag in soup(["script", "style", "noscript"]):
             tag.decompose()
-        # Zawsze usuwaj nav/header/footer/aside — to menu i stopka, nie treść.
-        # Wyjątek: jeśli strona nie ma żadnej innej treści (brak main/content/article)
-        # i nav zawiera więcej niż 80% tekstu — wtedy zostaw żeby nie zgubić treści.
-        for tag in soup(["nav", "header", "footer", "aside"]):
-            tag.decompose()
+        has_main_content = bool(
+            soup.find("main") or
+            soup.find(id=re.compile(r"(content|tresc|main|article)", re.I)) or
+            soup.find(class_=re.compile(r"(content|tresc|main|article)", re.I))
+        )
+        if has_main_content:
+            for tag in soup(["nav", "header", "footer", "aside"]):
+                tag.decompose()
         txt = re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip()
         txt = _strip_dynamic_noise(txt)
         return txt[:max_chars]
