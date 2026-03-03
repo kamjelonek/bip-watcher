@@ -1,40 +1,52 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.20 - PRODUCTION
-Zmiany v2.20 vs v2.18:
+BIP WATCHER v2.21 - PRODUCTION
+Zmiany v2.21 vs v2.20:
 
-[1] normalize_url — USUNIĘTO "lang", "locale", "language" z filtrowanych parametrów
-    Były to parametry FUNKCJONALNE, nie śledzące. Ich usuwanie niszczyło URL-e BIP-ów
-    opartych na PHP, np. /index.php?id=123&lang=pl → 404 lub pusta strona.
+[1] DETEKTOR STRON DYNAMICZNYCH — nowy moduł DynamicPageDetector
+    Jeden wspólny detektor używany w Phase1 i Phase2.
+    System punktowy (scoring) z wieloma sygnałami:
+    - React/Vue/Angular/Next.js markery w HTML
+    - Stosunek tekstu do skryptów
+    - Liczba linków <a href> vs rozmiar HTML
+    - Puste body lub bardzo mało tekstu
+    - webpack/vite/nuxt markery
+    - data-reactroot, __NEXT_DATA__, __nuxt itp.
+    Próg >= 3 punkty = strona dynamiczna (konfigurowalne DYNAMIC_SCORE_THRESHOLD)
 
-[2] IGNORE_URL_SUBSTR — USUNIĘTO "kadra" i "struktura"
-    Blokowały zakładki "Jednostki organizacyjne" / "Struktura urzędu", które mogą
-    zawierać sekcje z ogłoszeniami i decyzjami planistycznymi.
-    Zostawiono "regulamin" i "procedur" (te rzeczywiście nie niosą ogłoszeń).
+[2] PLAYWRIGHT BFS — pełnoprawny równoległy crawler
+    - Startuje od tej samej strony głównej co aiohttp BFS
+    - Działa RÓWNOLEGLE z aiohttp BFS w Phase1
+    - Głębokość PLAYWRIGHT_MAX_DEPTH (domyślnie 4, jak PHASE1_MAX_DEPTH)
+    - Odkryte URL-e trafiają do WSPÓLNEGO frontieru (gmina_frontiers)
+    - Persystowane w cache — Phase2 przetwarza je w kolejnych runach
+    - Oznaczone source="playwright" w frontierze dla diagnostyki
 
-[3] SPA FALLBACK — nowa funkcja collect_spa_fallback_urls() + _count_internal_links()
-    Problem: BIP-y oparte na React/Vue/Angular (np. *.bip.lubelskie.pl) generują menu
-    przez JavaScript — surowy HTML strony głównej zawiera < 5 linków. Crawler kończył
-    po 1/3 stron bo frontier bazował wyłącznie na sitemapie (który jest niepełny).
-    Rozwiązanie: gdy strona główna ma < SPA_FALLBACK_MIN_LINKS (domyślnie 20)
-    wewnętrznych linków, crawler próbuje znanych alternatywnych endpointów:
-    mapy serwisu, ostatnio dodane, ogłoszenia, planowanie itp.
-    Działa dla KAŻDEGO systemu BIP — nie tylko lubelskiego.
+[3] PHASE1 — równoległy BFS
+    - aiohttp BFS + Playwright BFS startują jednocześnie (asyncio.gather)
+    - Wyniki łączone w jeden frontier
+    - Playwright BFS aktywowany zawsze (nie tylko dla SPA) — decyzja architektoniczna
+      żeby nie przegapić niczego, szczególnie dla bip.lubelskie.pl i podobnych
 
-[4] PHASE1_MAX_DEPTH — zmieniono domyślną wartość z 3 na 4
-    Głębokość 3 okazała się niewystarczająca dla niektórych BIP-ów z głębszą hierarchią.
+[4] PHASE2 — Playwright jako fallback per-URL
+    - Każdy URL najpierw pobierany przez aiohttp
+    - Jeśli DynamicPageDetector wykryje stronę dynamiczną → Playwright fetch
+    - Wyniki z obu ścieżek przez ten sam keyword matching
+    - Nowe linki odkryte przez Playwright w Phase2 dopisywane do frontieru
 
-[5] SPA_FALLBACK_MIN_LINKS = 20 — konfigurowalna stała (poprzednio było planowane 10,
-    ale użytkownik zdecydował o progu 20 jako bardziej czułym na SPA).
+[5] fetch_with_fallback — naprawiony
+    - Teraz używa fetch_conditional (8 wartości z resp_meta)
+    - Zwraca 8 wartości (html, final, kind, status, ctype, err, ms, resp_meta)
+    - Phase2 poprawnie obsługuje etag/last-modified
 
-Zmiany v2.18 vs v2.17 (zachowane):
-- KEYWORDS: pełne frazy planistyczne, eliminacja false positives
-- STRICT_ONLY: wz, oze, ris wymagają word-boundary
-- _PAGINATION_RE: /lista/N, /wersja/N, pg=
-- IGNORE_URL_PATH_PATTERNS: /wersja[_/]
-- _GENERIC_TITLE_PATTERNS: śmieciowe tytuły BIP
-- is_junk_link_title: minimalny len tytułu = 10
-- RESET_CACHE: akceptuje "true" i "1"
+[6] crawl_with_playwright — naprawiony wyciek zasobów
+    - try/finally gwarantuje zamknięcie każdej strony
+
+Zmiany v2.20 vs v2.18 (zachowane):
+- normalize_url: lang/locale/language NIE są filtrowane
+- IGNORE_URL_SUBSTR: bez "kadra" i "struktura"
+- SPA_FALLBACK_HINTS + collect_spa_fallback_urls
+- PHASE1_MAX_DEPTH=4
 """
 
 import os, sys, csv, json, hashlib, asyncio, re, time, smtplib, warnings, socket, random, signal
@@ -73,7 +85,6 @@ def get_shard_index():
 
 # ===================== GIT / SHARD SAVE =====================
 def _git_commit_file(filepath, message):
-    """Python NIE pushuje do gita. Zapis obsługuje wyłącznie krok YAML."""
     print(f"📁 (git pominięty — plik zapisany na dysk): {filepath}")
 
 async def save_shard_cache_and_commit(loop=None):
@@ -132,10 +143,7 @@ EMAIL_TO = "planowanie@wpd-polska.pl"
 ENABLE_EMAIL = False
 
 # ===================== KEYWORDS =====================
-# v2.18: zastąpiono krótkie/ryzykowne słowa pełnymi frazami planistycznymi.
-# Zasada: im dłuższa fraza, tym mniejsze ryzyko fałszywego dopasowania.
 KEYWORDS = [
-    # ── MPZP ──────────────────────────────────────────────────────────────────
     "miejscowy plan zagospodarowania przestrzennego",
     "miejscowego planu zagospodarowania przestrzennego",
     "miejscowych planów zagospodarowania przestrzennego",
@@ -143,7 +151,6 @@ KEYWORDS = [
     "planu zagospodarowania przestrzennego",
     "plan zagospodarowania przestrzennego",
     "projekt mpzp",
-    # ── Plan ogólny ───────────────────────────────────────────────────────────
     "plan ogólny gminy",
     "plan ogólny miasta",
     "planu ogólnego gminy",
@@ -152,17 +159,14 @@ KEYWORDS = [
     "planu ogólnego",
     "plan ogolny",
     "planu ogolnego",
-    # ── Studium ───────────────────────────────────────────────────────────────
     "studium uwarunkowań i kierunków zagospodarowania przestrzennego",
     "studium uwarunkowan i kierunkow zagospodarowania przestrzennego",
     "studium uwarunkowań",
     "studium uwarunkowan",
-    # ── Warunki zabudowy ──────────────────────────────────────────────────────
     "decyzja o warunkach zabudowy",
     "decyzji o warunkach zabudowy",
     "decyzje o warunkach zabudowy",
     "warunki zabudowy",
-    # ── Decyzja środowiskowa ──────────────────────────────────────────────────
     "decyzja o środowiskowych uwarunkowaniach",
     "decyzji o środowiskowych uwarunkowaniach",
     "decyzja o srodowiskowych uwarunkowaniach",
@@ -170,20 +174,17 @@ KEYWORDS = [
     "środowiskowych uwarunkowaniach",
     "srodowiskowych uwarunkowaniach",
     "raport o oddziaływaniu na środowisko",
-    # ── Energetyka wiatrowa ───────────────────────────────────────────────────
     "elektrownia wiatrowa",
     "elektrowni wiatrowej",
     "park wiatrowy",
     "farma wiatrowa",
     "farmy wiatrowej",
-    "wiatrow",          # prefiks: wiatrowych, wiatrowej, wiatrowy — bez ryzyka fp
-    # ── Fotowoltaika / magazyny ───────────────────────────────────────────────
-    "fotowolta",        # prefiks: fotowoltaika, fotowoltaiczny — unikalny
+    "wiatrow",
+    "fotowolta",
     "farma fotowoltaiczna",
     "magazyn energii",
 ]
 
-# Słowa wymagające ścisłego dopasowania (word boundary) — krótkie lub wieloznaczne
 STRICT_ONLY = {"wz", "oze", "ris"}
 
 def keyword_match_in_blob(blob: str):
@@ -204,8 +205,6 @@ def keyword_match_in_blob(blob: str):
     return (False, None)
 
 # ===================== IGNORE =====================
-# v2.20: USUNIĘTO "kadra" i "struktura" — blokowały zakładki z potencjalnymi ogłoszeniami.
-# "Jednostki organizacyjne", "Struktura urzędu" mogą zawierać linki do decyzji/planów.
 IGNORE_URL_SUBSTR = [
     "kontakt", "mapa-strony", "mapa_strony", "wyszukiwarka", "statystyka",
     "rodo", "cookies", "deklaracja-dostepnosci", "deklaracja_dostepnosci",
@@ -219,7 +218,7 @@ IGNORE_URL_PATH_PATTERNS = [
     r"prognoza.pogody",
     r"prognoza_pogody",
     r"/wersja/\d+/?$",
-    r"/wersja[_/]",     # v2.18: łapie /wersja__, /wersja/ (BIP Kętrzyn i podobne)
+    r"/wersja[_/]",
 ]
 
 IGNORE_ANCHOR_TEXT = [
@@ -265,7 +264,6 @@ _DOWNLOAD_SUFFIX_RE = re.compile(
     re.IGNORECASE
 )
 
-# ===================== PAGINATION FILTER =====================
 _PAGINATION_RE = re.compile(
     r"[?&](page|strona|p|offset|start|from|skip|pg)=\d+"
     r"|/page/\d+"
@@ -301,18 +299,10 @@ _GENERIC_TITLE_PATTERNS = [
     "tagi", "archiwum", "newsletter", "galeria", "multimedia", "przetargi",
     "zamówienia", "zamowienia", "rada miasta", "zarząd", "zarzad",
     "burmistrz", "wójt", "wojt", "starosta",
-    # v2.18: nowe wzorce śmieciowych tytułów obserwowane w logach
-    "najnowsze informacje",
-    "najnowsze",
-    "więcej informacji",
-    "wiecej informacji",
-    "lista zmian",
-    "rejestr zmian strony",
-    "historia zmian",
-    "projekty unijne",
-    "projekty europejskie",
-    "dla mediów",
-    "dla mediow",
+    "najnowsze informacje", "najnowsze", "więcej informacji", "wiecej informacji",
+    "lista zmian", "rejestr zmian strony", "historia zmian",
+    "projekty unijne", "projekty europejskie",
+    "dla mediów", "dla mediow",
 ]
 
 def is_generic_page_title(title: str) -> bool:
@@ -369,15 +359,20 @@ CONCURRENT_GMINY = env_int("CONCURRENT_GMINY", 1)
 CONCURRENT_REQUESTS = env_int("CONCURRENT_REQUESTS", 50)
 LIMIT_PER_HOST = env_int("LIMIT_PER_HOST", 6)
 
-# v2.20: zwiększono domyślnie z 3 do 4 — głębsza hierarchia BIP wymaga 4 poziomów
-PHASE1_MAX_DEPTH = env_int("PHASE1_MAX_DEPTH", 3)
+PHASE1_MAX_DEPTH = env_int("PHASE1_MAX_DEPTH", 4)
 PHASE1_MAX_URLS = env_int("PHASE1_MAX_URLS", 999999)
 
 PHASE2_MAX_DEPTH = 4
 PHASE2_MAX_PAGES = 999999
 
-# v2.20: próg linków wewnętrznych poniżej którego aktywuje się SPA fallback
-# Konfigurowalny przez ENV: SPA_FALLBACK_MIN_LINKS=20
+# v2.21: Playwright BFS — głębokość taka sama jak Phase1
+PLAYWRIGHT_MAX_DEPTH = env_int("PLAYWRIGHT_MAX_DEPTH", 4)
+
+# v2.21: próg punktowy detektora dynamicznych stron
+# >= DYNAMIC_SCORE_THRESHOLD punktów = strona dynamiczna → użyj Playwright
+DYNAMIC_SCORE_THRESHOLD = env_int("DYNAMIC_SCORE_THRESHOLD", 3)
+
+# v2.20 compat
 SPA_FALLBACK_MIN_LINKS = env_int("SPA_FALLBACK_MIN_LINKS", 20)
 
 REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=None, sock_connect=12, sock_read=35)
@@ -629,148 +624,493 @@ def is_block_page(text: str) -> bool:
             return True
     return False
 
-def needs_playwright(url: str, result: tuple) -> bool:
+# ===================== DYNAMIC PAGE DETECTOR (v2.21) =====================
+# Jeden wspólny detektor używany zarówno w Phase1 jak i Phase2.
+# System punktowy — im więcej sygnałów, tym pewniejsza decyzja o użyciu Playwright.
+#
+# Sygnały i ich wagi:
+#   +3  React/Vue/Angular/Next.js markery w HTML (data-reactroot, __NEXT_DATA__ itp.)
+#   +3  id="root" lub id="app" w body (typowe dla SPA)
+#   +3  Puste body lub <body> z < 200 znaków tekstu przy HTML > 5 KB
+#   +3  Bardzo mało linków <a href> (< 5) przy dużym HTML (> 10 KB)
+#   +2  Tekst < 300 znaków przy HTML > 5 KB (strona renderuje się przez JS)
+#   +2  Skrypty z atrybutem src > 8 (dużo zewnętrznych JS)
+#   +1  webpack/vite/nuxt w src skryptów
+#   +1  Brak tagu <title> lub bardzo krótki title (< 5 znaków)
+#   +2  Odpowiedź serwera: kind == "timeout" lub "exc" przy status None
+#        (strona może wymagać JS do załadowania)
+
+class DynamicPageDetector:
     """
-    result = (html, final_url, kind, status, ctype, err, ms) z fetch_aiohttp
-    Zwraca True, jeśli warto spróbować pobrać stronę przez Playwright.
+    Ocenia czy strona jest dynamiczna (SPA/JS-rendered) i wymaga Playwright.
+
+    Użycie:
+        detector = DynamicPageDetector()
+        score, reasons = detector.score(html, url, kind, status)
+        is_dynamic = score >= DYNAMIC_SCORE_THRESHOLD
     """
-    html, final_url, kind, status, ctype, err, ms = result
 
-    # Jeśli zapytanie aiohttp się nie powiodło (timeout, błąd sieci, 5xx) – próbuj Playwright
-    if kind in ("timeout", "exc") or status in (403, 429, 500, 502, 503):
-        return True
-
-    # Jeśli to nie HTML – nie ma sensu (Playwright też nie wygeneruje)
-    if kind != "html" or not html:
-        return False
-
-    # --- Heurystyki oparte na treści HTML ---
-    low = html.lower()
-    soup = None
-
-    # 1. Markery frameworków JS (SPA)
-    js_markers = [
-        'id="root"', "id='root'", 'id="app"', "id='app'",
-        "__next_data__", "next.js", "data-reactroot", "react",
-        "nuxt", "__nuxt", "vue", "webpack", "vite", "angular"
+    # Markery frameworków JS — bardzo silny sygnał
+    _FRAMEWORK_MARKERS = [
+        # React
+        ("data-reactroot", 3),
+        ("__next_data__", 3),
+        ("_next/static", 3),
+        ("react-dom", 2),
+        # Vue
+        ("__vue__", 3),
+        ("data-v-", 2),
+        ("__nuxt", 3),
+        ("nuxt.js", 2),
+        # Angular
+        ("ng-version", 3),
+        ("ng-app", 2),
+        ("[ng-", 2),
+        # Svelte
+        ("__svelte", 3),
+        # Generyczne SPA markery
+        ("webpack", 1),
+        ("vite", 1),
+        ("chunk.js", 1),
+        ("bundle.js", 1),
     ]
-    if any(marker in low for marker in js_markers):
-        return True
 
-    # 2. Bardzo mało tekstu, dużo skryptów
-    try:
-        from bs4 import BeautifulSoup
-        soup = BeautifulSoup(html, "lxml")
-        text = soup.get_text(" ", strip=True)
-        scripts = soup.find_all("script")
-        if len(text) < 300 and len(scripts) >= 5:
-            return True
-        scripts_with_src = len([s for s in scripts if s.get("src")])
-        if len(text) < 1000 and scripts_with_src > 10:
-            return True
-    except Exception:
-        pass
+    # id/class typowe dla SPA root container
+    _ROOT_PATTERNS = re.compile(
+        r'(id=["\'])(root|app|__next|__nuxt|app-root|ng-app|vue-app)(["\'])',
+        re.IGNORECASE
+    )
 
-    # 3. Strona z parametrami (np. ?id=, action=) i bardzo mało linków
-    if any(p in url.lower() for p in ["?id=", "&id=", "action=", "kategoria="]):
-        if soup is None:
-            try:
-                soup = BeautifulSoup(html, "lxml")
-            except:
-                soup = None
-        if soup:
-            links = soup.find_all("a", href=True)
-            if len(links) < 10:   # mało linków jak na stronę z listą – możliwe JS
-                return True
+    def score(self, html: str, url: str = "", kind: str = "html", status: int = None) -> tuple:
+        """
+        Zwraca (score: int, reasons: list[str]).
+        score >= DYNAMIC_SCORE_THRESHOLD → użyj Playwright.
+        """
+        total = 0
+        reasons = []
 
-    # 4. (USUNIĘTO) Specyficzne domeny – teraz Playwright będzie używany tylko awaryjnie
-    # if "bip.lubelskie.pl" in url:
-    #     return True
+        if not html:
+            # Brak HTML przy braku błędu → prawie na pewno SPA
+            if kind == "html" and status == 200:
+                total += 3
+                reasons.append("empty_html_200")
+            return total, reasons
 
-    return False
+        low = html.lower()
+        html_size = len(html)
+
+        # --- Sygnał 1: Markery frameworków JS ---
+        fw_score = 0
+        fw_hits = []
+        for marker, weight in self._FRAMEWORK_MARKERS:
+            if marker.lower() in low:
+                fw_score = max(fw_score, weight)
+                fw_hits.append(marker)
+        if fw_score > 0:
+            total += fw_score
+            reasons.append(f"js_framework({','.join(fw_hits[:3])})")
+
+        # --- Sygnał 2: id="root" / id="app" ---
+        if self._ROOT_PATTERNS.search(html):
+            total += 3
+            reasons.append("spa_root_container")
+
+        # Parsowanie soup — używamy tylko jeśli potrzebne
+        soup = None
+
+        def _get_soup():
+            nonlocal soup
+            if soup is None:
+                try:
+                    soup = BeautifulSoup(html, "lxml")
+                except Exception:
+                    soup = None
+            return soup
+
+        # --- Sygnał 3: Analiza tekstu vs rozmiar HTML ---
+        try:
+            s = _get_soup()
+            if s:
+                for tag in s(["script", "style", "noscript"]):
+                    tag.decompose()
+                visible_text = re.sub(r"\s+", " ", s.get_text(" ", strip=True)).strip()
+                text_len = len(visible_text)
+
+                if html_size > 5000 and text_len < 200:
+                    total += 3
+                    reasons.append(f"near_empty_body(text={text_len},html={html_size})")
+                elif html_size > 5000 and text_len < 300:
+                    total += 2
+                    reasons.append(f"sparse_text(text={text_len},html={html_size})")
+        except Exception:
+            pass
+
+        # --- Sygnał 4: Liczba linków <a href> ---
+        try:
+            s = _get_soup()
+            if s:
+                links = s.find_all("a", href=True)
+                link_count = len(links)
+                if html_size > 10000 and link_count < 5:
+                    total += 3
+                    reasons.append(f"very_few_links(links={link_count},html={html_size})")
+                elif html_size > 5000 and link_count < 10:
+                    total += 1
+                    reasons.append(f"few_links(links={link_count},html={html_size})")
+        except Exception:
+            pass
+
+        # --- Sygnał 5: Liczba skryptów zewnętrznych ---
+        try:
+            s = _get_soup()
+            if s:
+                scripts_with_src = s.find_all("script", src=True)
+                if len(scripts_with_src) > 8:
+                    total += 2
+                    reasons.append(f"many_ext_scripts({len(scripts_with_src)})")
+                elif len(scripts_with_src) > 4:
+                    total += 1
+                    reasons.append(f"ext_scripts({len(scripts_with_src)})")
+        except Exception:
+            pass
+
+        # --- Sygnał 6: Brak lub bardzo krótki title ---
+        try:
+            s = _get_soup()
+            if s:
+                title_tag = s.find("title")
+                title_text = (title_tag.get_text(strip=True) if title_tag else "")
+                if not title_text or len(title_text) < 5:
+                    total += 1
+                    reasons.append(f"no_title")
+        except Exception:
+            pass
+
+        # --- Sygnał 7: Znane dynamiczne ścieżki / parametry URL ---
+        # Tylko gdy kombinacja z innymi sygnałami (nie standalone)
+        # aby nie być zbyt agresywnym dla zwykłych BIP-ów z ?id=
+        if total >= 1:
+            url_low = (url or "").lower()
+            dynamic_url_hints = [
+                "/#/", "/#!/", "/_next/", "/__nuxt/", "/static/js/",
+            ]
+            if any(h in url_low for h in dynamic_url_hints):
+                total += 2
+                reasons.append("dynamic_url_pattern")
+
+        return total, reasons
+
+    def is_dynamic(self, html: str, url: str = "", kind: str = "html", status: int = None) -> tuple:
+        """
+        Zwraca (is_dynamic: bool, score: int, reasons: list[str]).
+        Wygodna metoda do użycia w kodzie.
+        """
+        score, reasons = self.score(html, url, kind, status)
+        return score >= DYNAMIC_SCORE_THRESHOLD, score, reasons
+
+
+# Singleton — jeden detektor dla całego programu
+dynamic_detector = DynamicPageDetector()
+
+
+# ===================== PLAYWRIGHT HELPERS (v2.21) =====================
 
 async def fetch_with_playwright(url: str) -> tuple:
-    from playwright.async_api import async_playwright
+    """
+    Pobiera pojedynczą stronę przez Playwright.
+    Zwraca (html, final_url, kind, status, ctype, err, ms, resp_meta).
+    8 wartości — kompatybilne z fetch_conditional.
+    """
+    try:
+        from playwright.async_api import async_playwright
+    except ImportError:
+        return None, url, "exc", None, "", "playwright_not_installed", 0, {}
 
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        page = await browser.new_page()
+        browser = None
         try:
-            t0 = time.time()
-            # Zwiększ timeout, użyj 'domcontentloaded' zamiast 'networkidle'
-            await page.goto(url, wait_until="domcontentloaded", timeout=60000)
-            # Opcjonalnie: poczekaj na pojawienie się linków
-            await page.wait_for_selector('a', timeout=10000)
-            content = await page.content()
-            final_url = page.url
-            ms = round((time.time() - t0) * 1000)
-            return content, final_url, "html", 200, "text/html", None, ms
+            browser = await p.chromium.launch(headless=True)
+            page = await browser.new_page()
+            try:
+                t0 = time.time()
+                await page.goto(url, wait_until="domcontentloaded", timeout=60000)
+                # Poczekaj na załadowanie linków — do 10s
+                try:
+                    await page.wait_for_selector("a", timeout=10000)
+                except Exception:
+                    pass  # Brak linków też jest wynikiem
+                content = await page.content()
+                final_url = page.url
+                ms = round((time.time() - t0) * 1000)
+                return content, final_url, "html", 200, "text/html", None, ms, {}
+            except Exception as e:
+                return None, url, "exc", None, "", str(e), 0, {}
+            finally:
+                try:
+                    await page.close()
+                except Exception:
+                    pass
         except Exception as e:
-            return None, url, "exc", None, "", str(e), 0
+            return None, url, "exc", None, "", f"browser_launch_error: {e}", 0, {}
         finally:
-            await browser.close()
+            if browser:
+                try:
+                    await browser.close()
+                except Exception:
+                    pass
 
-async def crawl_with_playwright(start_url: str, allowed_host: str, max_depth: int = 3) -> set:
+
+async def playwright_bfs(
+    start_url: str,
+    allowed_host: str,
+    max_depth: int,
+    diag: dict,
+    existing_visited: set = None,
+) -> set:
     """
-    Wykonuje BFS na głębokość max_depth używając Playwright.
-    Zwraca zbiór unikalnych, znormalizowanych URL-i (w formie canonical).
+    Pełny BFS przez Playwright — odpowiednik aiohttp BFS z Phase1.
+
+    Startuje od start_url, odkrywa wszystkie wewnętrzne linki do głębokości max_depth.
+    Używa tej samej logiki filtrowania co aiohttp BFS (should_skip_href, same_base_domain).
+
+    Parametry:
+        start_url       — strona główna gminy
+        allowed_host    — host domeny (filtr same-origin)
+        max_depth       — maksymalna głębokość BFS (domyślnie PLAYWRIGHT_MAX_DEPTH=4)
+        diag            — słownik diagnostyczny
+        existing_visited — zbiór URL-i już odwiedzonych przez aiohttp BFS
+                          (żeby nie crawlować dwa razy tych samych stron)
+
+    Zwraca:
+        set canonicznych URL-i odkrytych przez Playwright (gotowe do frontieru)
     """
-    from playwright.async_api import async_playwright
-    visited = set()
-    queue = deque([(start_url, 0)])
+    try:
+        from playwright.async_api import async_playwright
+    except ImportError:
+        diag["notes"].append("PLAYWRIGHT_BFS_SKIP: playwright not installed")
+        print("  ⚠️  Playwright BFS: playwright nie jest zainstalowany", flush=True)
+        return set()
+
+    if existing_visited is None:
+        existing_visited = set()
+
     found_urls = set()
+    visited = set(existing_visited)  # kopia — nie modyfikujemy oryginału
+    queue = deque()
+
+    cu_start = _canon(start_url)
+    if cu_start:
+        visited.add(cu_start)
+    queue.append((start_url, 0))
+
+    pages_crawled = 0
+    pages_failed = 0
+    t0 = time.time()
+
+    print(
+        f"  🎭 Playwright BFS start: {start_url} "
+        f"(max_depth={max_depth}, already_visited={len(existing_visited)})",
+        flush=True
+    )
 
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        while queue and not state.shutdown_requested:
-            url, depth = queue.popleft()
-            if depth > max_depth:
-                continue
-            if url in visited:
-                continue
-            visited.add(url)
-            try:
-                page = await browser.new_page()
-                await page.goto(url, wait_until="domcontentloaded", timeout=60000)
-                # Pobierz wszystkie linki
-                links = await page.eval_on_selector_all('a[href]', 'els => els.map(e => e.href)')
-                for link in links:
-                    abs_url = urljoin(url, link)
-                    if not is_valid_url(abs_url):
-                        continue
-                    parsed = urlparse(abs_url)
-                    if not same_base_domain(parsed.netloc, allowed_host):
-                        continue
-                    cu = _canon(abs_url)
-                    if cu and cu not in visited:
+        browser = None
+        try:
+            browser = await p.chromium.launch(headless=True)
+
+            while queue and not state.shutdown_requested:
+                url, depth = queue.popleft()
+
+                if depth > max_depth:
+                    # URL zbyt głęboko — dodaj do frontieru ale nie crawluj
+                    cu = _canon(url)
+                    if cu:
                         found_urls.add(cu)
-                        queue.append((abs_url, depth + 1))
-                await page.close()
-            except Exception as e:
-                print(f"  ⚠️ Playwright crawl error {url}: {e}")
-        await browser.close()
+                    continue
+
+                # Limit czasu dla Playwright BFS
+                if RUN_DEADLINE_MIN > 0 and (time.time() - GLOBAL_T0) > (RUN_DEADLINE_MIN * 60 * 0.3):
+                    diag["notes"].append(f"PW_BFS_TIME_LIMIT pages={pages_crawled}")
+                    print(f"  ⏱️  Playwright BFS przerwany — limit czasu (pages={pages_crawled})", flush=True)
+                    break
+
+                page = None
+                try:
+                    page = await browser.new_page()
+
+                    # Blokuj zasoby niepotrzebne do odkrywania linków
+                    await page.route("**/*.{png,jpg,jpeg,gif,svg,ico,woff,woff2,ttf,eot}", lambda r: r.abort())
+
+                    await page.goto(url, wait_until="domcontentloaded", timeout=45000)
+
+                    # Poczekaj na linki — max 8s
+                    try:
+                        await page.wait_for_selector("a[href]", timeout=8000)
+                    except Exception:
+                        pass
+
+                    final_url = page.url
+                    pages_crawled += 1
+
+                    # Pobierz wszystkie linki przez JavaScript
+                    try:
+                        raw_links = await page.eval_on_selector_all(
+                            "a[href]",
+                            "els => els.map(e => ({href: e.href, text: e.innerText || e.textContent || ''}))"
+                        )
+                    except Exception:
+                        raw_links = []
+
+                    for link_obj in raw_links:
+                        try:
+                            href = (link_obj.get("href") or "").strip()
+                            if not href or href.startswith("mailto:") or href.startswith("tel:") or href.startswith("javascript:"):
+                                continue
+
+                            abs_u = normalize_url(urljoin(final_url, href))
+                            if not is_valid_url(abs_u):
+                                continue
+                            if not same_base_domain(urlparse(abs_u).netloc, allowed_host):
+                                continue
+                            if should_skip_href(abs_u):
+                                continue
+
+                            cu = _canon(abs_u)
+                            if not cu or cu in visited:
+                                continue
+
+                            visited.add(cu)
+                            found_urls.add(cu)
+
+                            # Dodaj do kolejki BFS jeśli nie za głęboko
+                            if depth + 1 <= max_depth:
+                                queue.append((abs_u, depth + 1))
+
+                        except Exception:
+                            continue
+
+                    if pages_crawled % 50 == 0:
+                        elapsed = round((time.time() - t0) / 60, 1)
+                        print(
+                            f"  🎭 Playwright BFS: pages={pages_crawled} "
+                            f"found={len(found_urls)} queue={len(queue)} "
+                            f"depth={depth} time={elapsed}min",
+                            flush=True
+                        )
+
+                except Exception as e:
+                    pages_failed += 1
+                    diag["counts"]["pw_bfs_page_errors"] = int(diag["counts"].get("pw_bfs_page_errors", 0)) + 1
+                    if pages_failed <= 5:
+                        print(f"  ⚠️  Playwright BFS error @ {url}: {str(e)[:80]}", flush=True)
+                finally:
+                    # GWARANTOWANE zamknięcie strony — nawet przy błędzie
+                    if page:
+                        try:
+                            await page.close()
+                        except Exception:
+                            pass
+
+        except Exception as e:
+            diag["notes"].append(f"PW_BFS_FATAL: {str(e)[:100]}")
+            print(f"  ❌ Playwright BFS fatal error: {e}", flush=True)
+        finally:
+            if browser:
+                try:
+                    await browser.close()
+                except Exception:
+                    pass
+
+    elapsed = round((time.time() - t0) / 60, 1)
+    print(
+        f"  🎭 Playwright BFS ZAKOŃCZONY: "
+        f"pages_crawled={pages_crawled} "
+        f"pages_failed={pages_failed} "
+        f"urls_found={len(found_urls)} "
+        f"time={elapsed}min",
+        flush=True
+    )
+    diag["notes"].append(
+        f"PW_BFS pages={pages_crawled} failed={pages_failed} found={len(found_urls)} time={elapsed}min"
+    )
+    diag["counts"]["pw_bfs_pages"] = pages_crawled
+    diag["counts"]["pw_bfs_found"] = len(found_urls)
+
     return found_urls
 
-async def fetch_with_fallback(session: aiohttp.ClientSession, url: str, extra_headers: dict = None):
-    """
-    Próbuje pobrać stronę przez aiohttp. Jeśli odpowiedź sugeruje dynamiczną treść (JS)
-    lub wystąpił błąd, próbuje przez Playwright.
-    """
-    # Najpierw standardowe aiohttp
-    result = await fetch(session, url, extra_headers)   # to jest Twoja obecna funkcja fetch
-    html, final, kind, status, ctype, err, ms = result
 
-    # Decyzja czy użyć Playwright
-    if needs_playwright(url, result):
-        print(f"  🔄 Używam Playwright dla: {url}")
-        pw_result = await fetch_with_playwright(url)
-        # Jeśli Playwright się udał, zwróć jego wynik, inaczej zwróć oryginalny
-        if pw_result[0] is not None:
-            return pw_result
-        else:
-            return result
-    else:
+async def fetch_with_fallback(
+    session: aiohttp.ClientSession,
+    url: str,
+    extra_headers: dict = None,
+) -> tuple:
+    """
+    Pobiera stronę przez aiohttp. Jeśli detektor wykryje stronę dynamiczną,
+    próbuje przez Playwright.
+
+    Zwraca 8 wartości: (html, final, kind, status, ctype, err, ms, resp_meta)
+    Kompatybilne z fetch_conditional.
+
+    Logika:
+    1. Pobierz przez aiohttp (fetch_conditional — obsługuje etag/304)
+    2. Uruchom DynamicPageDetector na wyniku
+    3. Jeśli dynamiczna i aiohttp nie zwróciło dobrego HTML → Playwright
+    4. Jeśli Playwright też się nie powiedzie → zwróć wynik aiohttp
+    """
+    # Krok 1: standardowe pobranie
+    result = await fetch_conditional(session, url, extra_headers)
+    html, final, kind, status, ctype, err, ms, resp_meta = result
+
+    # Nie próbuj Playwright dla:
+    # - plików binarnych (PDF, DOCX itp.)
+    # - odpowiedzi 304 Not Modified
+    # - stron zablokowanych (403/429) — Playwright też nie przejdzie WAF
+    # - błędów DNS / timeout — Playwright też nie pomoże przy problemach sieciowych
+    if kind in ("pdf", "not_modified", "blocked"):
         return result
+    if kind == "exc" and err and ("dns" in (err or "").lower() or "connect" in (err or "").lower()):
+        return result
+
+    # Krok 2: sprawdź czy strona jest dynamiczna
+    is_dyn, dyn_score, dyn_reasons = dynamic_detector.is_dynamic(
+        html=html or "",
+        url=url,
+        kind=kind,
+        status=status,
+    )
+
+    # Playwright potrzebny gdy:
+    # a) Detektor wykrył stronę dynamiczną
+    # b) LUB aiohttp w ogóle nie zwróciło HTML (timeout, błąd, 5xx)
+    need_playwright = is_dyn or (kind != "html") or (not html)
+
+    if not need_playwright:
+        return result
+
+    # Krok 3: próba przez Playwright
+    reason_str = f"score={dyn_score} reasons={dyn_reasons[:2]}" if is_dyn else f"aiohttp_kind={kind}"
+    print(
+        f"  🎭 Playwright fetch: {url[:80]} ({reason_str})",
+        flush=True
+    )
+
+    pw_result = await fetch_with_playwright(url)
+    pw_html, pw_final, pw_kind, pw_status, pw_ctype, pw_err, pw_ms, pw_meta = pw_result
+
+    if pw_kind == "html" and pw_html:
+        # Playwright udany — zwróć jego wynik z resp_meta z aiohttp (etag itp.)
+        # etag/last-modified z Playwright są niedostępne, więc zachowaj z aiohttp
+        merged_meta = resp_meta or {}
+        return pw_html, pw_final, "html", pw_status, pw_ctype, None, pw_ms, merged_meta
+    else:
+        # Playwright się nie powiódł — zwróć oryginalny wynik aiohttp
+        print(
+            f"  ⚠️  Playwright fetch failed ({pw_err[:60] if pw_err else 'unknown'}), "
+            f"używam aiohttp result",
+            flush=True
+        )
+        return result
+
 
 def retry_io(action, tries: int = 5, base_sleep: float = 0.6):
     last_exc = None
@@ -793,7 +1133,6 @@ def retry_io(action, tries: int = 5, base_sleep: float = 0.6):
 # ===================== FUNKCJE POMOCNICZE =====================
 
 def save_diag(diag_rows, diag_errors):
-    """Zapisuje diagnostykę do CSV."""
     try:
         def _do():
             new_file = not DIAG_GMINY_CSV.exists()
@@ -825,13 +1164,12 @@ def save_diag(diag_rows, diag_errors):
 
 
 def write_summary(diag_rows, new_items_for_mail):
-    """Zapisuje podsumowanie runu do pliku tekstowego."""
     try:
         total = len(diag_rows or [])
         ok = sum(1 for r in (diag_rows or []) if r.get("status") == "OK")
         start_fail = sum(1 for r in (diag_rows or []) if r.get("status") == "START_FAIL")
         lines = [
-            f"BIP WATCHER v2.20 SUMMARY @ {now_iso()}",
+            f"BIP WATCHER v2.21 SUMMARY @ {now_iso()}",
             f"gminy_total={total} ok={ok} start_fail={start_fail}",
             f"mail_items={len(new_items_for_mail or [])}",
             "",
@@ -849,7 +1187,6 @@ def write_summary(diag_rows, new_items_for_mail):
 
 
 def panic_save_checkpoint_sync(reason: str = "SIGTERM"):
-    """Krytyczny zapis synchroniczny przy sygnale lub końcu runa."""
     try:
         if not USE_CACHE:
             return
@@ -894,9 +1231,7 @@ def normalize_url(url: str) -> str:
                 continue
             if kl.startswith("utm_"):
                 continue
-            # v2.20: USUNIĘTO "lang", "locale", "language" z listy filtrowanych parametrów.
-            # Były FUNKCJONALNE (nie śledzące) — ich usuwanie niszczyło URL-e BIP-ów PHP,
-            # np. /index.php?id=123&lang=pl → serwer zwracał 404 lub pustą stronę.
+            # v2.20: NIE filtrujemy lang/locale/language — są funkcjonalne w BIP PHP
             if kl in {
                 "fbclid", "gclid", "yclid", "sid", "session", "sessionid",
                 "phpsessid", "jsessionid", "print", "format",
@@ -939,11 +1274,10 @@ def is_listing_url(u: str) -> bool:
         "/rss", "/feed", "rss.xml", "feed.xml",
         "wyszuk", "szukaj", "search", "query=", "filter", "filtr",
         "ostatnio_dodane", "ostatnio_zaktualizowane",
-        # Dodatkowe wzorce dla lepszego pokrycia
         "action=", "widok=",
         "/ogloszenia", "/obwieszczenia", "/planowanie", "/mpzp", "/studium",
         "/decyzje", "/uchwaly", "/prawo-miejscowe",
-        "?id=",   # uwaga: ogólne, ale może pomóc w głębszej eksploracji
+        "?id=",
     ])
 
 def is_phase1_listing(u: str) -> bool:
@@ -997,9 +1331,6 @@ def anchor_is_ignored(text: str) -> bool:
     return any(x in t for x in IGNORE_ANCHOR_TEXT)
 
 def should_skip_href(abs_href: str) -> bool:
-    """
-    v2.19: usunięto _PAGINATION_RE — blokował listy ogłoszeń BIP z page=, strona=, /lista/N
-    """
     u = (abs_href or "").lower()
     for pattern in IGNORE_URL_PATH_PATTERNS:
         if re.search(pattern, u):
@@ -1056,33 +1387,14 @@ def cache_mark_url(u: str):
 
 # ===================== SITEMAP + ROBOTS =====================
 def detect_js_app(html: str) -> bool:
+    """
+    Prosty detektor JS app — używany jako dodatkowy sygnał w Phase1.
+    Dla pełnej analizy używaj DynamicPageDetector.is_dynamic().
+    """
     if not html:
         return False
-    low = html.lower()
-    markers = [
-        'id="root"', "id='root'", 'id="app"', "id='app'",
-        "__next_data__", "next.js", "data-reactroot", "react",
-        "nuxt", "__nuxt", "vue", "webpack", "vite",
-    ]
-    has_marker = any(m in low for m in markers)
-    try:
-        soup = safe_soup(html)
-        if not soup:
-            return has_marker
-        txt = re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip()
-        if len(txt) < 300:
-            return True
-        if len(txt) < 200 and has_marker:
-            return True
-        scripts = len(soup.find_all("script"))
-        if len(txt) < 120 and scripts >= 8:
-            return True
-        scripts_with_src = len(soup.find_all("script", src=True))
-        if scripts_with_src > 10 and len(txt) < 500:
-            return True
-        return False
-    except Exception:
-        return has_marker
+    is_dyn, _, _ = dynamic_detector.is_dynamic(html)
+    return is_dyn
 
 def extract_sitemaps_from_robots(robots_text: str) -> list:
     out = []
@@ -1233,22 +1545,12 @@ async def collect_sitemap_urls(session: aiohttp.ClientSession, base_site_url: st
 
     return out_urls[:max_urls]
 
-# ===================== SPA FALLBACK (v2.20) =====================
-# Gdy strona główna ma < SPA_FALLBACK_MIN_LINKS wewnętrznych linków,
-# crawler próbuje tych alternatywnych endpointów zamiast polegać wyłącznie na BFS.
-# Rozwiązuje problem BIP-ów SPA (React/Vue/Angular) gdzie menu jest generowane przez JS.
-# Działa dla KAŻDEGO systemu BIP — lista endpointów pokrywa typowe polskie systemy.
-
+# ===================== SPA FALLBACK (v2.20, zachowane) =====================
 SPA_FALLBACK_HINTS = [
     "/planowanie-przestrzenne",
 ]
 
-
 def _count_internal_links(soup: BeautifulSoup, allowed_host: str) -> int:
-    """
-    Liczy unikalne wewnętrzne linki HTML na stronie.
-    Używane do wykrycia SPA — strony renderowane przez JS mają < kilka linków w raw HTML.
-    """
     if not soup:
         return 0
     seen = set()
@@ -1278,27 +1580,17 @@ async def collect_spa_fallback_urls(
     diag: dict,
     max_urls: int = 3000,
 ) -> list:
-    """
-    Wywoływana gdy strona główna ma < SPA_FALLBACK_MIN_LINKS wewnętrznych linków.
-    Próbuje znanych endpointów i zbiera z nich linki HTML.
-    Zwraca listę URL-i — nie fetchuje ich, tylko zbiera adresy.
-    """
     found_urls = []
     seen = set()
     hints_hit = 0
-
-    print(
-        f"  🔍 SPA fallback: próbuję {len(SPA_FALLBACK_HINTS)} endpointów "
-        f"(base={base_site_url})...",
-        flush=True
-    )
 
     for hint in SPA_FALLBACK_HINTS:
         if len(found_urls) >= max_urls:
             break
         try:
             url = normalize_url(urljoin(base_site_url, hint))
-            html, final, kind, status, ctype, err, ms = await fetch_with_fallback(session, url)
+            result = await fetch_with_fallback(session, url)
+            html, final, kind, status, ctype, err, ms, resp_meta = result
             if kind != "html" or not html:
                 continue
             soup = safe_soup(html)
@@ -1329,20 +1621,11 @@ async def collect_spa_fallback_urls(
 
             if links_found > 0:
                 hints_hit += 1
-                print(
-                    f"  ✅ SPA fallback HIT: {hint} → {links_found} linków "
-                    f"(łącznie: {len(found_urls)})",
-                    flush=True
-                )
                 diag["notes"].append(f"SPA_FALLBACK_HIT hint={hint} links={links_found}")
         except Exception as ex:
             diag["notes"].append(f"SPA_FALLBACK_ERR hint={hint} err={str(ex)[:60]}")
             continue
 
-    print(
-        f"  📋 SPA fallback ŁĄCZNIE: {len(found_urls)} URL z {hints_hit} endpointów",
-        flush=True
-    )
     return found_urls[:max_urls]
 
 
@@ -1545,7 +1828,7 @@ def candidate_start_urls(start_url: str):
                     yield auxu
 
 # ===================== CACHE =====================
-CACHE_SCHEMA = 14
+CACHE_SCHEMA = 15  # v2.21: +1 dla nowych pól playwright
 
 def _empty_cache():
     return {
@@ -1861,6 +2144,7 @@ def _is_binary_response(ctype: str, data: bytes, url: str) -> bool:
     return False
 
 async def fetch(session: aiohttp.ClientSession, url: str, extra_headers: dict = None):
+    """Bazowa funkcja fetch — zwraca 7 wartości (bez resp_meta)."""
     url = normalize_url(url)
     domain = urlparse(url).netloc
     for ssl_mode in (False, None):
@@ -1905,6 +2189,10 @@ async def fetch(session: aiohttp.ClientSession, url: str, extra_headers: dict = 
     return None, url, "exc", None, "", "fetch_failed", 0
 
 async def fetch_conditional(session: aiohttp.ClientSession, url: str, extra_headers: dict = None):
+    """
+    Fetch z obsługą warunkowego HTTP (etag, last-modified, 304 Not Modified).
+    Zwraca 8 wartości: (html, final, kind, status, ctype, err, ms, resp_meta).
+    """
     url = normalize_url(url)
     domain = urlparse(url).netloc
     parsed = urlparse(url)
@@ -2018,12 +2306,10 @@ def gmina_cycle_key(gkey: str) -> str:
     return f"cycle_{gkey}"
 
 def is_frontier_complete(gkey: str) -> bool:
-    """True jeśli Phase1 zakończyła się w całości i frontier jest kompletny."""
     meta = state.gmina_seeds.get(gmina_cycle_key(gkey), {})
     return bool(meta.get("frontier_complete", False))
 
 def mark_frontier_complete(gkey: str, total_urls: int):
-    """Zapisuje flagę że frontier jest kompletny po udanej Phase1."""
     state.gmina_seeds[gmina_cycle_key(gkey)] = {
         "frontier_complete": True,
         "frontier_total": total_urls,
@@ -2032,12 +2318,168 @@ def mark_frontier_complete(gkey: str, total_urls: int):
     }
 
 def mark_frontier_reset(gkey: str):
-    """Usuwa flagę — następny run zrobi nową Phase1."""
     state.gmina_seeds.pop(gmina_cycle_key(gkey), None)
 
 # ============================================================
-# PHASE 1 — BFS z limitem głębokości + SPA fallback (v2.20)
+# PHASE 1 — BFS aiohttp + Playwright BFS równolegle (v2.21)
 # ============================================================
+
+async def phase1_aiohttp_bfs(
+    gmina: str,
+    final0: str,
+    allowed_host: str,
+    html0: str,
+    base_site: str,
+    session_default,
+    session_ipv4,
+    session_crawl,
+    diag: dict,
+) -> dict:
+    """
+    Standardowy BFS przez aiohttp — bez zmian względem v2.20.
+    Zwraca słownik seeds {url: score}.
+    """
+    seeds = {}
+    visited = set()
+    q = deque()
+
+    # Sitemap
+    try:
+        sitemap_urls = await collect_sitemap_urls(session_crawl, base_site, diag, max_urls=5000)
+        sitemap_added = 0
+
+        def allow_url(u: str) -> bool:
+            return same_base_domain(urlparse(u).netloc.lower(), allowed_host)
+
+        for u in sitemap_urls:
+            if allow_url(u) and not should_skip_href(u):
+                cu = _canon(u)
+                if cu:
+                    score = 20 if any(h in u.lower() for h in LISTING_URL_HINTS) else 10
+                    seeds[u] = max(seeds.get(u, 0), score)
+                    if cu not in visited:
+                        visited.add(cu)
+                    sitemap_added += 1
+        diag["notes"].append(f"SITEMAP_SEEDS={sitemap_added}")
+        print(f"  🗺️  Sitemap [{gmina}]: {sitemap_added} URL", flush=True)
+    except Exception as ex:
+        diag["notes"].append(f"SITEMAP_FAILED: {str(ex)[:80]}")
+
+    # SPA fallback hints (zachowane z v2.20)
+    try:
+        spa_urls = await collect_spa_fallback_urls(
+            session=session_crawl,
+            base_site_url=base_site,
+            allowed_host=allowed_host,
+            diag=diag,
+            max_urls=3000,
+        )
+        spa_added = 0
+        for u in spa_urls:
+            if not same_base_domain(urlparse(u).netloc.lower(), allowed_host):
+                continue
+            cu = _canon(u)
+            if not cu:
+                continue
+            if not any(u.lower().endswith(ext) for ext in ATT_EXT):
+                score = 15 if any(h in u.lower() for h in LISTING_URL_HINTS) else 5
+                seeds[u] = max(seeds.get(u, 0), score)
+                if cu not in visited:
+                    visited.add(cu)
+                    q.append((u, 1))
+                    spa_added += 1
+        diag["notes"].append(f"SPA_FALLBACK_SEEDS={spa_added}")
+    except Exception as ex:
+        diag["notes"].append(f"SPA_FALLBACK_FAILED: {str(ex)[:80]}")
+
+    # Strona główna na początku kolejki
+    cu0 = _canon(final0)
+    if cu0 not in visited:
+        visited.add(cu0)
+    q.appendleft((final0, 0))
+    seeds[final0] = seeds.get(final0, 5)
+
+    def allow_url(u: str) -> bool:
+        return same_base_domain(urlparse(u).netloc.lower(), allowed_host)
+
+    pages_crawled = 0
+    start_time = time.time()
+
+    print(
+        f"  🕷️  aiohttp BFS start [{gmina}] @ {allowed_host} "
+        f"| sitemap_seeds={len(seeds)} | max_depth={PHASE1_MAX_DEPTH}",
+        flush=True
+    )
+
+    while q and not state.shutdown_requested:
+        if RUN_DEADLINE_MIN > 0 and (time.time() - GLOBAL_T0) > (RUN_DEADLINE_MIN * 60 * 0.35):
+            diag["notes"].append(f"PHASE1_AIOHTTP_TIME_LIMIT pages={pages_crawled}")
+            break
+
+        url, depth = q.popleft()
+        url = normalize_url(url)
+
+        if depth > PHASE1_MAX_DEPTH:
+            cu = _canon(url)
+            if cu and not any(url.lower().endswith(ext) for ext in ATT_EXT):
+                seeds[cu] = seeds.get(cu, 1)
+            continue
+
+        # Użyj fetch_with_fallback — obsługuje Playwright per-URL jeśli potrzebne
+        result = await fetch_with_fallback(session_crawl, url)
+        html, final, kind, status, ctype, err, ms, resp_meta = result
+
+        if kind != "html" or not html:
+            cu = _canon(url)
+            if cu and not any(url.lower().endswith(ext) for ext in ATT_EXT):
+                seeds[cu] = seeds.get(cu, 1)
+            diag_add_error(diag, gmina, url, "phase1_aiohttp_bfs", kind, status, err)
+            continue
+
+        pages_crawled += 1
+
+        if pages_crawled % 100 == 0:
+            elapsed = round((time.time() - start_time) / 60, 1)
+            print(
+                f"  🕷️  aiohttp BFS [{gmina}] "
+                f"pages={pages_crawled} seeds={len(seeds)} q={len(q)} "
+                f"depth={depth} time={elapsed}min",
+                flush=True
+            )
+
+        soup = safe_soup(html)
+        if not soup:
+            continue
+
+        for abs_u, txt in iter_links_fast(soup, final):
+            if not allow_url(abs_u):
+                continue
+            cu = _canon(abs_u)
+            if not cu:
+                continue
+
+            if not any(abs_u.lower().endswith(ext) for ext in ATT_EXT):
+                ul = abs_u.lower()
+                score = 15 if any(h in ul for h in LISTING_URL_HINTS) else 1
+                seeds[abs_u] = max(seeds.get(abs_u, 0), score)
+
+            if cu not in visited:
+                visited.add(cu)
+                next_depth = depth + 2 if is_listing_url(abs_u) else depth + 1
+                q.append((abs_u, next_depth))
+
+        if len(seeds) >= PHASE1_MAX_URLS:
+            diag["notes"].append(f"PHASE1_MAX_URLS_REACHED={len(seeds)}")
+            break
+
+    diag["notes"].append(f"AIOHTTP_BFS pages={pages_crawled} seeds={len(seeds)}")
+    print(
+        f"  ✅ aiohttp BFS [{gmina}]: pages={pages_crawled} seeds={len(seeds)} "
+        f"time={round((time.time()-start_time)/60,1)}min",
+        flush=True
+    )
+    return seeds
+
 
 async def phase1_full_crawl(
     gmina: str,
@@ -2048,27 +2490,21 @@ async def phase1_full_crawl(
     diag,
 ) -> tuple:
     """
-    BFS z ograniczeniem głębokości do PHASE1_MAX_DEPTH (domyślnie 4 w v2.20).
+    Phase1 v2.21: aiohttp BFS + Playwright BFS działają RÓWNOLEGLE.
 
-    v2.20: dodano SPA fallback — gdy strona główna ma < SPA_FALLBACK_MIN_LINKS (20)
-    wewnętrznych linków HTML, crawler próbuje alternatywnych endpointów zamiast
-    liczyć wyłącznie na BFS po menu. Rozwiązuje problem BIP-ów React/SPA
-    (np. *.bip.lubelskie.pl) gdzie menu jest generowane przez JavaScript i nie ma
-    żadnych <a href> w surowym HTML.
+    Przepływ:
+    1. Pobierz stronę główną (fetch_start_matrix — jak dotychczas)
+    2. Uruchom równolegle:
+       a) phase1_aiohttp_bfs — standardowy BFS przez aiohttp
+       b) playwright_bfs     — BFS przez Playwright (głębokość PLAYWRIGHT_MAX_DEPTH)
+    3. Scal wyniki obu BFS w jeden frontier
+    4. URL-e z Playwright oznaczone source="playwright" w diagnostyce
 
-    Przepływ Phase1:
-      depth 0: strona główna
-      depth 1: kategorie, działy (ogłoszenia, planowanie, środowisko...)
-      depth 2: listy ogłoszeń w kategorii
-      depth 3: konkretne ogłoszenie/decyzja
-      depth 4: załączniki, podstrony ogłoszeń (nowe w v2.20)
+    Playwright BFS startuje zawsze od strony głównej — nie tylko gdy wykryto SPA.
+    Dzięki temu nie przegapiamy stron gdzie aiohttp i Playwright dają różne wyniki.
     """
     if state.shutdown_requested:
         return [], {"status": "SHUTDOWN"}
-
-    seeds = {}
-    visited = set()
-    q = deque()
 
     html0 = final0 = None
     kind0 = "fail"
@@ -2079,6 +2515,7 @@ async def phase1_full_crawl(
     tried = 0
     start_time = time.time()
 
+    # ── Krok 1: Pobierz stronę główną ─────────────────────────────────────────
     for su in candidate_start_urls(start_url):
         if (time.time() - start_time) > START_TOTAL_TIMEOUT_SEC:
             diag["notes"].append(f"START_TIMEOUT after {int(time.time()-start_time)}s")
@@ -2117,197 +2554,100 @@ async def phase1_full_crawl(
         print(f"  ❌ Phase1 START_FAIL [{gmina}]: tried={tried} last_kind={kind0} last_status={status0}", flush=True)
         return [], {"status": "START_FAIL"}
 
-    def allow_url(u: str) -> bool:
-        return same_base_domain(urlparse(u).netloc.lower(), allowed_host)
+    base_site = urlunparse((
+        urlparse(final0).scheme,
+        urlparse(final0).netloc,
+        "/", "", "", ""
+    ))
 
-    try:
-        base_site = urlunparse((
-            urlparse(final0).scheme,
-            urlparse(final0).netloc,
-            "/", "", "", ""
-        ))
-        sitemap_urls = await collect_sitemap_urls(session_crawl, base_site, diag, max_urls=5000)
-        sitemap_added = 0
-        for u in sitemap_urls:
-            if allow_url(u) and not should_skip_href(u):
-                cu = _canon(u)
-                if cu:
-                    score = 20 if any(h in u.lower() for h in LISTING_URL_HINTS) else 10
-                    seeds[u] = max(seeds.get(u, 0), score)
-                    if cu not in visited:
-                        visited.add(cu)
-                    sitemap_added += 1
-        diag["notes"].append(f"SITEMAP_SEEDS={sitemap_added}")
-        print(f"  🗺️  Sitemap [{gmina}]: znaleziono {sitemap_added} URL-i", flush=True)
-    except Exception as ex:
-        diag["notes"].append(f"SITEMAP_FAILED: {str(ex)[:80]}")
-        print(f"  ⚠️  Sitemap [{gmina}]: błąd — {str(ex)[:80]}", flush=True)
-
-    # ── v2.20: SPA FALLBACK ──────────────────────────────────────────────────
-    # Zlicz wewnętrzne linki na stronie głównej.
-    # BIP-y SPA (React/Vue/Angular) mają < kilka linków w surowym HTML.
-    soup0 = safe_soup(html0)
-    internal_link_count = _count_internal_links(soup0, allowed_host) if soup0 else 0
-    diag["notes"].append(f"HOME_INTERNAL_LINKS={internal_link_count}")
-
-    # ── Zawsze uruchamiamy SPA fallback, aby odkryć dodatkowe ścieżki ─────────
+    # Sprawdź dynamiczność strony głównej — dla diagnostyki
+    is_dyn_home, dyn_score_home, dyn_reasons_home = dynamic_detector.is_dynamic(html0, final0)
+    diag["notes"].append(
+        f"HOME_DYNAMIC={is_dyn_home} score={dyn_score_home} "
+        f"reasons={dyn_reasons_home[:3]}"
+    )
     print(
-        f"  🔍 SPA fallback (always) [{gmina}]: próbuję {len(SPA_FALLBACK_HINTS)} endpointów...",
+        f"  🔍 Detektor [{gmina}]: dynamic={is_dyn_home} score={dyn_score_home} "
+        f"({', '.join(dyn_reasons_home[:3]) if dyn_reasons_home else 'brak sygnałów'})",
         flush=True
     )
-    spa_urls = await collect_spa_fallback_urls(
-        session=session_crawl,
-        base_site_url=base_site,
-        allowed_host=allowed_host,
-        diag=diag,
-        max_urls=3000,
+
+    # ── Krok 2: Równoległy BFS ─────────────────────────────────────────────────
+    print(f"  🚀 Phase1 [{gmina}]: startuję aiohttp BFS + Playwright BFS RÓWNOLEGLE", flush=True)
+
+    aiohttp_task = asyncio.create_task(
+        phase1_aiohttp_bfs(
+            gmina=gmina,
+            final0=final0,
+            allowed_host=allowed_host,
+            html0=html0,
+            base_site=base_site,
+            session_default=session_default,
+            session_ipv4=session_ipv4,
+            session_crawl=session_crawl,
+            diag=diag,
+        )
     )
-    spa_added = 0
-    for u in spa_urls:
-        if not allow_url(u):
-            continue
-        cu = _canon(u)
+
+    playwright_task = asyncio.create_task(
+        playwright_bfs(
+            start_url=final0,
+            allowed_host=allowed_host,
+            max_depth=PLAYWRIGHT_MAX_DEPTH,
+            diag=diag,
+            existing_visited=set(),  # Playwright odkrywa niezależnie
+        )
+    )
+
+    # Czekaj na oba — jeśli jeden się nie powiedzie, drugi nadal działa
+    results = await asyncio.gather(aiohttp_task, playwright_task, return_exceptions=True)
+
+    aiohttp_seeds = results[0] if not isinstance(results[0], Exception) else {}
+    playwright_urls = results[1] if not isinstance(results[1], Exception) else set()
+
+    if isinstance(results[0], Exception):
+        diag["notes"].append(f"AIOHTTP_BFS_EXCEPTION: {str(results[0])[:100]}")
+        print(f"  ⚠️  aiohttp BFS wyjątek [{gmina}]: {results[0]}", flush=True)
+    if isinstance(results[1], Exception):
+        diag["notes"].append(f"PW_BFS_EXCEPTION: {str(results[1])[:100]}")
+        print(f"  ⚠️  Playwright BFS wyjątek [{gmina}]: {results[1]}", flush=True)
+
+    # ── Krok 3: Scalenie wyników ───────────────────────────────────────────────
+    combined_seeds = dict(aiohttp_seeds)
+
+    pw_added = 0
+    for cu in playwright_urls:
         if not cu:
             continue
-        if not any(u.lower().endswith(ext) for ext in ATT_EXT):
-            score = 15 if any(h in u.lower() for h in LISTING_URL_HINTS) else 5
-            seeds[u] = max(seeds.get(u, 0), score)
-            if cu not in visited:
-                visited.add(cu)
-                q.append((u, 1))
-                spa_added += 1
-    diag["notes"].append(f"SPA_FALLBACK_SEEDS={spa_added}")
-    if spa_added > 0:
-        print(f"  🗺️  SPA fallback [{gmina}]: dodano {spa_added} URL-i do frontieru", flush=True)
-    else:
-        print(f"  ⚠️  SPA fallback [{gmina}]: brak wyników — BFS może być niepełny", flush=True)
-    # ── koniec SPA FALLBACK ──────────────────────────────────────────────────
+        # URL z Playwright dostaje score bazowy
+        # Wyższy jeśli wygląda jak listing
+        ul = cu.lower()
+        score = 12 if any(h in ul for h in LISTING_URL_HINTS) else 4
+        if cu not in combined_seeds or combined_seeds[cu] < score:
+            combined_seeds[cu] = score
+            pw_added += 1
 
-    # --- AWARYJNE SKANOWANIE PLAYWRIGHT DLA PODEJRZANYCH DOMEN ---
-    # Uruchom Playwright BFS, jeśli strona główna wygląda na aplikację JS LUB domena jest lubelska
-    if detect_js_app(html0) or "bip.lubelskie.pl" in allowed_host:
-        print(f"  🕸️  Wykryto aplikację JS lub domenę bip.lubelskie.pl – uruchamiam Playwright BFS (głębokość 3)")
-        pw_urls = await crawl_with_playwright(final0, allowed_host, max_depth=3)  # zmienione na 3
-        pw_added = 0
-        for u in pw_urls:
-            cu = _canon(u)
-            if cu and cu not in visited:
-                visited.add(cu)
-                # Nadaj wyższy priorytet (15), aby były przetworzone wcześniej
-                seeds[u] = max(seeds.get(u, 0), 15)
-                q.append((u, 1))  # depth=1, bo pochodzą ze strony głównej
-                pw_added += 1
-        diag["notes"].append(f"PLAYWRIGHT_BFS_SEEDS={pw_added}")
-        if pw_added > 0:
-            print(f"  ✅ Playwright BFS dodał {pw_added} URL-i do frontieru", flush=True)
-        else:
-            print(f"  ⚠️ Playwright BFS nie dodał żadnych URL-i", flush=True)
-    # --- KONIEC AWARYJNEGO SKANOWANIA ---
-
-    # Strona główna zawsze na początku kolejki
-    cu0 = _canon(final0)
-    if cu0 not in visited:
-        visited.add(cu0)
-    q.appendleft((final0, 0))
-    seeds[final0] = seeds.get(final0, 5)
-
-    pages_crawled = 0
-
+    diag["notes"].append(
+        f"PHASE1_COMBINED: aiohttp={len(aiohttp_seeds)} pw_new={pw_added} total={len(combined_seeds)}"
+    )
     print(
-        f"  🕷️  Phase1 start [{gmina}] @ {allowed_host} "
-        f"| sitemap_seeds={len(seeds)} "
-        f"| max_depth={PHASE1_MAX_DEPTH} "
-        f"| home_links={internal_link_count}",
+        f"  🔗 Phase1 scalenie [{gmina}]: "
+        f"aiohttp={len(aiohttp_seeds)} | "
+        f"playwright_new={pw_added} | "
+        f"łącznie={len(combined_seeds)}",
         flush=True
     )
 
-    while q and not state.shutdown_requested:
-        if RUN_DEADLINE_MIN > 0 and (time.time() - GLOBAL_T0) > (RUN_DEADLINE_MIN * 60 * 0.35):
-            diag["notes"].append(f"PHASE1_TIME_LIMIT pages={pages_crawled} seeds={len(seeds)} q_remaining={len(q)}")
-            print(
-                f"  ⏱️  Phase1 PRZERWANA — limit czasu [{gmina}]: "
-                f"stron_crawled={pages_crawled} | zebrano={len(seeds)} URL | "
-                f"czas={round((time.time()-GLOBAL_T0)/60,1)}min",
-                flush=True
-            )
-            break
-
-        url, depth = q.popleft()
-        url = normalize_url(url)
-
-        if depth > PHASE1_MAX_DEPTH:
-            cu = _canon(url)
-            if cu and not any(url.lower().endswith(ext) for ext in ATT_EXT):
-                seeds[cu] = seeds.get(cu, 1)
-            continue
-
-        html, final, kind, status, ctype, err, ms = await fetch_with_fallback(session_crawl, url)
-
-        if kind != "html" or not html:
-            cu = _canon(url)
-            if cu and not any(url.lower().endswith(ext) for ext in ATT_EXT):
-                seeds[cu] = seeds.get(cu, 1)
-            diag_add_error(diag, gmina, url, "phase1_fetch", kind, status, err)
-            continue
-
-        pages_crawled += 1
-
-        if pages_crawled % 100 == 0:
-            elapsed = round((time.time() - start_time) / 60, 1)
-            print(
-                f"  🕷️  Phase1 [{gmina}] "
-                f"strony_crawled={pages_crawled} | "
-                f"url_zebrane={len(seeds)} | "
-                f"kolejka={len(q)} | "
-                f"depth_current={depth} | "
-                f"czas={elapsed}min",
-                flush=True
-            )
-
-        soup = safe_soup(html)
-        if not soup:
-            continue
-
-        for abs_u, txt in iter_links_fast(soup, final):
-            if not allow_url(abs_u):
-                continue
-            cu = _canon(abs_u)
-            if not cu:
-                continue
-
-            if not any(abs_u.lower().endswith(ext) for ext in ATT_EXT):
-                ul = abs_u.lower()
-                score = 15 if any(h in ul for h in LISTING_URL_HINTS) else 1
-                seeds[abs_u] = max(seeds.get(abs_u, 0), score)
-
-            if cu not in visited:
-                visited.add(cu)
-                # Jeśli URL jest listingiem, zwiększ głębokość o 2
-                if is_listing_url(abs_u):
-                    next_depth = depth + 2
-                else:
-                    next_depth = depth + 1
-                q.append((abs_u, next_depth))
-
-        if len(seeds) >= PHASE1_MAX_URLS:
-            diag["notes"].append(f"PHASE1_MAX_URLS_REACHED={len(seeds)}")
-            print(
-                f"  ⚠️  Phase1 [{gmina}]: osiągnięto limit {PHASE1_MAX_URLS} URL — kończę zbieranie",
-                flush=True
-            )
-            break
-
-    all_urls = sorted(seeds.keys(), key=lambda u: -seeds.get(u, 0))
+    # Sortuj po score malejąco — najważniejsze URL-e najpierw
+    all_urls = sorted(combined_seeds.keys(), key=lambda u: -combined_seeds.get(u, 0))
     phase1_complete = not state.shutdown_requested
 
     print(
         f"  ✅ Phase1 {'KOMPLETNA' if phase1_complete else 'PRZERWANA'} [{gmina}]: "
-        f"stron_crawled={pages_crawled} | "
-        f"url_w_frontierze={len(all_urls)} | "
+        f"frontier={len(all_urls)} URL | "
         f"czas={round((time.time()-start_time)/60,1)}min",
         flush=True
     )
-    diag["notes"].append(f"PHASE1_{'COMPLETE' if phase1_complete else 'INCOMPLETE'} pages={pages_crawled} frontier={len(all_urls)}")
 
     return all_urls, {
         "status": "OK",
@@ -2315,11 +2655,13 @@ async def phase1_full_crawl(
         "start_final": final0,
         "seeds": len(all_urls),
         "phase1_complete": phase1_complete,
-        "pages_crawled": pages_crawled,
+        "home_dynamic": is_dyn_home,
+        "home_dyn_score": dyn_score_home,
     }
 
+
 # ============================================================
-# PHASE 2 — sprawdza zawartość + odkrywa nowe linki
+# PHASE 2 — sprawdza zawartość + odkrywa nowe linki (v2.21)
 # ============================================================
 
 async def phase2_focus(
@@ -2330,10 +2672,14 @@ async def phase2_focus(
     diag,
 ) -> tuple:
     """
-    - Pobiera frontier z state.gmina_frontiers[gkey]
-    - Sprawdza każdy URL pod kątem NOWE / ZMIANA / HIT / NO_MATCH
-    - Odkrywa nowe linki podczas skanowania i dopisuje je do frontieru
-    - Kontynuuje między runami: zapisuje gdzie skończyła
+    Phase2 v2.21 — bez zmian w logice głównej relative to v2.20,
+    ale teraz fetch_with_fallback automatycznie używa Playwright
+    gdy detektor wykryje stronę dynamiczną.
+
+    Każdy URL z frontieru:
+    1. Pobierany przez fetch_with_fallback (aiohttp + Playwright fallback)
+    2. Sprawdzany przez keyword matching
+    3. Nowe linki odkryte podczas skanowania → dopisywane do frontieru
     """
     if state.shutdown_requested:
         return [], {"status": "SHUTDOWN"}
@@ -2374,16 +2720,14 @@ async def phase2_focus(
             retry_seen.add(sha1(cu))
             retry_added += 1
     if retry_added:
-        print(f"  🔁 Retry: {retry_added} URL dodanych na początek kolejki ({gmina})", flush=True)
+        print(f"  🔁 Retry: {retry_added} URL [{gmina}]", flush=True)
 
     if isinstance(state.gmina_retry, dict):
         state.gmina_retry[gkey] = []
 
     print(
         f"  🔍 Phase2 start [{gmina}]: "
-        f"frontier={total_in_frontier} URL | "
-        f"retry={retry_added} | "
-        f"dead={len(dead_set)}",
+        f"frontier={total_in_frontier} | retry={retry_added} | dead={len(dead_set)}",
         flush=True
     )
 
@@ -2404,15 +2748,10 @@ async def phase2_focus(
         if pages_ok > 0 and pages_ok % FRONTIER_CHECKPOINT_EVERY == 0:
             async with state.cache_lock:
                 state.gmina_frontiers[gkey] = [[u, d] for u, d in q]
-            remaining = len(q)
-            elapsed = round((time.time() - GLOBAL_T0) / 60, 1)
             print(
-                f"  📊 [{gmina}] "
-                f"strony_ok={pages_ok} | "
-                f"pominięte_ttl={pages_skipped_ttl} | "
-                f"nowe_linki={new_links_added} | "
-                f"pozostało={remaining} | "
-                f"czas={elapsed}min",
+                f"  📊 [{gmina}] pages_ok={pages_ok} pominięte={pages_skipped_ttl} "
+                f"nowe_linki={new_links_added} pozostało={len(q)} "
+                f"czas={round((time.time()-GLOBAL_T0)/60,1)}min",
                 flush=True
             )
 
@@ -2453,9 +2792,10 @@ async def phase2_focus(
         if prev_pre and prev_pre.get("last_modified"):
             extra_headers["If-Modified-Since"] = prev_pre["last_modified"]
 
-        html, final, kind, status, ctype, err, ms = await fetch_with_fallback(session_crawl, url, extra_headers)
-        # fetch_with_fallback nie zwraca resp_meta, więc musimy to obsłużyć – np. ustawić puste
-        resp_meta = {}
+        # fetch_with_fallback — automatycznie używa Playwright jeśli detektor to wskaże
+        html, final, kind, status, ctype, err, ms, resp_meta = await fetch_with_fallback(
+            session_crawl, url, extra_headers
+        )
 
         final_c = _canon(final or url)
         url_dedup_final = sha1(canonical_url(final_c))
@@ -2586,7 +2926,7 @@ async def phase2_focus(
             else:
                 diag["counts"]["dedup_skipped"] += 1
 
-        # Odkrywanie nowych linków — Phase2 dopisuje do KOŃCA frontieru
+        # Odkrywanie nowych linków — dopisuje do końca frontieru
         for abs_u, txt in iter_links_fast(soup, final_c):
             cu = _canon(abs_u)
             if not cu or not allow_url(cu) or cu in dead_set:
@@ -2622,12 +2962,9 @@ async def phase2_focus(
     async with state.cache_lock:
         if q:
             state.gmina_frontiers[gkey] = [[u, d] for u, d in list(q)]
-            remaining = len(q)
             print(
                 f"  💾 Frontier zapisany [{gmina}]: "
-                f"pozostało={remaining} URL | "
-                f"nowe_linki_dodane={new_links_added} | "
-                f"ten_run={pages_ok} stron",
+                f"pozostało={len(q)} | nowe_linki={new_links_added} | ten_run={pages_ok}",
                 flush=True
             )
         else:
@@ -2635,10 +2972,8 @@ async def phase2_focus(
             mark_frontier_reset(gkey)
             print(
                 f"  🏁 Frontier wyczerpany [{gmina}]: "
-                f"sprawdzono={pages_ok} stron | "
-                f"pominięto_ttl={pages_skipped_ttl} | "
-                f"znaleziono={len(found)} trafień | "
-                f"PEŁNY CYKL ZAKOŃCZONY — następny run: nowa Phase1",
+                f"sprawdzono={pages_ok} | pominięto_ttl={pages_skipped_ttl} | "
+                f"znaleziono={len(found)} | PEŁNY CYKL ZAKOŃCZONY",
                 flush=True
             )
 
@@ -2703,7 +3038,7 @@ async def worker(
                 frontier_size = len((state.gmina_frontiers or {}).get(gkey_approx, []))
                 print(
                     f"  ▶️  [{name}] {gmina}: kontynuacja Phase2 "
-                    f"(frontier kompletny, {frontier_size} URL pozostało)",
+                    f"(frontier kompletny, {frontier_size} URL)",
                     flush=True
                 )
                 cached_seeds = state.gmina_seeds.get(gkey_approx, {})
@@ -2721,11 +3056,7 @@ async def worker(
                 p1meta = {"status": "SKIP", "seeds": 0, "phase1_complete": True}
 
             else:
-                if not has_frontier:
-                    reason = "brak frontieru (pierwszy run lub nowy cykl)"
-                else:
-                    reason = "frontier niekompletny (poprzednia Phase1 przerwana)"
-
+                reason = "brak frontieru" if not has_frontier else "frontier niekompletny"
                 print(f"  🆕 [{name}] {gmina}: Phase1 — {reason}", flush=True)
 
                 all_urls, p1meta = await phase1_full_crawl(
@@ -2762,6 +3093,8 @@ async def worker(
                     "allowed_host": allowed_host,
                     "start_final": p1meta.get("start_final", ""),
                     "seeds": len(all_urls),
+                    "home_dynamic": p1meta.get("home_dynamic", False),
+                    "home_dyn_score": p1meta.get("home_dyn_score", 0),
                     "ts": now_iso(),
                 }
 
@@ -2769,17 +3102,13 @@ async def worker(
                     mark_frontier_complete(gkey, len(all_urls))
                     print(
                         f"  ✅ [{name}] {gmina}: Phase1 KOMPLETNA — "
-                        f"frontier={len(all_urls)} URL | "
-                        f"stron_crawled={p1meta.get('pages_crawled', 0)} | "
-                        f"startuje Phase2",
+                        f"frontier={len(all_urls)} URL | startuje Phase2",
                         flush=True
                     )
                 else:
                     print(
                         f"  ⚠️  [{name}] {gmina}: Phase1 NIEKOMPLETNA — "
-                        f"frontier={len(all_urls)} URL | "
-                        f"Phase2 uruchomiona z tym co jest | "
-                        f"następny run: ponowna Phase1",
+                        f"frontier={len(all_urls)} | Phase2 z tym co jest",
                         flush=True
                     )
 
@@ -2838,7 +3167,7 @@ async def worker(
             if frontier_len > 0:
                 total_approx = frontier_len + pages_ok
                 done_pct = round(pages_ok / max(total_approx, 1) * 100, 1)
-                cycle_info = f" | cykl≈{done_pct}% zrobiony"
+                cycle_info = f" | cykl≈{done_pct}%"
 
             print(
                 f"✅ [{name}] DONE: {gmina} | "
@@ -2851,18 +3180,6 @@ async def worker(
                 f"{cycle_info}",
                 flush=True
             )
-
-            if frontier_len == 0:
-                print(f"   🏁 [{gmina}] Pełny cykl zakończony — następny run: nowa Phase1", flush=True)
-            elif p1meta and p1meta.get("status") == "SKIP":
-                print(f"   ▶️  [{gmina}] Phase2 kontynuuje ({frontier_len} URL pozostało)", flush=True)
-            else:
-                complete_flag = "✅ kompletna" if p1meta and p1meta.get("phase1_complete") else "⚠️ niekompletna"
-                print(
-                    f"   📋 [{gmina}] Phase1 {complete_flag} | "
-                    f"Phase2 kontynuuje w kolejnych runach ({frontier_len} URL pozostało)",
-                    flush=True
-                )
 
         except asyncio.CancelledError:
             return
@@ -2890,7 +3207,6 @@ async def worker(
 
 # ===================== MAIN =====================
 async def main():
-    # v2.18: obsługa RESET_CACHE — akceptuje zarówno "1" jak i "true"
     reset_val = os.getenv("RESET_CACHE", "0").strip().lower()
     if reset_val in ("1", "true", "yes"):
         print("🗑️  RESET_CACHE — czyszczę cache...")
@@ -2901,7 +3217,6 @@ async def main():
             shard_file.unlink()
             print(f"   ✅ Usunięto: {shard_file}")
         print("   ✅ Cache wyczyszczony.")
-        print()
 
     (state.raw_cache, state.urls_seen, state.content_seen,
      state.gmina_seeds, state.gmina_frontiers,
@@ -2966,7 +3281,7 @@ async def main():
                 except Exception as ex:
                     print(f"⚠️ periodic checkpoint failed: {ex}", flush=True)
 
-            print("🔚 Periodic checkpoint: finalny zapis po shutdown...", flush=True)
+            print("🔚 Finalny checkpoint...", flush=True)
             try:
                 if USE_CACHE:
                     if os.getenv("GITHUB_ACTIONS") and get_shard_index() >= 0:
@@ -3046,12 +3361,3 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
-
-
-
-
-
-
-
-
-
