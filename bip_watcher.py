@@ -2977,6 +2977,20 @@ async def phase2_focus(
         blob = f"{all_headings} {full_text}"
         ok_any, kw_any = keyword_match_in_blob(blob)
 
+        # DIAGNOSTYKA: pokaż co zebraliśmy i gdzie znaleziono keyword
+        _ul = (url or "").lower()
+        _is_detail = "action=details" in _ul or "document_id=" in _ul
+        if ok_any or _is_detail:
+            kw_pos = blob.lower().find((kw_any or "").lower()) if kw_any else -1
+            kw_ctx = blob[max(0,kw_pos-60):kw_pos+100].replace("\n"," ") if kw_pos >= 0 else ""
+            print(
+                f"  🔎 [{gmina}] {'DETAIL ' if _is_detail else ''}match={ok_any} kw={kw_any!r} "
+                f"blob={len(blob)}ch html={len(html)}B"
+                f"\n     ctx: ...{kw_ctx!r}..."
+                f"\n     url={url[:80]}",
+                flush=True
+            )
+
 
 
         # Tytuł: pierwszy nagłówek h1/h2/h3 który nie jest generyczny
