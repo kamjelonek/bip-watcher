@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.25 - PRODUCTION
+BIP WATCHER v2.26 - PRODUCTION
 Zmiany v2.23 vs v2.22:
 
 [ZMIANA 1] _fetch_links_playwright — pełny mini-BFS przez Playwright (głębokość 1)
@@ -720,8 +720,20 @@ async def fetch_with_playwright(url: str, interact: bool = False) -> tuple:
         browser = None
         page = None
         try:
-            browser = await p.chromium.launch(headless=True)
+            browser = await p.chromium.launch(
+                headless=True,
+                args=[
+                    "--no-sandbox", "--disable-setuid-sandbox",
+                    "--ignore-certificate-errors",
+                    "--disable-blink-features=AutomationControlled",
+                ]
+            )
             page = await browser.new_page()
+            await page.set_extra_http_headers({
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept-Language": "pl-PL,pl;q=0.9,en-US;q=0.8",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            })
             await page.route(
                 "**/*.{png,jpg,jpeg,gif,svg,ico,woff,woff2,ttf,eot,mp4,mp3,css}",
                 lambda r: r.abort()
@@ -822,7 +834,16 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
                 raw_count = raw_count[0] if raw_count else 0
                 tbody_rows = await pw_page.eval_on_selector_all("tbody tr", "els => els.length")
                 tbody_rows = tbody_rows[0] if tbody_rows else 0
-                print(f"      [PW-DBG] a[href]=0 raw_a={raw_count} tbody_tr={tbody_rows} url={base_url[:60]}", flush=True)
+                # [v2.26] Dodatkowy debug: tytul i snippet body
+                try:
+                    _title = await pw_page.title()
+                    _body_snip = await pw_page.evaluate("() => document.body ? document.body.innerText.slice(0,150).replace(/\n/g,' ') : 'NO_BODY'")
+                    _page_url = pw_page.url
+                except Exception:
+                    _title, _body_snip, _page_url = "?", "?", base_url
+                print(f"      [PW-DBG] a[href]=0 raw_a={raw_count} tbody_tr={tbody_rows}", flush=True)
+                print(f"      [PW-DBG] title={_title!r} final_url={_page_url[:80]}", flush=True)
+                print(f"      [PW-DBG] body={_body_snip!r}", flush=True)
             for href in hrefs:
                 if not href: continue
                 try:
@@ -911,7 +932,14 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
     async with async_playwright() as p:
         browser = None
         try:
-            browser = await p.chromium.launch(headless=True)
+            browser = await p.chromium.launch(
+                headless=True,
+                args=[
+                    "--no-sandbox", "--disable-setuid-sandbox",
+                    "--ignore-certificate-errors",  # jak ssl=False w aiohttp
+                    "--disable-blink-features=AutomationControlled",
+                ]
+            )
 
             while bfs_queue and pages_crawled < PLAYWRIGHT_MINI_BFS_MAX_PAGES:
                 current_url, depth = bfs_queue.popleft()
@@ -919,26 +947,43 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
 
                 try:
                     page = await browser.new_page()
+                    await page.set_extra_http_headers({
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                        "Accept-Language": "pl-PL,pl;q=0.9,en-US;q=0.8",
+                        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                    })
                     await page.route(
                         "**/*.{png,jpg,jpeg,gif,svg,ico,woff,woff2,ttf,eot,mp4,mp3,css}",
                         lambda r: r.abort()
                     )
 
-                    # [v2.25] load zamiast networkidle — patrz komentarz w fetch_with_playwright
-                    try:
-                        await page.goto(current_url, wait_until="load", timeout=40000)
-                    except Exception:
-                        await page.goto(current_url, wait_until="domcontentloaded", timeout=25000)
+                    # [v2.26] goto z logowaniem bledow — SSL ignore + bot bypass headers
+                    _goto_ok = False
+                    _goto_err = None
+                    for _wait in ("load", "domcontentloaded"):
+                        try:
+                            await page.goto(current_url, wait_until=_wait, timeout=30000)
+                            _goto_ok = True
+                            break
+                        except Exception as _ge:
+                            _goto_err = _ge
+                    if not _goto_ok:
+                        print(f"      [PW-DBG] goto FAIL: {str(_goto_err)[:120]} url={current_url[:60]}", flush=True)
+                        pages_crawled += 1
+                        continue
 
                     # Czekaj az tbody wypelni sie wierszami (DataTables inicjalizacja)
                     try:
                         await page.wait_for_selector("tbody tr", timeout=8000)
                     except Exception:
-                        pass  # Strona bez tabeli — OK, kontynuuj
+                        pass
 
                     # Scrollowanie + czas na doladowanie lazy content
                     for _ in range(2):
-                        await page.evaluate("window.scrollBy(0, document.body.scrollHeight)")
+                        try:
+                            await page.evaluate("window.scrollBy(0, document.body.scrollHeight)")
+                        except Exception:
+                            pass
                         await asyncio.sleep(1.0)
 
                     final_url = page.url
@@ -1668,7 +1713,7 @@ def candidate_start_urls(start_url: str):
                     yield auxu
 
 # ===================== CACHE =====================
-CACHE_SCHEMA = 18  # v2.25
+CACHE_SCHEMA = 18  # v2.26
 
 def _empty_cache():
     return {
