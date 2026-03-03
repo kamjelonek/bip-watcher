@@ -1274,10 +1274,11 @@ def is_listing_url(u: str) -> bool:
         "/rss", "/feed", "rss.xml", "feed.xml",
         "wyszuk", "szukaj", "search", "query=", "filter", "filtr",
         "ostatnio_dodane", "ostatnio_zaktualizowane",
-        "action=", "widok=",
         "/ogloszenia", "/obwieszczenia", "/planowanie", "/mpzp", "/studium",
         "/decyzje", "/uchwaly", "/prawo-miejscowe",
-        "?id=",
+        # UWAGA: NIE ma tu "?id=", "action=", "widok=" — to sa konkretne podstrony
+        # BIP-u, nie listingi. Dodanie ich powoduje depth+2 dla kazdej strony
+        # co skraca BFS z 4 do 2 poziomow i nie dociera do ogloszen.
     ])
 
 def is_phase1_listing(u: str) -> bool:
@@ -2691,8 +2692,7 @@ async def phase1_full_crawl(
             seeds[cu] = max(seeds.get(cu, 0), score)
             if cu not in visited:
                 visited.add(cu)
-                next_depth = depth + 2 if is_listing_url(cu) else depth + 1
-                q.append((cu, next_depth))
+                q.append((cu, depth + 1))
 
         if pages_crawled % 100 == 0:
             elapsed = round((time.time() - start_time) / 60, 1)
