@@ -2353,6 +2353,7 @@ def should_try_playwright(
     html: str,
     aiohttp_kind: str,
     home_links: set = None,
+    home_text: str = "",
 ) -> tuple:
     """
     Ocenia czy warto odpytać Playwright dla tej strony.
@@ -2390,9 +2391,10 @@ def should_try_playwright(
         if html_size > 10000 and text_len < 400:
             return True, f"spa_suspect(html={html_size},text={text_len})"
 
-        # 3. Porównaj linki z home_links — jeśli podstrona nie wnosi nic nowego
-        #    to znaczy że treść (lista ogłoszeń) jest ładowana przez JS
+        # 3. Porównaj TEKST strony do home_text — jeśli strona to klon menu,
+        #    treść zakładki jest ładowana przez JS → wymuś Playwright
         if home_links and len(home_links) > 10:
+            # Sprawdź new_links (stary check)
             page_links = {
                 _canon(normalize_url(urljoin(url, a.get("href", ""))))
                 for a in soup.find_all("a", href=True)
@@ -2401,9 +2403,27 @@ def should_try_playwright(
             page_links.discard(None)
             page_links.discard("")
             new_links = page_links - home_links
-            new_links = {u for u in new_links if u}  # odfiltruj None/empty
+            new_links = {u for u in new_links if u}
             if len(new_links) < 3:
                 return True, f"no_new_links(page={len(page_links)},home={len(home_links)},new={len(new_links)})"
+
+            # CHECK: czy new_links to tylko kolejne strony menu (?id=X bez treści)?
+            # Jeśli ŻADEN z nowych linków nie ma oznak contentu (p1=szczegoly, action=details itp.)
+            # to ta zakładka ładuje dokumenty przez JS/AJAX → potrzeba Playwright
+            CONTENT_HINTS = ["p1=szczegoly", "action=details", "document_id=",
+                             "p1=tresc", "p1=pokaz", "p1=lista"]
+            content_new = {u for u in new_links if any(h in u.lower() for h in CONTENT_HINTS)}
+            if len(content_new) == 0 and len(new_links) > 0:
+                return True, f"only_menu_links(new={len(new_links)},content=0)"
+
+            # CHECK: text similarity z home_text
+            if home_text and len(text) > 100:
+                home_words = set(re.findall(r"[\w\u00c0-\u017e]+", home_text.lower()))
+                page_words = set(re.findall(r"[\w\u00c0-\u017e]+", text.lower()))
+                if home_words and page_words:
+                    overlap = len(page_words & home_words) / len(page_words)
+                    if overlap > 0.92:
+                        return True, f"menu_clone(overlap={overlap:.2f},text={text_len})"
 
         # 4. URL listingowy ale pusta treść po usunięciu nav
         url_relevant = any(h in url_low for h in LISTING_URL_HINTS)
@@ -2595,7 +2615,6 @@ async def phase1_full_crawl(
     pw_fetches = 0
     pw_extra_links = 0
     home_links: set = set()  # linki ze strony głównej — do porównania na podstronach
-    home_text_for_phase2: str = ""  # tekst strony głównej (menu) — do odejmowania w Phase2
 
     print(
         f"  🕷️  BFS [{gmina}] @ {allowed_host} "
@@ -2636,20 +2655,10 @@ async def phase1_full_crawl(
         # --- Linki z aiohttp ---
         aiohttp_links = _extract_links_from_html(html, final, allowed_host)
 
-        # --- Zbierz home_links + home_text ze strony głównej (depth=0) ---
+        # --- Zbierz home_links ze strony głównej (depth=0) ---
         if depth == 0 and not home_links:
             home_links = set(aiohttp_links)
-            # Zapisz też pełny tekst strony głównej (menu) do odejmowania w Phase2
-            try:
-                _soup_home = safe_soup(html)
-                if _soup_home:
-                    for _t in _soup_home(["script","style","noscript"]): _t.decompose()
-                    home_text_for_phase2 = re.sub(r"\s+", " ", _soup_home.get_text(" ", strip=True)).strip()
-                else:
-                    home_text_for_phase2 = ""
-            except Exception:
-                home_text_for_phase2 = ""
-            print(f"  🏠 [{gmina}] home_links={len(home_links)} home_text={len(home_text_for_phase2)}ch", flush=True)
+            print(f"  🏠 [{gmina}] home_links={len(home_links)} (bazowy zestaw linków menu)", flush=True)
 
         # --- DEBUG: szczegóły każdej strony (pierwsze 30 stron) ---
         if pages_crawled <= 30:
@@ -2676,7 +2685,7 @@ async def phase1_full_crawl(
 
         # --- Playwright jeśli strona wygląda jakby JS nie wyrenderował treści ---
         pw_links = set()
-        use_pw, pw_reason = should_try_playwright(url, html, kind, home_links=home_links)
+        use_pw, pw_reason = should_try_playwright(url, html, kind, home_links=home_links, home_text=home_text_for_phase2)
         if pages_crawled <= 30:
             print(f"  🔍 should_pw={use_pw} reason={pw_reason} url={url[:70]}", flush=True)
         if use_pw:
@@ -2751,7 +2760,6 @@ async def phase1_full_crawl(
         "pw_fetches": pw_fetches,
         "pw_extra_links": pw_extra_links,
         "home_links_list": list(home_links),
-        "home_text": home_text_for_phase2,
     }
 
 # PHASE 2 — sprawdza zawartość + odkrywa nowe linki (v2.21)
@@ -2979,7 +2987,7 @@ async def phase2_focus(
         title, h1, h2, meta_blob = extract_title_h1_h2(soup)
         att_set = attachments_signature(soup, final_c)
 
-        # Zbierz nagłówki + cały tekst; keyword matchuj TYLKO w "extra" treści
+        # Zbierz wszystkie nagłówki + cały tekst (skrypty/style usunięte)
         _ul = (url or "").lower()
         _is_detail = "action=details" in _ul or "document_id=" in _ul
 
@@ -2992,47 +3000,47 @@ async def phase2_focus(
         )
         full_text = re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip()
 
-        # Zbuduj "extra_blob" = tekst strony MINUS tekst menu (home_text)
-        # Rozbijamy na tokeny (słowa) i usuwamy ciągi wspólne z home_text
-        # To eliminuje fałszywe positive z powodu słów kluczowych w nawigacji
-        if home_text and not _is_detail:
-            # Tokenizuj home_text do zbioru ungramów i bigramów
-            home_words = set(re.findall(r"[\wÀ-ž]+", home_text.lower()))
-            # Podziel full_text na zdania (po ". " lub "\n") i zachowaj tylko te
-            # które zawierają słowa NIE będące w home_text
-            sentences = re.split(r"(?<=[.!?;])\s+", full_text)
-            extra_sentences = []
-            for sent in sentences:
-                sent_words = set(re.findall(r"[\wÀ-ž]+", sent.lower()))
-                # Zdanie jest "extra" jeśli >30% jego słów nie pochodzi z home
-                if not sent_words:
+        # Usuń tekst menu ze strony przez sliding-window substring removal
+        # Zamiast zgadywać klasy CSS, bierzemy okna 60-znaków z home_text
+        # i usuwamy je z full_text — działa niezależnie od struktury HTML
+        if home_text and not _is_detail and len(home_text) > 200:
+            clean = full_text
+            cl = clean.lower()
+            win, step = 70, 25
+            ht = home_text
+            for i in range(0, max(0, len(ht) - win), step):
+                phrase = ht[i:i + win].strip()
+                if len(phrase) < 50:
                     continue
-                overlap = len(sent_words & home_words) / len(sent_words)
-                if overlap < 0.85:  # mniej niż 85% słów pochodzi z menu
-                    extra_sentences.append(sent)
-            extra_text = " ".join(extra_sentences)
-            blob = f"{all_headings} {extra_text}"
-            _extra_chars = len(extra_text)
+                pl = phrase.lower()
+                pos = cl.find(pl)
+                while pos >= 0:
+                    clean = clean[:pos] + " " + clean[pos + len(phrase):]
+                    cl = clean.lower()
+                    pos = cl.find(pl)
+            clean_text = re.sub(r"\s+", " ", clean).strip()
+            blob = f"{all_headings} {clean_text}"
+            _removed_chars = len(full_text) - len(clean_text)
         else:
             blob = f"{all_headings} {full_text}"
-            _extra_chars = len(full_text)
+            _removed_chars = 0
 
         ok_any, kw_any = keyword_match_in_blob(blob)
 
         # DIAGNOSTYKA
         if ok_any or _is_detail:
             kw_pos = blob.lower().find((kw_any or "").lower()) if kw_any else -1
-            kw_ctx = blob[max(0,kw_pos-60):kw_pos+100].replace("\n"," ") if kw_pos >= 0 else ""
+            kw_ctx = blob[max(0, kw_pos-60):kw_pos+100].replace("\n", " ") if kw_pos >= 0 else ""
             print(
                 f"  🔎 [{gmina}] {'DETAIL ' if _is_detail else ''}match={ok_any} kw={kw_any!r} "
-                f"extra={_extra_chars}ch full={len(full_text)}ch html={len(html)}B"
+                f"removed={_removed_chars}ch blob={len(blob)}ch html={len(html)}B"
                 f"\n     ctx: ...{kw_ctx!r}..."
                 f"\n     url={url[:80]}",
                 flush=True
             )
         elif pages_ok <= 3:
             print(
-                f"  🧹 [{gmina}] no_match extra={_extra_chars}ch full={len(full_text)}ch "
+                f"  🧹 [{gmina}] no_match removed={_removed_chars}ch blob={len(blob)}ch "
                 f"url={url[:80]}",
                 flush=True
             )
