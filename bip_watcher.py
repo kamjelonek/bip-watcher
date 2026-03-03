@@ -833,12 +833,7 @@ async def fetch_with_playwright(url: str) -> tuple:
             page = await browser.new_page()
             try:
                 t0 = time.time()
-                await page.goto(url, wait_until="domcontentloaded", timeout=60000)
-                # Poczekaj na załadowanie linków — do 10s
-                try:
-                    await page.wait_for_selector("a", timeout=10000)
-                except Exception:
-                    pass  # Brak linków też jest wynikiem
+                await page.goto(url, wait_until="networkidle", timeout=60000)
                 content = await page.content()
                 final_url = page.url
                 ms = round((time.time() - t0) * 1000)
@@ -941,7 +936,7 @@ async def playwright_bfs(
                     # Blokuj zasoby niepotrzebne do odkrywania linków
                     await page.route("**/*.{png,jpg,jpeg,gif,svg,ico,woff,woff2,ttf,eot}", lambda r: r.abort())
 
-                    await page.goto(url, wait_until="domcontentloaded", timeout=45000)
+                    await page.goto(url, wait_until="networkidle", timeout=60000)
 
                     # Poczekaj na linki — max 8s
                     try:
@@ -2970,19 +2965,24 @@ async def phase2_focus(
 
         title, h1, h2, meta_blob = extract_title_h1_h2(soup)
         att_set = attachments_signature(soup, final_c)
-        fast_text = _soup_fast_text(soup)
 
-        blob = f"{title} {h1} {h2} {fast_text}"
+        # Cały tekst strony bez żadnego obcinania — taka sama logika jak reszta kodu
+        for tag in soup(["script", "style", "noscript"]):
+            tag.decompose()
+        full_text = re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip()
+
+        blob = f"{title} {h1} {h2} {full_text}"
         ok_any, kw_any = keyword_match_in_blob(blob)
+        fast_text = full_text  # dla kompatybilności z debugiem i resztą kodu
 
         # DEBUG: dla stron action=details pokaż co widzimy
         _ul = (url or "").lower()
         if "action=details" in _ul or "document_id=" in _ul:
             print(
                 f"  🔬 [{gmina}] action/doc page:"
-                f" html={len(html)}B title={title!r:.50} h1={h1!r:.50}"
-                f" text={len(fast_text)}ch ok={ok_any} kw={kw_any}"
-                f" url={url[:80]}",
+                f" html={len(html)}B text={len(fast_text)}ch ok={ok_any} kw={kw_any}"
+                f"\n      blob[0:300]={blob[:300]!r}"
+                f"\n      url={url[:80]}",
                 flush=True
             )
 
