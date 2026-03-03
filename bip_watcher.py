@@ -2630,9 +2630,34 @@ async def phase1_full_crawl(
         # --- Linki z aiohttp ---
         aiohttp_links = _extract_links_from_html(html, final, allowed_host)
 
+        # --- DEBUG: szczegóły każdej strony (pierwsze 30 stron) ---
+        if pages_crawled <= 30:
+            try:
+                _soup_dbg = safe_soup(html)
+                if _soup_dbg:
+                    for _t in _soup_dbg(["script","style","noscript"]):
+                        _t.decompose()
+                    _txt_dbg = re.sub(r"\s+", " ", _soup_dbg.get_text(" ", strip=True)).strip()
+                    _lnk_dbg = len(_soup_dbg.find_all("a", href=True))
+                else:
+                    _txt_dbg = ""
+                    _lnk_dbg = 0
+                _has_id = bool(re.search(r"[?&](id|art|kat|dz|sub|nid)=\d+", url.lower()))
+                print(
+                    f"  📄 [{gmina}] p={pages_crawled} depth={depth} "
+                    f"html={len(html)}B text={len(_txt_dbg)}ch links={_lnk_dbg} "
+                    f"id_param={_has_id} kind={kind} status={status} "
+                    f"url={url[:70]}",
+                    flush=True
+                )
+            except Exception as _ex:
+                print(f"  📄 DEBUG ERR: {_ex}", flush=True)
+
         # --- Playwright jeśli strona wygląda jakby JS nie wyrenderował treści ---
         pw_links = set()
         use_pw, pw_reason = should_try_playwright(url, html, kind)
+        if pages_crawled <= 30:
+            print(f"  🔍 should_pw={use_pw} reason={pw_reason} url={url[:70]}", flush=True)
         if use_pw:
             pw_fetches += 1
             print(
