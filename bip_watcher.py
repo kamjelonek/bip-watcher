@@ -187,6 +187,21 @@ KEYWORDS = [
 
 STRICT_ONLY = {"wz", "oze", "ris"}
 
+# Słowa nawigacyjne — jeśli keyword jest otoczony nimi, to match z menu, nie z treści
+_NAV_CONTEXT_WORDS = [
+    "aktualności", "ogłoszenia", "zamówienia publiczne", "rejestr instytucji",
+    "rada gminy", "prawo miejscowe", "ochrona środowiska", "informacje o gminie",
+    "jednostki organizacyjne", "strona główna", "zawiadomienia o zgromadzeniach",
+    "biuletyn informacji", "cyberbezpieczeństwo", "ochrona danych osobowych",
+]
+
+def _is_nav_context(text_lower: str, kw_pos: int, window: int = 150) -> bool:
+    """Zwraca True jeśli keyword w tej pozycji jest otoczony słowami menu nawigacyjnego."""
+    ctx = text_lower[max(0, kw_pos - window): kw_pos + len(text_lower) + window]
+    ctx = text_lower[max(0, kw_pos - window): min(len(text_lower), kw_pos + window)]
+    nav_hits = sum(1 for w in _NAV_CONTEXT_WORDS if w in ctx)
+    return nav_hits >= 3  # 3+ różnych słów nawigacyjnych = jesteśmy w menu
+
 def keyword_match_in_blob(blob: str):
     t = re.sub(r"\s+", " ", (blob or "")).strip().lower()
     if not t:
@@ -197,11 +212,15 @@ def keyword_match_in_blob(blob: str):
         if not k:
             continue
         if (k in strict_only) or (len(k) <= 3):
-            if re.search(rf"(?<!\w){re.escape(k)}(?!\w)", t):
+            m = re.search(rf"(?<!\w){re.escape(k)}(?!\w)", t)
+            if m and not _is_nav_context(t, m.start()):
                 return (True, kw)
         else:
-            if k in t:
-                return (True, kw)
+            pos = t.find(k)
+            while pos >= 0:
+                if not _is_nav_context(t, pos):
+                    return (True, kw)
+                pos = t.find(k, pos + 1)
     return (False, None)
 
 # ===================== IGNORE =====================
