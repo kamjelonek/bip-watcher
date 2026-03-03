@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.26 - PRODUCTION
+BIP WATCHER v2.28 - PRODUCTION
 Zmiany v2.23 vs v2.22:
 
 [ZMIANA 1] _fetch_links_playwright — pełny mini-BFS przez Playwright (głębokość 1)
@@ -1713,7 +1713,7 @@ def candidate_start_urls(start_url: str):
                     yield auxu
 
 # ===================== CACHE =====================
-CACHE_SCHEMA = 18  # v2.26
+CACHE_SCHEMA = 18  # v2.28
 
 def _empty_cache():
     return {
@@ -2386,30 +2386,37 @@ async def phase1_full_crawl(
                 flush=True
             )
 
-        # --- Playwright mini-BFS jeśli potrzebny ---
+        # --- [v2.28] Playwright dla linkow — pobierz TYLKO te strone, bez mini-BFS ---
+        # Glowny BFS sam odwiedzi kazdy znaleziony link (przez aiohttp lub PW).
+        # Nie potrzebujemy osobnego sub-crawlera — to bylo zrodlem petli i eksplozji.
         pw_links = set()
         if use_pw:
             pw_fetches += 1
             print(
-                f"  🎭 [{gmina}] Playwright mini-BFS @ depth={depth} "
-                f"reason={pw_reason} aiohttp_links={len(aiohttp_links)} "
-                f"url={url[:65]}",
+                f"  🎭 [{gmina}] PW fetch-for-links @ depth={depth} "
+                f"reason={pw_reason} url={url[:70]}",
                 flush=True
             )
             try:
-                pw_links = await _fetch_links_playwright(final, allowed_host)
-                new_from_pw = len(pw_links - aiohttp_links)
-                pw_extra_links += new_from_pw
-                print(
-                    f"  🎭 Playwright mini-BFS result: {len(pw_links)} linków "
-                    f"(+{new_from_pw} nowych ponad aiohttp) @ {url[:60]}",
-                    flush=True
+                pw_html, pw_final, pw_kind, _, _, pw_err, pw_ms, _ = await fetch_with_playwright(
+                    final or url, interact=True
                 )
-                diag["counts"]["pw_mini_bfs_calls"] = int(diag["counts"].get("pw_mini_bfs_calls", 0)) + 1
-                diag["counts"]["pw_mini_bfs_extra_links"] = int(diag["counts"].get("pw_mini_bfs_extra_links", 0)) + new_from_pw
+                if pw_html:
+                    pw_links = _extract_links_from_html(pw_html, pw_final or final or url, allowed_host)
+                    new_from_pw = len(pw_links - aiohttp_links)
+                    pw_extra_links += new_from_pw
+                    print(
+                        f"  🎭 PW links: {len(pw_links)} ({new_from_pw} nowych) "
+                        f"html={len(pw_html)}B ms={pw_ms} @ {url[:60]}",
+                        flush=True
+                    )
+                    diag["counts"]["pw_mini_bfs_calls"] = int(diag["counts"].get("pw_mini_bfs_calls", 0)) + 1
+                    diag["counts"]["pw_mini_bfs_extra_links"] = int(diag["counts"].get("pw_mini_bfs_extra_links", 0)) + new_from_pw
+                else:
+                    print(f"  🎭 PW fetch-for-links: brak HTML ({pw_err}) @ {url[:60]}", flush=True)
             except Exception as ex:
                 diag["notes"].append(f"PW_ERR {url[:50]}: {str(ex)[:60]}")
-                print(f"    ⚠️ Playwright mini-BFS error: {ex}", flush=True)
+                print(f"    ⚠️ PW fetch-for-links error: {ex}", flush=True)
 
         # --- Połącz linki z obu źródeł ---
         all_links = aiohttp_links | pw_links
