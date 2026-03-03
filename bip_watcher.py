@@ -2361,46 +2361,57 @@ def should_try_playwright(url: str, html: str, aiohttp_kind: str) -> tuple:
     1. aiohttp w ogóle nie zwróciło HTML (błąd, timeout, http_err)
     2. URL sugeruje że strona powinna zawierać ogłoszenia/listy
        ALE treść jest podejrzanie pusta lub mało linków wewnętrznych
-       (JS prawdopodobnie nie wyrenderował jeszcze contentu)
-
-    NIE odpala się gdy:
-    - aiohttp zwróciło normalną stronę z treścią — nie ma sensu
-    - URL to zasób statyczny (obrazek, PDF itp.)
+    3. Strona ma dużo HTML ale bardzo mało widocznego tekstu
+       (klasyczny objaw SPA — React/Vue renderuje przez JS)
     """
     url_low = (url or "").lower()
 
-    # Przypadek 1: aiohttp w ogóle nie dostało HTML — zawsze próbuj Playwright
+    # Przypadek 1: aiohttp w ogóle nie dostało HTML
     if aiohttp_kind != "html":
         return True, f"aiohttp_failed(kind={aiohttp_kind})"
 
-    # Przypadek 2: sprawdź czy URL sugeruje listę ogłoszeń / planowanie
-    url_relevant = any(h in url_low for h in LISTING_URL_HINTS)
-    if not url_relevant:
-        return False, "url_not_relevant"
-
-    # URL jest relevatny — sprawdź czy treść jest podejrzanie pusta
     if not html:
-        return True, "empty_html_relevant_url"
+        return True, "empty_html"
+
+    html_size = len(html)
 
     try:
         soup = safe_soup(html)
         if not soup:
-            return True, "no_soup_relevant_url"
+            return True, "no_soup"
 
-        # Usuń nawigację żeby nie liczyć menu jako treści
-        for tag in soup(["script", "style", "noscript", "nav", "header", "footer"]):
+        for tag in soup(["script", "style", "noscript"]):
             tag.decompose()
 
         text = re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip()
-        links = soup.find_all("a", href=True)
+        all_links = soup.find_all("a", href=True)
+        text_len = len(text)
+        links_count = len(all_links)
 
-        # Treść bardzo krótka jak na stronę listingową
-        if len(text) < 300:
-            return True, f"sparse_content(text={len(text)},links={len(links)})"
+        # Przypadek 2: dużo HTML ale mało tekstu — klasyczny SPA
+        # np. html=50KB ale tekst=200 znaków → JS renderuje treść
+        if html_size > 10000 and text_len < 400:
+            return True, f"spa_suspect(html={html_size},text={text_len})"
 
-        # Mało linków wewnętrznych na stronie która powinna mieć listę
-        if len(links) < 8:
-            return True, f"few_links(links={len(links)},text={len(text)})"
+        # Przypadek 3: URL z parametrem ?id= lub podobnym — BIP-y PHP często
+        # mają taką strukturę gdzie podstrony są dynamiczne mimo statycznego menu
+        url_has_id_param = bool(re.search(r"[?&](id|art|kat|dz|sub|nid)=\d+", url_low))
+        if url_has_id_param and text_len < 800:
+            return True, f"id_param_sparse(text={text_len})"
+
+        # Przypadek 4: URL sugeruje ogłoszenia/planowanie
+        url_relevant = any(h in url_low for h in LISTING_URL_HINTS)
+        if url_relevant:
+            # Usuń nav/header/footer żeby nie liczyć menu jako treści listingu
+            for tag in soup(["nav", "header", "footer", "aside"]):
+                tag.decompose()
+            content_text = re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip()
+            content_links = soup.find_all("a", href=True)
+
+            if len(content_text) < 500:
+                return True, f"listing_sparse(text={len(content_text)},links={len(content_links)})"
+            if len(content_links) < 6:
+                return True, f"listing_few_links(links={len(content_links)})"
 
     except Exception:
         return True, "parse_error"
