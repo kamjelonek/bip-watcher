@@ -1,46 +1,46 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.21 - PRODUCTION
-Zmiany v2.21 vs v2.20:
+BIP WATCHER v2.22 - PRODUCTION
+Zmiany v2.22 vs v2.21:
 
-[1] DETEKTOR STRON DYNAMICZNYCH — nowy moduł DynamicPageDetector
-    Jeden wspólny detektor używany w Phase1 i Phase2.
-    System punktowy (scoring) z wieloma sygnałami:
-    - React/Vue/Angular/Next.js markery w HTML
-    - Stosunek tekstu do skryptów
-    - Liczba linków <a href> vs rozmiar HTML
-    - Puste body lub bardzo mało tekstu
-    - webpack/vite/nuxt markery
-    - data-reactroot, __NEXT_DATA__, __nuxt itp.
-    Próg >= 3 punkty = strona dynamiczna (konfigurowalne DYNAMIC_SCORE_THRESHOLD)
+[FIX 1] _fetch_links_playwright — wyciąganie document_id z JS/AJAX (KRYTYCZNY)
+    Problem: strony bip.lubelskie.pl ładują listę dokumentów przez AJAX.
+    Tabela <table><tbody> jest pusta w HTML — wypełnia się przez JavaScript.
+    Playwright po networkidle ma wyrenderowaną tabelę, ale linki do dokumentów
+    są generowane przez onclick/JS, nie przez <a href>.
+    
+    Rozwiązanie:
+    - Po networkidle parsuj page.content() (pełny wyrenderowany HTML)
+    - Szukaj document_id w CAŁEJ treści strony (regex na page source)
+    - Szukaj też w atrybutach onclick, data-href, data-url
+    - Rekonstruuj URL: ?action=details&document_id=XXXXX
+    - Dodaj znalezione URL-e do zbioru linków
 
-[2] PLAYWRIGHT BFS — pełnoprawny równoległy crawler
-    - Startuje od tej samej strony głównej co aiohttp BFS
-    - Działa RÓWNOLEGLE z aiohttp BFS w Phase1
-    - Głębokość PLAYWRIGHT_MAX_DEPTH (domyślnie 4, jak PHASE1_MAX_DEPTH)
-    - Odkryte URL-e trafiają do WSPÓLNEGO frontieru (gmina_frontiers)
-    - Persystowane w cache — Phase2 przetwarza je w kolejnych runach
-    - Oznaczone source="playwright" w frontierze dla diagnostyki
+[FIX 2] _extract_content_text — zawsze usuwaj menu, także dla stron DETAIL
+    Problem: dla _is_detail=True kod wracał full_text bez usuwania menu.
+    Menu BIP lubelskie.pl zawiera "Plan Ogólny Gminy Dołhobyczów" jako
+    pozycję nawigacyjną — powodowało fałszywe trafienia.
+    
+    Rozwiązanie: Strategia 3 (strip_nav) i Strategia 4 (sliding_window)
+    działają teraz TAKŻE dla stron DETAIL, zanim wróci do detail_full fallback.
 
-[3] PHASE1 — równoległy BFS
-    - aiohttp BFS + Playwright BFS startują jednocześnie (asyncio.gather)
-    - Wyniki łączone w jeden frontier
-    - Playwright BFS aktywowany zawsze (nie tylko dla SPA) — decyzja architektoniczna
-      żeby nie przegapić niczego, szczególnie dla bip.lubelskie.pl i podobnych
+[FIX 3] _is_nav_context — zwiększony window i obniżony próg
+    Problem: window=150 zbyt mały gdy strona ma 8000+ znaków menu.
+    Próg nav_hits>=3 zbyt wysoki dla krótkich fragmentów.
+    
+    Rozwiązanie: window=300, próg nav_hits>=2.
+    Dodano też więcej słów nawigacyjnych charakterystycznych dla BIP.
 
-[4] PHASE2 — Playwright jako fallback per-URL
-    - Każdy URL najpierw pobierany przez aiohttp
-    - Jeśli DynamicPageDetector wykryje stronę dynamiczną → Playwright fetch
-    - Wyniki z obu ścieżek przez ten sam keyword matching
-    - Nowe linki odkryte przez Playwright w Phase2 dopisywane do frontieru
+[FIX 4] _is_nav_context — naprawiony błąd (zduplikowana linia ctx =)
+    Pierwsza linia przypisania ctx była nadpisywana przez drugą —
+    obliczenia były prawidłowe (druga linia), ale kod był mylący.
+    Usunięto duplikat.
 
-[5] fetch_with_fallback — naprawiony
-    - Teraz używa fetch_conditional (8 wartości z resp_meta)
-    - Zwraca 8 wartości (html, final, kind, status, ctype, err, ms, resp_meta)
-    - Phase2 poprawnie obsługuje etag/last-modified
-
-[6] crawl_with_playwright — naprawiony wyciek zasobów
-    - try/finally gwarantuje zamknięcie każdej strony
+Zmiany v2.21 vs v2.20 (zachowane):
+- DynamicPageDetector — jeden wspólny detektor
+- playwright_bfs — pełny równoległy BFS
+- fetch_with_fallback — naprawiony (8 wartości)
+- crawl_with_playwright — naprawiony wyciek zasobów
 
 Zmiany v2.20 vs v2.18 (zachowane):
 - normalize_url: lang/locale/language NIE są filtrowane
@@ -187,20 +187,42 @@ KEYWORDS = [
 
 STRICT_ONLY = {"wz", "oze", "ris"}
 
-# Słowa nawigacyjne — jeśli keyword jest otoczony nimi, to match z menu, nie z treści
+# ===================== NAV CONTEXT (FIX 3 + FIX 4) =====================
+# [FIX 3] Rozszerzona lista słów nawigacyjnych — dodano frazy typowe dla BIP lubelskie.pl
 _NAV_CONTEXT_WORDS = [
     "aktualności", "ogłoszenia", "zamówienia publiczne", "rejestr instytucji",
     "rada gminy", "prawo miejscowe", "ochrona środowiska", "informacje o gminie",
     "jednostki organizacyjne", "strona główna", "zawiadomienia o zgromadzeniach",
     "biuletyn informacji", "cyberbezpieczeństwo", "ochrona danych osobowych",
+    # Dodane w v2.22 — typowe dla bip.lubelskie.pl i podobnych platform BIP
+    "plan ogólny gminy",       # pojawia się jako pozycja MENU w bip.lubelskie.pl
+    "plan ogólny miasta",
+    "planu ogólnego",
+    "studium uwarunkowań",
+    "warunki zabudowy",
+    "decyzje środowiskowe",
+    "rejestr zmian",
+    "mapa strony",
+    "drukuj stronę",
+    "wersja kontrastowa",
+    "accessibility",
+    "polityka prywatności",
 ]
 
-def _is_nav_context(text_lower: str, kw_pos: int, window: int = 150) -> bool:
-    """Zwraca True jeśli keyword w tej pozycji jest otoczony słowami menu nawigacyjnego."""
-    ctx = text_lower[max(0, kw_pos - window): kw_pos + len(text_lower) + window]
+def _is_nav_context(text_lower: str, kw_pos: int, window: int = 300) -> bool:
+    """
+    Zwraca True jeśli keyword w tej pozycji jest otoczony słowami menu nawigacyjnego.
+
+    [FIX 3] window zwiększony z 150 do 300 — menu BIP może mieć 8000+ znaków,
+    małe okno nie wykrywało kontekstu nawigacyjnego.
+    [FIX 4] Usunięto zduplikowaną linię ctx = (pierwsza była błędna — używała
+    kw_pos + len(text_lower) zamiast kw_pos + window).
+    [FIX 3] Próg obniżony z 3 do 2 — bardziej agresywne filtrowanie menu.
+    """
+    # [FIX 4] Poprawiona — tylko jedna linia ctx (stara miała zduplikowane przypisanie)
     ctx = text_lower[max(0, kw_pos - window): min(len(text_lower), kw_pos + window)]
     nav_hits = sum(1 for w in _NAV_CONTEXT_WORDS if w in ctx)
-    return nav_hits >= 3  # 3+ różnych słów nawigacyjnych = jesteśmy w menu
+    return nav_hits >= 2  # [FIX 3] obniżone z 3 do 2
 
 def keyword_match_in_blob(blob: str):
     t = re.sub(r"\s+", " ", (blob or "")).strip().lower()
@@ -384,14 +406,8 @@ PHASE1_MAX_URLS = env_int("PHASE1_MAX_URLS", 999999)
 PHASE2_MAX_DEPTH = 4
 PHASE2_MAX_PAGES = 999999
 
-# v2.21: Playwright BFS — głębokość taka sama jak Phase1
 PLAYWRIGHT_MAX_DEPTH = env_int("PLAYWRIGHT_MAX_DEPTH", 4)
-
-# v2.21: próg punktowy detektora dynamicznych stron
-# >= DYNAMIC_SCORE_THRESHOLD punktów = strona dynamiczna → użyj Playwright
 DYNAMIC_SCORE_THRESHOLD = env_int("DYNAMIC_SCORE_THRESHOLD", 3)
-
-# v2.20 compat
 SPA_FALLBACK_MIN_LINKS = env_int("SPA_FALLBACK_MIN_LINKS", 20)
 
 REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=None, sock_connect=12, sock_read=35)
@@ -643,73 +659,26 @@ def is_block_page(text: str) -> bool:
             return True
     return False
 
-# ===================== DYNAMIC PAGE DETECTOR (v2.21) =====================
-# Jeden wspólny detektor używany zarówno w Phase1 jak i Phase2.
-# System punktowy — im więcej sygnałów, tym pewniejsza decyzja o użyciu Playwright.
-#
-# Sygnały i ich wagi:
-#   +3  React/Vue/Angular/Next.js markery w HTML (data-reactroot, __NEXT_DATA__ itp.)
-#   +3  id="root" lub id="app" w body (typowe dla SPA)
-#   +3  Puste body lub <body> z < 200 znaków tekstu przy HTML > 5 KB
-#   +3  Bardzo mało linków <a href> (< 5) przy dużym HTML (> 10 KB)
-#   +2  Tekst < 300 znaków przy HTML > 5 KB (strona renderuje się przez JS)
-#   +2  Skrypty z atrybutem src > 8 (dużo zewnętrznych JS)
-#   +1  webpack/vite/nuxt w src skryptów
-#   +1  Brak tagu <title> lub bardzo krótki title (< 5 znaków)
-#   +2  Odpowiedź serwera: kind == "timeout" lub "exc" przy status None
-#        (strona może wymagać JS do załadowania)
-
+# ===================== DYNAMIC PAGE DETECTOR =====================
 class DynamicPageDetector:
-    """
-    Ocenia czy strona jest dynamiczna (SPA/JS-rendered) i wymaga Playwright.
-
-    Użycie:
-        detector = DynamicPageDetector()
-        score, reasons = detector.score(html, url, kind, status)
-        is_dynamic = score >= DYNAMIC_SCORE_THRESHOLD
-    """
-
-    # Markery frameworków JS — bardzo silny sygnał
     _FRAMEWORK_MARKERS = [
-        # React
-        ("data-reactroot", 3),
-        ("__next_data__", 3),
-        ("_next/static", 3),
-        ("react-dom", 2),
-        # Vue
-        ("__vue__", 3),
-        ("data-v-", 2),
-        ("__nuxt", 3),
-        ("nuxt.js", 2),
-        # Angular
-        ("ng-version", 3),
-        ("ng-app", 2),
-        ("[ng-", 2),
-        # Svelte
+        ("data-reactroot", 3), ("__next_data__", 3), ("_next/static", 3), ("react-dom", 2),
+        ("__vue__", 3), ("data-v-", 2), ("__nuxt", 3), ("nuxt.js", 2),
+        ("ng-version", 3), ("ng-app", 2), ("[ng-", 2),
         ("__svelte", 3),
-        # Generyczne SPA markery
-        ("webpack", 1),
-        ("vite", 1),
-        ("chunk.js", 1),
-        ("bundle.js", 1),
+        ("webpack", 1), ("vite", 1), ("chunk.js", 1), ("bundle.js", 1),
     ]
 
-    # id/class typowe dla SPA root container
     _ROOT_PATTERNS = re.compile(
         r'(id=["\'])(root|app|__next|__nuxt|app-root|ng-app|vue-app)(["\'])',
         re.IGNORECASE
     )
 
     def score(self, html: str, url: str = "", kind: str = "html", status: int = None) -> tuple:
-        """
-        Zwraca (score: int, reasons: list[str]).
-        score >= DYNAMIC_SCORE_THRESHOLD → użyj Playwright.
-        """
         total = 0
         reasons = []
 
         if not html:
-            # Brak HTML przy braku błędu → prawie na pewno SPA
             if kind == "html" and status == 200:
                 total += 3
                 reasons.append("empty_html_200")
@@ -718,7 +687,6 @@ class DynamicPageDetector:
         low = html.lower()
         html_size = len(html)
 
-        # --- Sygnał 1: Markery frameworków JS ---
         fw_score = 0
         fw_hits = []
         for marker, weight in self._FRAMEWORK_MARKERS:
@@ -729,12 +697,10 @@ class DynamicPageDetector:
             total += fw_score
             reasons.append(f"js_framework({','.join(fw_hits[:3])})")
 
-        # --- Sygnał 2: id="root" / id="app" ---
         if self._ROOT_PATTERNS.search(html):
             total += 3
             reasons.append("spa_root_container")
 
-        # Parsowanie soup — używamy tylko jeśli potrzebne
         soup = None
 
         def _get_soup():
@@ -746,7 +712,6 @@ class DynamicPageDetector:
                     soup = None
             return soup
 
-        # --- Sygnał 3: Analiza tekstu vs rozmiar HTML ---
         try:
             s = _get_soup()
             if s:
@@ -754,7 +719,6 @@ class DynamicPageDetector:
                     tag.decompose()
                 visible_text = re.sub(r"\s+", " ", s.get_text(" ", strip=True)).strip()
                 text_len = len(visible_text)
-
                 if html_size > 5000 and text_len < 200:
                     total += 3
                     reasons.append(f"near_empty_body(text={text_len},html={html_size})")
@@ -764,7 +728,6 @@ class DynamicPageDetector:
         except Exception:
             pass
 
-        # --- Sygnał 4: Liczba linków <a href> ---
         try:
             s = _get_soup()
             if s:
@@ -779,7 +742,6 @@ class DynamicPageDetector:
         except Exception:
             pass
 
-        # --- Sygnał 5: Liczba skryptów zewnętrznych ---
         try:
             s = _get_soup()
             if s:
@@ -793,7 +755,6 @@ class DynamicPageDetector:
         except Exception:
             pass
 
-        # --- Sygnał 6: Brak lub bardzo krótki title ---
         try:
             s = _get_soup()
             if s:
@@ -801,18 +762,13 @@ class DynamicPageDetector:
                 title_text = (title_tag.get_text(strip=True) if title_tag else "")
                 if not title_text or len(title_text) < 5:
                     total += 1
-                    reasons.append(f"no_title")
+                    reasons.append("no_title")
         except Exception:
             pass
 
-        # --- Sygnał 7: Znane dynamiczne ścieżki / parametry URL ---
-        # Tylko gdy kombinacja z innymi sygnałami (nie standalone)
-        # aby nie być zbyt agresywnym dla zwykłych BIP-ów z ?id=
         if total >= 1:
             url_low = (url or "").lower()
-            dynamic_url_hints = [
-                "/#/", "/#!/", "/_next/", "/__nuxt/", "/static/js/",
-            ]
+            dynamic_url_hints = ["/#/", "/#!/", "/_next/", "/__nuxt/", "/static/js/"]
             if any(h in url_low for h in dynamic_url_hints):
                 total += 2
                 reasons.append("dynamic_url_pattern")
@@ -820,26 +776,16 @@ class DynamicPageDetector:
         return total, reasons
 
     def is_dynamic(self, html: str, url: str = "", kind: str = "html", status: int = None) -> tuple:
-        """
-        Zwraca (is_dynamic: bool, score: int, reasons: list[str]).
-        Wygodna metoda do użycia w kodzie.
-        """
         score, reasons = self.score(html, url, kind, status)
         return score >= DYNAMIC_SCORE_THRESHOLD, score, reasons
 
 
-# Singleton — jeden detektor dla całego programu
 dynamic_detector = DynamicPageDetector()
 
 
-# ===================== PLAYWRIGHT HELPERS (v2.21) =====================
+# ===================== PLAYWRIGHT HELPERS =====================
 
 async def fetch_with_playwright(url: str) -> tuple:
-    """
-    Pobiera pojedynczą stronę przez Playwright.
-    Zwraca (html, final_url, kind, status, ctype, err, ms, resp_meta).
-    8 wartości — kompatybilne z fetch_conditional.
-    """
     try:
         from playwright.async_api import async_playwright
     except ImportError:
@@ -881,23 +827,6 @@ async def playwright_bfs(
     diag: dict,
     existing_visited: set = None,
 ) -> set:
-    """
-    Pełny BFS przez Playwright — odpowiednik aiohttp BFS z Phase1.
-
-    Startuje od start_url, odkrywa wszystkie wewnętrzne linki do głębokości max_depth.
-    Używa tej samej logiki filtrowania co aiohttp BFS (should_skip_href, same_base_domain).
-
-    Parametry:
-        start_url       — strona główna gminy
-        allowed_host    — host domeny (filtr same-origin)
-        max_depth       — maksymalna głębokość BFS (domyślnie PLAYWRIGHT_MAX_DEPTH=4)
-        diag            — słownik diagnostyczny
-        existing_visited — zbiór URL-i już odwiedzonych przez aiohttp BFS
-                          (żeby nie crawlować dwa razy tych samych stron)
-
-    Zwraca:
-        set canonicznych URL-i odkrytych przez Playwright (gotowe do frontieru)
-    """
     try:
         from playwright.async_api import async_playwright
     except ImportError:
@@ -909,7 +838,7 @@ async def playwright_bfs(
         existing_visited = set()
 
     found_urls = set()
-    visited = set(existing_visited)  # kopia — nie modyfikujemy oryginału
+    visited = set(existing_visited)
     queue = deque()
 
     cu_start = _canon(start_url)
@@ -936,13 +865,11 @@ async def playwright_bfs(
                 url, depth = queue.popleft()
 
                 if depth > max_depth:
-                    # URL zbyt głęboko — dodaj do frontieru ale nie crawluj
                     cu = _canon(url)
                     if cu:
                         found_urls.add(cu)
                     continue
 
-                # Limit czasu dla Playwright BFS
                 if RUN_DEADLINE_MIN > 0 and (time.time() - GLOBAL_T0) > (RUN_DEADLINE_MIN * 60 * 0.3):
                     diag["notes"].append(f"PW_BFS_TIME_LIMIT pages={pages_crawled}")
                     print(f"  ⏱️  Playwright BFS przerwany — limit czasu (pages={pages_crawled})", flush=True)
@@ -951,13 +878,9 @@ async def playwright_bfs(
                 page = None
                 try:
                     page = await browser.new_page()
-
-                    # Blokuj zasoby niepotrzebne do odkrywania linków
                     await page.route("**/*.{png,jpg,jpeg,gif,svg,ico,woff,woff2,ttf,eot}", lambda r: r.abort())
-
                     await page.goto(url, wait_until="networkidle", timeout=60000)
 
-                    # Poczekaj na linki — max 8s
                     try:
                         await page.wait_for_selector("a[href]", timeout=8000)
                     except Exception:
@@ -966,7 +889,6 @@ async def playwright_bfs(
                     final_url = page.url
                     pages_crawled += 1
 
-                    # Pobierz wszystkie linki przez JavaScript
                     try:
                         raw_links = await page.eval_on_selector_all(
                             "a[href]",
@@ -980,7 +902,6 @@ async def playwright_bfs(
                             href = (link_obj.get("href") or "").strip()
                             if not href or href.startswith("mailto:") or href.startswith("tel:") or href.startswith("javascript:"):
                                 continue
-
                             abs_u = normalize_url(urljoin(final_url, href))
                             if not is_valid_url(abs_u):
                                 continue
@@ -988,18 +909,13 @@ async def playwright_bfs(
                                 continue
                             if should_skip_href(abs_u):
                                 continue
-
                             cu = _canon(abs_u)
                             if not cu or cu in visited:
                                 continue
-
                             visited.add(cu)
                             found_urls.add(cu)
-
-                            # Dodaj do kolejki BFS jeśli nie za głęboko
                             if depth + 1 <= max_depth:
                                 queue.append((abs_u, depth + 1))
-
                         except Exception:
                             continue
 
@@ -1018,7 +934,6 @@ async def playwright_bfs(
                     if pages_failed <= 5:
                         print(f"  ⚠️  Playwright BFS error @ {url}: {str(e)[:80]}", flush=True)
                 finally:
-                    # GWARANTOWANE zamknięcie strony — nawet przy błędzie
                     if page:
                         try:
                             await page.close()
@@ -1038,10 +953,8 @@ async def playwright_bfs(
     elapsed = round((time.time() - t0) / 60, 1)
     print(
         f"  🎭 Playwright BFS ZAKOŃCZONY: "
-        f"pages_crawled={pages_crawled} "
-        f"pages_failed={pages_failed} "
-        f"urls_found={len(found_urls)} "
-        f"time={elapsed}min",
+        f"pages_crawled={pages_crawled} pages_failed={pages_failed} "
+        f"urls_found={len(found_urls)} time={elapsed}min",
         flush=True
     )
     diag["notes"].append(
@@ -1058,66 +971,33 @@ async def fetch_with_fallback(
     url: str,
     extra_headers: dict = None,
 ) -> tuple:
-    """
-    Pobiera stronę przez aiohttp. Jeśli detektor wykryje stronę dynamiczną,
-    próbuje przez Playwright.
-
-    Zwraca 8 wartości: (html, final, kind, status, ctype, err, ms, resp_meta)
-    Kompatybilne z fetch_conditional.
-
-    Logika:
-    1. Pobierz przez aiohttp (fetch_conditional — obsługuje etag/304)
-    2. Uruchom DynamicPageDetector na wyniku
-    3. Jeśli dynamiczna i aiohttp nie zwróciło dobrego HTML → Playwright
-    4. Jeśli Playwright też się nie powiedzie → zwróć wynik aiohttp
-    """
-    # Krok 1: standardowe pobranie
     result = await fetch_conditional(session, url, extra_headers)
     html, final, kind, status, ctype, err, ms, resp_meta = result
 
-    # Nie próbuj Playwright dla:
-    # - plików binarnych (PDF, DOCX itp.)
-    # - odpowiedzi 304 Not Modified
-    # - stron zablokowanych (403/429) — Playwright też nie przejdzie WAF
-    # - błędów DNS / timeout — Playwright też nie pomoże przy problemach sieciowych
     if kind in ("pdf", "not_modified", "blocked"):
         return result
     if kind == "exc" and err and ("dns" in (err or "").lower() or "connect" in (err or "").lower()):
         return result
 
-    # Krok 2: sprawdź czy strona jest dynamiczna
     is_dyn, dyn_score, dyn_reasons = dynamic_detector.is_dynamic(
-        html=html or "",
-        url=url,
-        kind=kind,
-        status=status,
+        html=html or "", url=url, kind=kind, status=status,
     )
 
-    # Playwright potrzebny gdy:
-    # a) Detektor wykrył stronę dynamiczną
-    # b) LUB aiohttp w ogóle nie zwróciło HTML (timeout, błąd, 5xx)
     need_playwright = is_dyn or (kind != "html") or (not html)
 
     if not need_playwright:
         return result
 
-    # Krok 3: próba przez Playwright
     reason_str = f"score={dyn_score} reasons={dyn_reasons[:2]}" if is_dyn else f"aiohttp_kind={kind}"
-    print(
-        f"  🎭 Playwright fetch: {url[:80]} ({reason_str})",
-        flush=True
-    )
+    print(f"  🎭 Playwright fetch: {url[:80]} ({reason_str})", flush=True)
 
     pw_result = await fetch_with_playwright(url)
     pw_html, pw_final, pw_kind, pw_status, pw_ctype, pw_err, pw_ms, pw_meta = pw_result
 
     if pw_kind == "html" and pw_html:
-        # Playwright udany — zwróć jego wynik z resp_meta z aiohttp (etag itp.)
-        # etag/last-modified z Playwright są niedostępne, więc zachowaj z aiohttp
         merged_meta = resp_meta or {}
         return pw_html, pw_final, "html", pw_status, pw_ctype, None, pw_ms, merged_meta
     else:
-        # Playwright się nie powiódł — zwróć oryginalny wynik aiohttp
         print(
             f"  ⚠️  Playwright fetch failed ({pw_err[:60] if pw_err else 'unknown'}), "
             f"używam aiohttp result",
@@ -1183,7 +1063,7 @@ def write_summary(diag_rows, new_items_for_mail):
         ok = sum(1 for r in (diag_rows or []) if r.get("status") == "OK")
         start_fail = sum(1 for r in (diag_rows or []) if r.get("status") == "START_FAIL")
         lines = [
-            f"BIP WATCHER v2.21 SUMMARY @ {now_iso()}",
+            f"BIP WATCHER v2.22 SUMMARY @ {now_iso()}",
             f"gminy_total={total} ok={ok} start_fail={start_fail}",
             f"mail_items={len(new_items_for_mail or [])}",
             "",
@@ -1245,7 +1125,6 @@ def normalize_url(url: str) -> str:
                 continue
             if kl.startswith("utm_"):
                 continue
-            # v2.20: NIE filtrujemy lang/locale/language — są funkcjonalne w BIP PHP
             if kl in {
                 "fbclid", "gclid", "yclid", "sid", "session", "sessionid",
                 "phpsessid", "jsessionid", "print", "format",
@@ -1290,9 +1169,6 @@ def is_listing_url(u: str) -> bool:
         "ostatnio_dodane", "ostatnio_zaktualizowane",
         "/ogloszenia", "/obwieszczenia", "/planowanie", "/mpzp", "/studium",
         "/decyzje", "/uchwaly", "/prawo-miejscowe",
-        # UWAGA: NIE ma tu "?id=", "action=", "widok=" — to sa konkretne podstrony
-        # BIP-u, nie listingi. Dodanie ich powoduje depth+2 dla kazdej strony
-        # co skraca BFS z 4 do 2 poziomow i nie dociera do ogloszen.
     ])
 
 def is_phase1_listing(u: str) -> bool:
@@ -1402,10 +1278,6 @@ def cache_mark_url(u: str):
 
 # ===================== SITEMAP + ROBOTS =====================
 def detect_js_app(html: str) -> bool:
-    """
-    Prosty detektor JS app — używany jako dodatkowy sygnał w Phase1.
-    Dla pełnej analizy używaj DynamicPageDetector.is_dynamic().
-    """
     if not html:
         return False
     is_dyn, _, _ = dynamic_detector.is_dynamic(html)
@@ -1560,7 +1432,7 @@ async def collect_sitemap_urls(session: aiohttp.ClientSession, base_site_url: st
 
     return out_urls[:max_urls]
 
-# ===================== SPA FALLBACK (v2.20, zachowane) =====================
+# ===================== SPA FALLBACK =====================
 SPA_FALLBACK_HINTS = [
     "/planowanie-przestrzenne",
 ]
@@ -1843,7 +1715,7 @@ def candidate_start_urls(start_url: str):
                     yield auxu
 
 # ===================== CACHE =====================
-CACHE_SCHEMA = 15  # v2.21: +1 dla nowych pól playwright
+CACHE_SCHEMA = 16  # v2.22: +1 dla nowych pól (fix document_id extraction)
 
 def _empty_cache():
     return {
@@ -2338,19 +2210,7 @@ def mark_frontier_reset(gkey: str):
 
 # ============================================================
 # PHASE 1 — Jeden adaptacyjny BFS (v2.22)
-#
-# Na każdym kroku BFS:
-#   1. Pobierz stronę przez aiohttp
-#   2. should_try_playwright() ocenia czy warto też odpytać Playwright:
-#      - URL sugeruje ogłoszenia/planowanie (LISTING_URL_HINTS)
-#        ALE treść jest pusta/krótka lub mało linków → JS nie wyrenderował
-#      - LUB aiohttp w ogóle nie zwróciło HTML (błąd, timeout)
-#   3. Jeśli tak → Playwright pobiera TĘ SAMĄ stronę (networkidle)
-#   4. Scal linki z OBU źródeł — bierzemy WSZYSTKO
-#
-# Logika jest uniwersalna — działa dla każdej gminy bez sztywnych progów.
 # ============================================================
-
 
 def _extract_links_from_html(html: str, base_url: str, allowed_host: str) -> set:
     """Wyciąga wszystkie wewnętrzne linki z HTML. Zwraca zbiór canonicznych URL."""
@@ -2377,17 +2237,9 @@ def should_try_playwright(
     """
     Ocenia czy warto odpytać Playwright dla tej strony.
     Zwraca (bool, reason: str).
-
-    Sygnały:
-    1. aiohttp nie zwróciło HTML — zawsze Playwright
-    2. Klasyczne SPA: duży HTML ale mało tekstu
-    3. Podstrona nie wnosi żadnych nowych linków względem strony głównej
-       (menu powtórzone 1:1, treść ładowana przez JS) — kluczowy sygnał
-    4. URL listingowy ale pusta treść
     """
     url_low = (url or "").lower()
 
-    # 1. aiohttp w ogóle nie dostało HTML
     if aiohttp_kind != "html":
         return True, f"aiohttp_failed(kind={aiohttp_kind})"
     if not html:
@@ -2406,14 +2258,10 @@ def should_try_playwright(
         text = re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip()
         text_len = len(text)
 
-        # 2. Klasyczne SPA: duży HTML, prawie brak tekstu
         if html_size > 10000 and text_len < 400:
             return True, f"spa_suspect(html={html_size},text={text_len})"
 
-        # 3. Porównaj TEKST strony do home_text — jeśli strona to klon menu,
-        #    treść zakładki jest ładowana przez JS → wymuś Playwright
         if home_links and len(home_links) > 10:
-            # Sprawdź new_links (stary check)
             page_links = {
                 _canon(normalize_url(urljoin(url, a.get("href", ""))))
                 for a in soup.find_all("a", href=True)
@@ -2426,16 +2274,12 @@ def should_try_playwright(
             if len(new_links) < 3:
                 return True, f"no_new_links(page={len(page_links)},home={len(home_links)},new={len(new_links)})"
 
-            # CHECK: czy new_links to tylko kolejne strony menu (?id=X bez treści)?
-            # Jeśli ŻADEN z nowych linków nie ma oznak contentu (p1=szczegoly, action=details itp.)
-            # to ta zakładka ładuje dokumenty przez JS/AJAX → potrzeba Playwright
             CONTENT_HINTS = ["p1=szczegoly", "action=details", "document_id=",
                              "p1=tresc", "p1=pokaz", "p1=lista"]
             content_new = {u for u in new_links if any(h in u.lower() for h in CONTENT_HINTS)}
             if len(content_new) == 0 and len(new_links) > 0:
                 return True, f"only_menu_links(new={len(new_links)},content=0)"
 
-            # CHECK: text similarity z home_text
             if home_text and len(text) > 100:
                 home_words = set(re.findall(r"[\w\u00c0-\u017e]+", home_text.lower()))
                 page_words = set(re.findall(r"[\w\u00c0-\u017e]+", text.lower()))
@@ -2444,7 +2288,6 @@ def should_try_playwright(
                     if overlap > 0.92:
                         return True, f"menu_clone(overlap={overlap:.2f},text={text_len})"
 
-        # 4. URL listingowy ale pusta treść po usunięciu nav
         url_relevant = any(h in url_low for h in LISTING_URL_HINTS)
         if url_relevant:
             for tag in soup(["nav", "header", "footer", "aside"]):
@@ -2462,10 +2305,23 @@ def should_try_playwright(
     return False, "ok"
 
 
+# [FIX 1] Rozszerzona ekstrakcja linków przez Playwright
+# Obsługuje strony AJAX/BIP gdzie document_id jest w JS, onclick, lub tabeli renderowanej przez JS.
+_DOCUMENT_ID_RE = re.compile(
+    r"document_id[=\\\'\"\:\s]+(\d+)",
+    re.IGNORECASE
+)
+
 async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
     """
     Pobiera stronę przez Playwright (networkidle) i zwraca zbiór wewnętrznych linków.
-    networkidle czeka aż JS skończy renderować — kluczowe dla SPA/React/Angular.
+
+    [FIX 1] Rozszerzona logika dla stron AJAX/BIP (np. bip.lubelskie.pl):
+    1. Standardowe <a href> linki (jak poprzednio)
+    2. Linki ukryte w atrybutach onclick, data-href, data-url
+    3. document_id wyciągane z CAŁEGO source strony (wyrenderowanej przez JS)
+       i rekonstruowane do URL ?action=details&document_id=XXXXX
+    4. Dodatkowe czekanie na wypełnienie tabel (AJAX może ładować po networkidle)
     """
     try:
         from playwright.async_api import async_playwright
@@ -2484,7 +2340,17 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
                     lambda r: r.abort()
                 )
                 await page.goto(url, wait_until="networkidle", timeout=45000)
+
+                # [FIX 1] Dodatkowe czekanie — niektóre BIP-y ładują tabelę po networkidle
+                try:
+                    await page.wait_for_selector("table tbody tr", timeout=5000)
+                    await asyncio.sleep(1.0)  # daj czas na wypełnienie tabeli przez AJAX
+                except Exception:
+                    pass  # jeśli brak tabeli — kontynuuj normalnie
+
                 final_url = page.url
+
+                # --- Część 1: Standardowe <a href> ---
                 raw_links = await page.eval_on_selector_all(
                     "a[href]",
                     "els => els.map(e => e.href).filter(h => h && !h.startsWith('javascript:'))"
@@ -2503,6 +2369,86 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
                             links.add(cu)
                     except Exception:
                         continue
+
+                # --- Część 2: onclick / data-href / data-url ---
+                # [FIX 1] Wyciąga linki z atrybutów JS — typowe dla BIP CMS
+                try:
+                    extra_attrs = await page.eval_on_selector_all(
+                        "[onclick], [data-href], [data-url]",
+                        """els => els.map(e => ({
+                            onclick: e.getAttribute('onclick') || '',
+                            dataHref: e.getAttribute('data-href') || '',
+                            dataUrl: e.getAttribute('data-url') || ''
+                        }))"""
+                    )
+                    for attr_obj in (extra_attrs or []):
+                        for val in [attr_obj.get("onclick", ""), attr_obj.get("dataHref", ""), attr_obj.get("dataUrl", "")]:
+                            if not val:
+                                continue
+                            # Szukaj URL-i w atrybutach onclick (np. location.href='...', window.open('...'))
+                            for m in re.findall(r"['\"]([^'\"]*\?[^'\"]+)['\"]", val):
+                                try:
+                                    abs_u = normalize_url(urljoin(final_url, m))
+                                    if not is_valid_url(abs_u):
+                                        continue
+                                    if not same_base_domain(urlparse(abs_u).netloc, allowed_host):
+                                        continue
+                                    if should_skip_href(abs_u):
+                                        continue
+                                    cu = _canon(abs_u)
+                                    if cu:
+                                        links.add(cu)
+                                except Exception:
+                                    continue
+                except Exception:
+                    pass
+
+                # --- Część 3: document_id z wyrenderowanego source ---
+                # [FIX 1] KLUCZOWA CZĘŚĆ dla bip.lubelskie.pl i podobnych platform.
+                # Po networkidle Playwright ma pełny HTML z tabelą wypełnioną przez JS.
+                # document_id może być w: <td onclick="...">, data-id="...", var docId = ...
+                try:
+                    page_source = await page.content()
+                    base_for_reconstruction = urlparse(final_url)
+                    base_url_str = urlunparse((
+                        base_for_reconstruction.scheme,
+                        base_for_reconstruction.netloc,
+                        base_for_reconstruction.path.rsplit("/", 1)[0] + "/",
+                        "", "", ""
+                    ))
+                    # Wyciągnij wszystkie document_id z source
+                    doc_ids = set(_DOCUMENT_ID_RE.findall(page_source))
+                    if doc_ids:
+                        print(
+                            f"  🎭 [document_id] Znaleziono {len(doc_ids)} document_id w source @ {url[:60]}",
+                            flush=True
+                        )
+                    for doc_id in doc_ids:
+                        # Rekonstruuj URL bazując na aktualnym URL strony
+                        parsed_current = urlparse(final_url)
+                        # Zachowaj bazowy URL (scheme + netloc + path bez query)
+                        detail_base = urlunparse((
+                            parsed_current.scheme,
+                            parsed_current.netloc,
+                            parsed_current.path,
+                            "", "", ""
+                        ))
+                        detail_url = f"{detail_base}?action=details&document_id={doc_id}"
+                        try:
+                            abs_u = normalize_url(detail_url)
+                            if not is_valid_url(abs_u):
+                                continue
+                            if not same_base_domain(urlparse(abs_u).netloc, allowed_host):
+                                continue
+                            # Nie używamy should_skip_href — document_id to treść, nie attachment
+                            cu = _canon(abs_u)
+                            if cu:
+                                links.add(cu)
+                        except Exception:
+                            continue
+                except Exception:
+                    pass
+
             except Exception:
                 pass
             finally:
@@ -2531,15 +2477,6 @@ async def phase1_full_crawl(
 ) -> tuple:
     """
     Phase1 v2.22 — jeden adaptacyjny BFS.
-
-    Na każdej stronie:
-    - aiohttp pobiera HTML → wyciągamy linki
-    - jeśli should_try_playwright() → Playwright pobiera TĘ SAMĄ stronę
-      i dodajemy jego linki DO PULI (nie zamiast, ale OPRÓCZ)
-    - wszystkie zebrane linki trafiają do kolejki BFS i do frontieru
-
-    Dzięki temu strony które mają część linków w HTML a część w JS
-    (np. menu statyczne + lista ogłoszeń przez AJAX) są obsługiwane poprawnie.
     """
     if state.shutdown_requested:
         return [], {"status": "SHUTDOWN"}
@@ -2553,7 +2490,6 @@ async def phase1_full_crawl(
     tried = 0
     start_time = time.time()
 
-    # ── Krok 1: Pobierz stronę główną ─────────────────────────────────────────
     for su in candidate_start_urls(start_url):
         if (time.time() - start_time) > START_TOTAL_TIMEOUT_SEC:
             diag["notes"].append(f"START_TIMEOUT after {int(time.time()-start_time)}s")
@@ -2605,7 +2541,6 @@ async def phase1_full_crawl(
     visited = set()
     q = deque()
 
-    # ── Krok 2: Sitemap ────────────────────────────────────────────────────────
     try:
         sitemap_urls = await collect_sitemap_urls(session_crawl, base_site, diag, max_urls=5000)
         sitemap_added = 0
@@ -2623,7 +2558,6 @@ async def phase1_full_crawl(
     except Exception as ex:
         diag["notes"].append(f"SITEMAP_FAILED: {str(ex)[:80]}")
 
-    # Strona główna jako punkt startowy BFS
     cu0 = _canon(final0)
     if cu0 not in visited:
         visited.add(cu0)
@@ -2633,8 +2567,8 @@ async def phase1_full_crawl(
     pages_crawled = 0
     pw_fetches = 0
     pw_extra_links = 0
-    home_links: set = set()  # linki ze strony głównej — do porównania na podstronach
-    home_text_for_phase2: str = ""  # tekst strony głównej (menu) — do filtrowania w Phase2
+    home_links: set = set()
+    home_text_for_phase2: str = ""
 
     print(
         f"  🕷️  BFS [{gmina}] @ {allowed_host} "
@@ -2642,7 +2576,6 @@ async def phase1_full_crawl(
         flush=True
     )
 
-    # ── Krok 3: Adaptacyjny BFS ────────────────────────────────────────────────
     while q and not state.shutdown_requested:
         if RUN_DEADLINE_MIN > 0 and (time.time() - GLOBAL_T0) > (RUN_DEADLINE_MIN * 60 * 0.35):
             diag["notes"].append(f"PHASE1_TIME_LIMIT pages={pages_crawled}")
@@ -2658,7 +2591,6 @@ async def phase1_full_crawl(
                 seeds[cu] = seeds.get(cu, 1)
             continue
 
-        # --- aiohttp ---
         result = await fetch_conditional(session_crawl, url)
         html, final, kind, status, ctype, err, ms, resp_meta = result
 
@@ -2672,10 +2604,8 @@ async def phase1_full_crawl(
         pages_crawled += 1
         final_c = _canon(final or url)
 
-        # --- Linki z aiohttp ---
         aiohttp_links = _extract_links_from_html(html, final, allowed_host)
 
-        # --- Zbierz home_links + home_text ze strony głównej (depth=0) ---
         if depth == 0 and not home_links:
             home_links = set(aiohttp_links)
             try:
@@ -2687,7 +2617,6 @@ async def phase1_full_crawl(
                 home_text_for_phase2 = ""
             print(f"  🏠 [{gmina}] home_links={len(home_links)} home_text={len(home_text_for_phase2)}ch", flush=True)
 
-        # --- DEBUG: szczegóły każdej strony (pierwsze 30 stron) ---
         if pages_crawled <= 30:
             try:
                 _soup_dbg = safe_soup(html)
@@ -2710,7 +2639,6 @@ async def phase1_full_crawl(
             except Exception as _ex:
                 print(f"  📄 DEBUG ERR: {_ex}", flush=True)
 
-        # --- Playwright jeśli strona wygląda jakby JS nie wyrenderował treści ---
         pw_links = set()
         use_pw, pw_reason = should_try_playwright(url, html, kind, home_links=home_links, home_text=home_text_for_phase2)
         if pages_crawled <= 30:
@@ -2735,7 +2663,6 @@ async def phase1_full_crawl(
             except Exception as ex:
                 diag["notes"].append(f"PW_ERR {url[:50]}: {str(ex)[:60]}")
 
-        # --- Scal WSZYSTKIE linki z obu źródeł ---
         all_links = aiohttp_links | pw_links
 
         for cu in all_links:
@@ -2790,13 +2717,19 @@ async def phase1_full_crawl(
         "home_text": home_text_for_phase2,
     }
 
-# PHASE 2 — sprawdza zawartość + odkrywa nowe linki (v2.21)
+# ============================================================
+# PHASE 2 — sprawdza zawartość + odkrywa nowe linki (v2.22)
 # ============================================================
 
 def _extract_content_text(soup_orig, url: str, home_text: str = "") -> tuple:
     """
     Wyciąga tekst TYLKO z treści strony, z pominięciem menu nawigacyjnego.
     Zwraca: (blob_text, removed_chars, method_used)
+
+    [FIX 2] Strony DETAIL (action=details, document_id=) też przechodzą przez
+    pełny pipeline usuwania menu (Strategie 2-4) zanim wróci do fallback.
+    Poprzednio dla _is_detail kod wracał do full_text bez filtrowania —
+    powodowało to fałszywe dopasowania gdy keyword był tylko w menu nawigacyjnym.
     """
     import copy
 
@@ -2811,7 +2744,9 @@ def _extract_content_text(soup_orig, url: str, home_text: str = "") -> tuple:
 
     full_text_raw = re.sub(r"\s+", " ", soup_orig.get_text(" ", strip=True)).strip()
 
-    # === STRATEGIA 1: Strony DETAIL — szukaj sekcji po "Szczegóły dokumentu" ===
+    # === STRATEGIA 1: Strony DETAIL — szukaj sekcji "Szczegóły dokumentu" ===
+    # [FIX 2] Zachowane jako główna strategia dla DETAIL,
+    # ale teraz jeśli nie znajdzie sekcji — przechodzi do Strategii 2-4
     if _is_detail:
         anchor = None
         for tag in soup_orig.find_all(["h1", "h2", "h3", "h4"]):
@@ -2826,8 +2761,8 @@ def _extract_content_text(soup_orig, url: str, home_text: str = "") -> tuple:
             content = re.sub(r"\s+", " ", " ".join(parts)).strip()
             if len(content) > 50:
                 return f"{all_headings} {content}", len(full_text_raw) - len(content), "detail_section"
-        # Fallback: pełny tekst dla DETAIL (sam dokument jest treścią)
-        return f"{all_headings} {full_text_raw}", 0, "detail_full"
+        # Nie znaleziono sekcji "Szczegóły dokumentu" — KONTYNUUJ do Strategii 2-4
+        # (NIE wracamy już do full_text — to był bug w v2.21)
 
     # === STRATEGIA 2: Główny kontener treści ===
     for sel in ["#content", "#tresc", "#main-content", ".content", ".tresc",
@@ -2873,6 +2808,7 @@ def _extract_content_text(soup_orig, url: str, home_text: str = "") -> tuple:
         if removed > 500:
             return f"{all_headings} {clean_text}", removed, "sliding_window"
 
+    # === FALLBACK: pełny tekst (ostateczność) ===
     return f"{all_headings} {full_text_raw}", 0, "full_text"
 
 async def phase2_focus(
@@ -2884,16 +2820,6 @@ async def phase2_focus(
     home_links: set = None,
     home_text: str = "",
 ) -> tuple:
-    """
-    Phase2 v2.21 — bez zmian w logice głównej relative to v2.20,
-    ale teraz fetch_with_fallback automatycznie używa Playwright
-    gdy detektor wykryje stronę dynamiczną.
-
-    Każdy URL z frontieru:
-    1. Pobierany przez fetch_with_fallback (aiohttp + Playwright fallback)
-    2. Sprawdzany przez keyword matching
-    3. Nowe linki odkryte podczas skanowania → dopisywane do frontieru
-    """
     if state.shutdown_requested:
         return [], {"status": "SHUTDOWN"}
 
@@ -3005,12 +2931,10 @@ async def phase2_focus(
         if prev_pre and prev_pre.get("last_modified"):
             extra_headers["If-Modified-Since"] = prev_pre["last_modified"]
 
-        # Pobierz przez aiohttp
         html, final, kind, status, ctype, err, ms, resp_meta = await fetch_conditional(
             session_crawl, url, extra_headers
         )
 
-        # Playwright jeśli strona nie wnosi nowych linków (treść w JS)
         use_pw, pw_reason = should_try_playwright(url, html, kind, home_links=home_links)
         if use_pw and kind not in ("pdf", "not_modified", "blocked"):
             print(f"  🎭 Phase2 Playwright @ {url[:70]} reason={pw_reason}", flush=True)
@@ -3097,8 +3021,8 @@ async def phase2_focus(
         title, h1, h2, meta_blob = extract_title_h1_h2(soup)
         att_set = attachments_signature(soup, final_c)
 
-# Wyciągnij tekst tylko z treści, nie z menu nawigacyjnego
         _ul = (url or "").lower()
+        _is_detail = "action=details" in _ul or "document_id=" in _ul
         for tag in soup(["script", "style", "noscript"]):
             tag.decompose()
 
@@ -3107,7 +3031,6 @@ async def phase2_focus(
         )
 
         ok_any, kw_any = keyword_match_in_blob(blob)
-
 
         # DIAGNOSTYKA
         if ok_any or _is_detail:
@@ -3127,9 +3050,6 @@ async def phase2_focus(
                 flush=True
             )
 
-
-
-        # Tytuł: pierwszy nagłówek h1/h2/h3 który nie jest generyczny
         page_title = ""
         for tag in soup.find_all(["h1", "h2", "h3"]):
             txt = re.sub(r"\s+", " ", (tag.get_text(" ", strip=True) or "")).strip()
@@ -3180,7 +3100,6 @@ async def phase2_focus(
             else:
                 diag["counts"]["dedup_skipped"] += 1
 
-        # Odkrywanie nowych linków — dopisuje do końca frontieru
         for abs_u, txt in iter_links_fast(soup, final_c):
             cu = _canon(abs_u)
             if not cu or not allow_url(cu) or cu in dead_set:
@@ -3351,6 +3270,9 @@ async def worker(
                     "seeds": len(all_urls),
                     "home_dynamic": p1meta.get("home_dynamic", False),
                     "home_dyn_score": p1meta.get("home_dyn_score", 0),
+                    # [v2.22] Zapisz home_links_list i home_text dla kolejnych runów
+                    "home_links_list": p1meta.get("home_links_list", []),
+                    "home_text": p1meta.get("home_text", ""),
                     "ts": now_iso(),
                 }
 
@@ -3619,4 +3541,3 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
-
