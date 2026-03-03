@@ -2793,6 +2793,88 @@ async def phase1_full_crawl(
 # PHASE 2 — sprawdza zawartość + odkrywa nowe linki (v2.21)
 # ============================================================
 
+def _extract_content_text(soup_orig, url: str, home_text: str = "") -> tuple:
+    """
+    Wyciąga tekst TYLKO z treści strony, z pominięciem menu nawigacyjnego.
+    Zwraca: (blob_text, removed_chars, method_used)
+    """
+    import copy
+
+    _ul = (url or "").lower()
+    _is_detail = "action=details" in _ul or "document_id=" in _ul
+
+    # Nagłówki zawsze bierzemy z całej strony (są unikalne, nie menu)
+    all_headings = " ".join(
+        re.sub(r"\s+", " ", t.get_text(" ", strip=True))
+        for t in soup_orig.find_all(["h1", "h2", "h3", "h4", "h5"])
+    )
+
+    full_text_raw = re.sub(r"\s+", " ", soup_orig.get_text(" ", strip=True)).strip()
+
+    # === STRATEGIA 1: Strony DETAIL — szukaj sekcji po "Szczegóły dokumentu" ===
+    if _is_detail:
+        anchor = None
+        for tag in soup_orig.find_all(["h1", "h2", "h3", "h4"]):
+            txt = (tag.get_text(" ", strip=True) or "").lower()
+            if "szczeg" in txt and "dokument" in txt:
+                anchor = tag
+                break
+        if anchor:
+            parts = [anchor.get_text(" ", strip=True)]
+            for sib in anchor.find_next_siblings():
+                parts.append(sib.get_text(" ", strip=True))
+            content = re.sub(r"\s+", " ", " ".join(parts)).strip()
+            if len(content) > 50:
+                return f"{all_headings} {content}", len(full_text_raw) - len(content), "detail_section"
+        # Fallback: pełny tekst dla DETAIL (sam dokument jest treścią)
+        return f"{all_headings} {full_text_raw}", 0, "detail_full"
+
+    # === STRATEGIA 2: Główny kontener treści ===
+    for sel in ["#content", "#tresc", "#main-content", ".content", ".tresc",
+                "main", "article", "[role='main']", "#page-content"]:
+        try:
+            node = soup_orig.select_one(sel)
+            if node:
+                node_text = re.sub(r"\s+", " ", node.get_text(" ", strip=True)).strip()
+                if len(node_text) > 200:
+                    removed = len(full_text_raw) - len(node_text)
+                    return f"{all_headings} {node_text}", removed, f"sel:{sel}"
+        except Exception:
+            continue
+
+    # === STRATEGIA 3: Usuń nav/header/footer/aside ===
+    soup2 = copy.copy(soup_orig)
+    removed_tags = 0
+    for tag in soup2.find_all(["nav", "header", "footer", "aside"]):
+        tag.decompose()
+        removed_tags += 1
+    if removed_tags > 0:
+        stripped = re.sub(r"\s+", " ", soup2.get_text(" ", strip=True)).strip()
+        removed = len(full_text_raw) - len(stripped)
+        if removed > 500:
+            return f"{all_headings} {stripped}", removed, "strip_nav"
+
+    # === STRATEGIA 4: Sliding window z home_text ===
+    if home_text and len(home_text) > 200:
+        clean = full_text_raw
+        cl = clean.lower()
+        for i in range(0, max(0, len(home_text) - 70), 25):
+            phrase = home_text[i:i + 70].strip()
+            if len(phrase) < 50:
+                continue
+            pl = phrase.lower()
+            pos = cl.find(pl)
+            while pos >= 0:
+                clean = clean[:pos] + " " + clean[pos + len(phrase):]
+                cl = clean.lower()
+                pos = cl.find(pl)
+        clean_text = re.sub(r"\s+", " ", clean).strip()
+        removed = len(full_text_raw) - len(clean_text)
+        if removed > 500:
+            return f"{all_headings} {clean_text}", removed, "sliding_window"
+
+    return f"{all_headings} {full_text_raw}", 0, "full_text"
+
 async def phase2_focus(
     gmina: str,
     session_crawl,
@@ -3015,45 +3097,17 @@ async def phase2_focus(
         title, h1, h2, meta_blob = extract_title_h1_h2(soup)
         att_set = attachments_signature(soup, final_c)
 
-        # Zbierz wszystkie nagłówki + cały tekst (skrypty/style usunięte)
+# Wyciągnij tekst tylko z treści, nie z menu nawigacyjnego
         _ul = (url or "").lower()
-        _is_detail = "action=details" in _ul or "document_id=" in _ul
-
         for tag in soup(["script", "style", "noscript"]):
             tag.decompose()
 
-        all_headings = " ".join(
-            re.sub(r"\s+", " ", t.get_text(" ", strip=True))
-            for t in soup.find_all(["h1", "h2", "h3", "h4", "h5"])
+        blob, _removed_chars, _blob_method = _extract_content_text(
+            soup, url=url, home_text=home_text
         )
-        full_text = re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip()
-
-        # Usuń tekst menu ze strony przez sliding-window substring removal
-        # Zamiast zgadywać klasy CSS, bierzemy okna 60-znaków z home_text
-        # i usuwamy je z full_text — działa niezależnie od struktury HTML
-        if home_text and not _is_detail and len(home_text) > 200:
-            clean = full_text
-            cl = clean.lower()
-            win, step = 70, 25
-            ht = home_text
-            for i in range(0, max(0, len(ht) - win), step):
-                phrase = ht[i:i + win].strip()
-                if len(phrase) < 50:
-                    continue
-                pl = phrase.lower()
-                pos = cl.find(pl)
-                while pos >= 0:
-                    clean = clean[:pos] + " " + clean[pos + len(phrase):]
-                    cl = clean.lower()
-                    pos = cl.find(pl)
-            clean_text = re.sub(r"\s+", " ", clean).strip()
-            blob = f"{all_headings} {clean_text}"
-            _removed_chars = len(full_text) - len(clean_text)
-        else:
-            blob = f"{all_headings} {full_text}"
-            _removed_chars = 0
 
         ok_any, kw_any = keyword_match_in_blob(blob)
+
 
         # DIAGNOSTYKA
         if ok_any or _is_detail:
@@ -3565,3 +3619,4 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
