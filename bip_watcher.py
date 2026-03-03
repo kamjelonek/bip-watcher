@@ -2663,10 +2663,9 @@ async def phase1_full_crawl(
         aiohttp_links = _extract_links_from_html(html, final, allowed_host)
 
         # --- NOWA LOGIKA DECYZYJNA (tylko tutaj) ---
-        is_listing_page = any(h in url.lower() for h in LISTING_URL_HINTS) or "id=" in url.lower()
-        if is_listing_page and depth <= 1:
+        if depth <= 1 and any(h in url.lower() for h in LISTING_URL_HINTS) and len(aiohttp_links) < 20:
             use_pw = True
-            pw_reason = "listing_page_depth<=1"
+            pw_reason = "listing_page_depth<=1_and_few_links"
         else:
             use_pw, pw_reason = await _should_use_playwright_phase1(
                 html=html,
@@ -3641,6 +3640,7 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
 
