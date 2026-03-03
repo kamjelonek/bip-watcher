@@ -860,7 +860,7 @@ async def _should_use_playwright_phase2(
 
     return False, "ok"
 
-async def fetch_with_playwright(url: str) -> tuple:
+async def fetch_with_playwright(url: str, interact: bool = False) -> tuple:
     try:
         from playwright.async_api import async_playwright
     except ImportError:
@@ -871,28 +871,38 @@ async def fetch_with_playwright(url: str) -> tuple:
         try:
             browser = await p.chromium.launch(headless=True)
             page = await browser.new_page()
-            try:
-                t0 = time.time()
-                await page.goto(url, wait_until="networkidle", timeout=60000)
-                content = await page.content()
-                final_url = page.url
-                ms = round((time.time() - t0) * 1000)
-                return content, final_url, "html", 200, "text/html", None, ms, {}
-            except Exception as e:
-                return None, url, "exc", None, "", str(e), 0, {}
-            finally:
-                try:
-                    await page.close()
-                except Exception:
-                    pass
+            # Blokuj niepotrzebne zasoby
+            await page.route("**/*.{png,jpg,jpeg,gif,svg,ico,woff,woff2,ttf,eot,mp4,mp3,css}", lambda r: r.abort())
+            
+            t0 = time.time()
+            await page.goto(url, wait_until="networkidle", timeout=60000)
+            
+            if interact:
+                # Przewiń stronę kilka razy
+                for _ in range(3):
+                    await page.evaluate("window.scrollBy(0, document.body.scrollHeight)")
+                    await asyncio.sleep(1)
+                # Kliknij w przyciski "więcej" (jeśli istnieją)
+                more_selectors = ["button:has-text('więcej')", "a:has-text('więcej')", ".show-more", ".read-more"]
+                for sel in more_selectors:
+                    try:
+                        await page.click(sel, timeout=3000)
+                        await asyncio.sleep(1)
+                    except:
+                        pass
+            
+            content = await page.content()
+            final_url = page.url
+            ms = round((time.time() - t0) * 1000)
+            return content, final_url, "html", 200, "text/html", None, ms, {}
         except Exception as e:
-            return None, url, "exc", None, "", f"browser_launch_error: {e}", 0, {}
+            return None, url, "exc", None, "", str(e), 0, {}
         finally:
-            if browser:
-                try:
-                    await browser.close()
-                except Exception:
-                    pass
+            try:
+                await page.close()
+            except Exception:
+                pass
+    return None, url, "exc", None, "", "browser_launch_error", 0, {}
 
 
 async def playwright_bfs(
@@ -2568,6 +2578,22 @@ async def phase1_full_crawl(
 
         aiohttp_links = _extract_links_from_html(html, final, allowed_host)
 
+        # --- NOWA LOGIKA DECYZYJNA (tylko tutaj) ---
+        is_listing_page = any(h in url.lower() for h in LISTING_URL_HINTS) or "id=" in url.lower()
+        if is_listing_page and depth <= 1:
+            use_pw = True
+            pw_reason = "listing_page_depth<=1"
+        else:
+            use_pw, pw_reason = await _should_use_playwright_phase1(
+                html=html,
+                kind=kind,
+                status=status,
+                url=final,
+                aiohttp_links_count=len(aiohttp_links),
+                depth=depth
+            )
+        # --- KONIEC LOGIKI ---
+
         if depth == 0 and not home_links:
             home_links = set(aiohttp_links)
             try:
@@ -2602,14 +2628,6 @@ async def phase1_full_crawl(
                 print(f"  📄 DEBUG ERR: {_ex}", flush=True)
 
         pw_links = set()
-        use_pw, pw_reason = await _should_use_playwright_phase1(
-            html=html,
-            kind=kind,
-            status=status,
-            url=final,
-            aiohttp_links_count=len(aiohttp_links),
-            depth=depth
-        )
         if pages_crawled <= 30 or use_pw:
             print(f"  🔍 should_pw={use_pw} reason={pw_reason} aiohttp_links={len(aiohttp_links)} url={url[:70]}", flush=True)
         if use_pw:
@@ -2735,8 +2753,22 @@ def _extract_content_text(soup_orig, url: str, home_text: str = "") -> tuple:
         # (NIE wracamy już do full_text — to był bug w v2.21)
 
     # === STRATEGIA 2: Główny kontener treści ===
-    for sel in ["#content", "#tresc", "#main-content", ".content", ".tresc",
-                "main", "article", "[role='main']", "#page-content"]:
+    # === STRATEGIA 2: Główny kontener treści ===
+    for sel in [
+        "#content", "#tresc", "#main-content", ".content", ".tresc",
+        "main", "article", "[role='main']", "#page-content",
+        ".article-content", ".entry-content", ".post-content",
+        "#s3_content", "#s3content", "#content-div", ".document-content",
+        ".field-items", ".field--name-body",  # Drupal
+        "#print-content", ".print-content",  # wersje do druku
+        ".bip-content", "#bip-content",  # typowe dla BIP
+        "#middle-column", "#right-column", "#left-column",  # kolumny
+        ".main-content", ".page-content", ".entry-content",
+        ".post-body", ".article-body", ".node-content",
+        ".view-content", ".views-field",  # Drupal views
+        "#dokument", "#dokumenty", ".dokument",  # typowe dla BIP
+        "td.content", "div.content",  # ogólne
+    ]:
         try:
             node = soup_orig.select_one(sel)
             if node:
@@ -2913,10 +2945,19 @@ async def phase2_focus(
         )
         if use_pw and kind not in ("pdf", "not_modified", "blocked"):
             print(f"  🎭 Phase2 Playwright @ {url[:70]} reason={pw_reason}", flush=True)
-            pw_result = await fetch_with_playwright(url)
+            pw_result = await fetch_with_playwright(url, interact=True)
             pw_html, pw_final, pw_kind, pw_status, pw_ctype, pw_err, pw_ms, pw_meta = pw_result
             if pw_kind == "html" and pw_html:
                 html, final, kind, status, ctype = pw_html, pw_final, pw_kind, pw_status, pw_ctype
+                # Zapis debug
+                if "id=62" in url or "id=43" in url:  # możesz dodać inne podejrzane URL-e
+                    debug_path = BASE_DIR / f"debug_{gmina}_{url.split('=')[-1]}.html"
+                    try:
+                        with open(debug_path, "w", encoding="utf-8") as f:
+                            f.write(html)
+                        print(f"    🔍 Zapisano debug: {debug_path}")
+                    except Exception as e:
+                        print(f"    ⚠️ Nie udało się zapisać debug: {e}")
                 print(f"  🎭 Phase2 Playwright OK: {len(html)}B @ {url[:60]}", flush=True)
             else:
                 print(f"  🎭 Phase2 Playwright FAIL: {pw_err or '?'} @ {url[:60]}", flush=True)
@@ -3004,7 +3045,7 @@ async def phase2_focus(
         blob, _removed_chars, _blob_method = _extract_content_text(
             soup, url=url, home_text=home_text
         )
-
+        print(f"    [DEBUG] blob_len={len(blob)} method={_blob_method} removed={_removed_chars} url={url[:60]}")
         ok_any, kw_any = keyword_match_in_blob(blob)
 
         # DIAGNOSTYKA
@@ -3516,4 +3557,5 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
