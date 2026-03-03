@@ -2316,9 +2316,11 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
     """
     Zaawansowane zbieranie linków przez Playwright:
     - przewijanie strony (3 razy),
-    - kliknięcie w elementy rozwijane (dropdowny, zakładki),
+    - kliknięcie w elementy rozwijane (dropdowny, zakładki, "więcej"),
+    - ekstrakcja linków z atrybutów onclick, data-href, data-url,
+    - ekstrakcja document_id z całego źródła i rekonstrukcja URL,
+    - obsługa iframe (przechodzi do iframe i zbiera linki),
     - zbieranie linków po każdej akcji.
-    Dodatkowo: ekstrakcja document_id z source (dla systemów BIP).
     """
     try:
         from playwright.async_api import async_playwright
@@ -2337,55 +2339,116 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
             print(f"    🎭 Playwright nawigacja do: {url[:80]}")
             await page.goto(url, wait_until="networkidle", timeout=60000)
 
-            # Funkcja pomocnicza do zbierania linków z bieżącej strony
-            async def collect_links():
-                current_url = page.url
-                # Pobierz wszystkie linki z atrybutem href
-                raw_hrefs = await page.eval_on_selector_all(
-                    "a[href]",
-                    "els => els.map(e => e.href).filter(h => h && !h.startsWith('javascript:'))"
-                )
+            # Funkcja pomocnicza do zbierania linków z bieżącej strony (i ew. iframe)
+            async def collect_links_from_page(current_page):
+                current_url = current_page.url
                 new_links = set()
-                for href in raw_hrefs:
-                    try:
-                        abs_u = normalize_url(urljoin(current_url, href))
-                        if not is_valid_url(abs_u):
-                            continue
-                        if not same_base_domain(urlparse(abs_u).netloc, allowed_host):
-                            continue
-                        if should_skip_href(abs_u):
-                            continue
-                        cu = _canon(abs_u)
-                        if cu:
-                            new_links.add(cu)
-                    except Exception:
-                        continue
 
-                # Dodatkowo: wyciągnij document_id z source (dla BIP)
+                # 1. Standardowe <a href>
                 try:
-                    page_source = await page.content()
+                    raw_hrefs = await current_page.eval_on_selector_all(
+                        "a[href]",
+                        "els => els.map(e => e.href).filter(h => h && !h.startsWith('javascript:'))"
+                    )
+                    for href in raw_hrefs:
+                        try:
+                            abs_u = normalize_url(urljoin(current_url, href))
+                            if not is_valid_url(abs_u):
+                                continue
+                            if not same_base_domain(urlparse(abs_u).netloc, allowed_host):
+                                continue
+                            if should_skip_href(abs_u):
+                                continue
+                            cu = _canon(abs_u)
+                            if cu:
+                                new_links.add(cu)
+                        except Exception:
+                            continue
+                except Exception:
+                    pass
+
+                # 2. Linki z atrybutów onclick, data-href, data-url
+                try:
+                    elements_with_attrs = await current_page.eval_on_selector_all(
+                        "[onclick], [data-href], [data-url]",
+                        """els => els.map(e => ({
+                            onclick: e.getAttribute('onclick') || '',
+                            dataHref: e.getAttribute('data-href') || '',
+                            dataUrl: e.getAttribute('data-url') || ''
+                        }))"""
+                    )
+                    for attrs in elements_with_attrs:
+                        for attr_name in ['onclick', 'dataHref', 'dataUrl']:
+                            val = attrs.get(attr_name, '')
+                            if not val:
+                                continue
+                            # Szukaj URL-i w onclick (np. location.href='...', window.open('...'))
+                            for m in re.findall(r"['\"]([^'\"]*?[?&][^'\"]*)['\"]", val):
+                                try:
+                                    abs_u = normalize_url(urljoin(current_url, m))
+                                    if not is_valid_url(abs_u):
+                                        continue
+                                    if not same_base_domain(urlparse(abs_u).netloc, allowed_host):
+                                        continue
+                                    if should_skip_href(abs_u):
+                                        continue
+                                    cu = _canon(abs_u)
+                                    if cu:
+                                        new_links.add(cu)
+                                except Exception:
+                                    continue
+                except Exception:
+                    pass
+
+                # 3. document_id z całego źródła (dla systemów BIP)
+                try:
+                    page_source = await current_page.content()
                     doc_ids = set(re.findall(r'document_id[=\'":\s]+(\d+)', page_source, re.IGNORECASE))
                     for doc_id in doc_ids:
                         parsed = urlparse(current_url)
+                        # Próbuj różnych kombinacji: ścieżka bazowa, albo zachowaj obecną
                         base = urlunparse((parsed.scheme, parsed.netloc, parsed.path, "", "", ""))
-                        detail_url = f"{base}?action=details&document_id={doc_id}"
-                        cu = _canon(detail_url)
-                        if cu and same_base_domain(urlparse(cu).netloc, allowed_host):
-                            new_links.add(cu)
+                        # Czasami dokumenty są w innej ścieżce, więc spróbuj też bez ścieżki
+                        base2 = urlunparse((parsed.scheme, parsed.netloc, "/", "", "", ""))
+                        for b in (base, base2):
+                            detail_url = f"{b}?action=details&document_id={doc_id}"
+                            cu = _canon(detail_url)
+                            if cu and same_base_domain(urlparse(cu).netloc, allowed_host):
+                                new_links.add(cu)
+                                break  # jeśli działa, nie próbuj drugiej
                 except Exception:
                     pass
 
                 return new_links
 
+            # Główna funkcja zbierająca, uwzględniająca iframe
+            async def collect_all_links():
+                all_links = set()
+                # Zbierz z głównej strony
+                all_links.update(await collect_links_from_page(page))
+                # Zbierz z iframe
+                try:
+                    frames = page.frames
+                    for frame in frames:
+                        if frame != page.main_frame:
+                            try:
+                                frame_links = await collect_links_from_page(frame)
+                                all_links.update(frame_links)
+                            except Exception:
+                                pass
+                except Exception:
+                    pass
+                return all_links
+
             # Krok 1: zbierz linki po załadowaniu
-            links.update(await collect_links())
+            links.update(await collect_all_links())
             print(f"    🎭 Po załadowaniu: {len(links)} linków")
 
             # Krok 2: przewijanie strony (aby załadować leniwe treści)
             for scroll in range(3):
                 await page.evaluate("window.scrollBy(0, document.body.scrollHeight)")
                 await asyncio.sleep(2)
-                new_links = await collect_links()
+                new_links = await collect_all_links()
                 added = new_links - links
                 if added:
                     links.update(added)
@@ -2393,7 +2456,7 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
                 else:
                     break
 
-            # Krok 3: kliknij w elementy, które mogą rozwijać menu
+            # Krok 3: kliknij w elementy, które mogą rozwijać menu/treść
             expand_selectors = [
                 "button.dropdown-toggle",
                 "a.dropdown-toggle",
@@ -2406,7 +2469,16 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
                 ".accordion-button",
                 ".nav-link.dropdown-toggle",
                 "summary",  # dla <details>
-                ".btn-link",  # często używane do rozwijania
+                ".btn-link",
+                ".more-link",
+                ".read-more",
+                ".expand",
+                ".collapse",
+                "[data-toggle='collapse']",
+                "[data-toggle='dropdown']",
+                ".open-menu",
+                ".rozwin",
+                ".zobacz-wiecej",
             ]
             for selector in expand_selectors:
                 try:
@@ -2416,7 +2488,7 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
                             try:
                                 await el.click(timeout=3000)
                                 await asyncio.sleep(1)
-                                new_links = await collect_links()
+                                new_links = await collect_all_links()
                                 added = new_links - links
                                 if added:
                                     links.update(added)
@@ -2426,8 +2498,20 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
                 except Exception:
                     continue
 
-            # Krok 4: końcowe zbieranie
-            final_links = await collect_links()
+            # Krok 4: dodatkowe przewijanie po kliknięciach
+            for scroll in range(2):
+                await page.evaluate("window.scrollBy(0, document.body.scrollHeight)")
+                await asyncio.sleep(1)
+                new_links = await collect_all_links()
+                added = new_links - links
+                if added:
+                    links.update(added)
+                    print(f"    🎭 Po dodatkowym przewinięciu {scroll+1}: +{len(added)} linków")
+                else:
+                    break
+
+            # Krok 5: końcowe zbieranie
+            final_links = await collect_all_links()
             links.update(final_links)
             print(f"    🎭 Łącznie zebrano: {len(links)} linków")
 
@@ -3557,5 +3641,6 @@ def run_main_vscode_style():
 
 if __name__ == "__main__":
     run_main_vscode_style()
+
 
 
