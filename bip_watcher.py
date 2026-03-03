@@ -2975,6 +2975,17 @@ async def phase2_focus(
         blob = f"{title} {h1} {h2} {fast_text}"
         ok_any, kw_any = keyword_match_in_blob(blob)
 
+        # DEBUG: dla stron action=details pokaż co widzimy
+        _ul = (url or "").lower()
+        if "action=details" in _ul or "document_id=" in _ul:
+            print(
+                f"  🔬 [{gmina}] action/doc page:"
+                f" html={len(html)}B title={title!r:.50} h1={h1!r:.50}"
+                f" text={len(fast_text)}ch ok={ok_any} kw={kw_any}"
+                f" url={url[:80]}",
+                flush=True
+            )
+
         page_title = ""
         for candidate in [h1, h2, title]:
             c = (candidate or "").strip()
