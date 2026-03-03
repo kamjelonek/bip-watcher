@@ -2353,24 +2353,28 @@ def _extract_links_from_html(html: str, base_url: str, allowed_host: str) -> set
     return links
 
 
-def should_try_playwright(url: str, html: str, aiohttp_kind: str) -> tuple:
+def should_try_playwright(
+    url: str,
+    html: str,
+    aiohttp_kind: str,
+    home_links: set = None,
+) -> tuple:
     """
     Ocenia czy warto odpytać Playwright dla tej strony.
     Zwraca (bool, reason: str).
 
-    Playwright odpala się gdy:
-    1. aiohttp w ogóle nie zwróciło HTML (błąd, timeout, http_err)
-    2. URL sugeruje że strona powinna zawierać ogłoszenia/listy
-       ALE treść jest podejrzanie pusta lub mało linków wewnętrznych
-    3. Strona ma dużo HTML ale bardzo mało widocznego tekstu
-       (klasyczny objaw SPA — React/Vue renderuje przez JS)
+    Sygnały:
+    1. aiohttp nie zwróciło HTML — zawsze Playwright
+    2. Klasyczne SPA: duży HTML ale mało tekstu
+    3. Podstrona nie wnosi żadnych nowych linków względem strony głównej
+       (menu powtórzone 1:1, treść ładowana przez JS) — kluczowy sygnał
+    4. URL listingowy ale pusta treść
     """
     url_low = (url or "").lower()
 
-    # Przypadek 1: aiohttp w ogóle nie dostało HTML
+    # 1. aiohttp w ogóle nie dostało HTML
     if aiohttp_kind != "html":
         return True, f"aiohttp_failed(kind={aiohttp_kind})"
-
     if not html:
         return True, "empty_html"
 
@@ -2385,32 +2389,36 @@ def should_try_playwright(url: str, html: str, aiohttp_kind: str) -> tuple:
             tag.decompose()
 
         text = re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip()
-        all_links = soup.find_all("a", href=True)
         text_len = len(text)
-        links_count = len(all_links)
 
-        # Przypadek 2: dużo HTML ale mało tekstu — klasyczny SPA
-        # np. html=50KB ale tekst=200 znaków → JS renderuje treść
+        # 2. Klasyczne SPA: duży HTML, prawie brak tekstu
         if html_size > 10000 and text_len < 400:
             return True, f"spa_suspect(html={html_size},text={text_len})"
 
-        # Przypadek 3: URL z parametrem ?id= lub podobnym — BIP-y PHP często
-        # mają taką strukturę gdzie podstrony są dynamiczne mimo statycznego menu
-        url_has_id_param = bool(re.search(r"[?&](id|art|kat|dz|sub|nid)=\d+", url_low))
-        if url_has_id_param and text_len < 800:
-            return True, f"id_param_sparse(text={text_len})"
+        # 3. Porównaj linki z home_links — jeśli podstrona nie wnosi nic nowego
+        #    to znaczy że treść (lista ogłoszeń) jest ładowana przez JS
+        if home_links and len(home_links) > 10:
+            page_links = {
+                _canon(normalize_url(urljoin(url, a.get("href", ""))))
+                for a in soup.find_all("a", href=True)
+                if a.get("href", "").strip()
+            }
+            page_links.discard(None)
+            page_links.discard("")
+            new_links = page_links - home_links
+            new_links = {u for u in new_links if u}  # odfiltruj None/empty
+            if len(new_links) < 3:
+                return True, f"no_new_links(page={len(page_links)},home={len(home_links)},new={len(new_links)})"
 
-        # Przypadek 4: URL sugeruje ogłoszenia/planowanie
+        # 4. URL listingowy ale pusta treść po usunięciu nav
         url_relevant = any(h in url_low for h in LISTING_URL_HINTS)
         if url_relevant:
-            # Usuń nav/header/footer żeby nie liczyć menu jako treści listingu
             for tag in soup(["nav", "header", "footer", "aside"]):
                 tag.decompose()
             content_text = re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip()
             content_links = soup.find_all("a", href=True)
-
             if len(content_text) < 500:
-                return True, f"listing_sparse(text={len(content_text)},links={len(content_links)})"
+                return True, f"listing_sparse(text={len(content_text)})"
             if len(content_links) < 6:
                 return True, f"listing_few_links(links={len(content_links)})"
 
@@ -2591,6 +2599,7 @@ async def phase1_full_crawl(
     pages_crawled = 0
     pw_fetches = 0
     pw_extra_links = 0
+    home_links: set = set()  # linki ze strony głównej — do porównania na podstronach
 
     print(
         f"  🕷️  BFS [{gmina}] @ {allowed_host} "
@@ -2631,6 +2640,11 @@ async def phase1_full_crawl(
         # --- Linki z aiohttp ---
         aiohttp_links = _extract_links_from_html(html, final, allowed_host)
 
+        # --- Zbierz home_links ze strony głównej (depth=0) ---
+        if depth == 0 and not home_links:
+            home_links = set(aiohttp_links)
+            print(f"  🏠 [{gmina}] home_links={len(home_links)} (bazowy zestaw linków menu)", flush=True)
+
         # --- DEBUG: szczegóły każdej strony (pierwsze 30 stron) ---
         if pages_crawled <= 30:
             try:
@@ -2656,7 +2670,7 @@ async def phase1_full_crawl(
 
         # --- Playwright jeśli strona wygląda jakby JS nie wyrenderował treści ---
         pw_links = set()
-        use_pw, pw_reason = should_try_playwright(url, html, kind)
+        use_pw, pw_reason = should_try_playwright(url, html, kind, home_links=home_links)
         if pages_crawled <= 30:
             print(f"  🔍 should_pw={use_pw} reason={pw_reason} url={url[:70]}", flush=True)
         if use_pw:
@@ -2730,6 +2744,7 @@ async def phase1_full_crawl(
         "pages_crawled": pages_crawled,
         "pw_fetches": pw_fetches,
         "pw_extra_links": pw_extra_links,
+        "home_links_list": list(home_links),
     }
 
 # PHASE 2 — sprawdza zawartość + odkrywa nowe linki (v2.21)
@@ -2741,6 +2756,7 @@ async def phase2_focus(
     allowed_host: str,
     content_seen: dict,
     diag,
+    home_links: set = None,
 ) -> tuple:
     """
     Phase2 v2.21 — bez zmian w logice głównej relative to v2.20,
@@ -2863,10 +2879,22 @@ async def phase2_focus(
         if prev_pre and prev_pre.get("last_modified"):
             extra_headers["If-Modified-Since"] = prev_pre["last_modified"]
 
-        # fetch_with_fallback — automatycznie używa Playwright jeśli detektor to wskaże
-        html, final, kind, status, ctype, err, ms, resp_meta = await fetch_with_fallback(
+        # Pobierz przez aiohttp
+        html, final, kind, status, ctype, err, ms, resp_meta = await fetch_conditional(
             session_crawl, url, extra_headers
         )
+
+        # Playwright jeśli strona nie wnosi nowych linków (treść w JS)
+        use_pw, pw_reason = should_try_playwright(url, html, kind, home_links=home_links)
+        if use_pw and kind not in ("pdf", "not_modified", "blocked"):
+            print(f"  🎭 Phase2 Playwright @ {url[:70]} reason={pw_reason}", flush=True)
+            pw_result = await fetch_with_playwright(url)
+            pw_html, pw_final, pw_kind, pw_status, pw_ctype, pw_err, pw_ms, pw_meta = pw_result
+            if pw_kind == "html" and pw_html:
+                html, final, kind, status, ctype = pw_html, pw_final, pw_kind, pw_status, pw_ctype
+                print(f"  🎭 Phase2 Playwright OK: {len(html)}B @ {url[:60]}", flush=True)
+            else:
+                print(f"  🎭 Phase2 Playwright FAIL: {pw_err or '?'} @ {url[:60]}", flush=True)
 
         final_c = _canon(final or url)
         url_dedup_final = sha1(canonical_url(final_c))
@@ -3000,9 +3028,18 @@ async def phase2_focus(
         # Odkrywanie nowych linków — dopisuje do końca frontieru
         for abs_u, txt in iter_links_fast(soup, final_c):
             cu = _canon(abs_u)
+            # DEBUG: śledź linki z action= lub document_id=
+            _ul = (cu or "").lower()
+            _is_oglos = "action=" in _ul or "document_id=" in _ul
+            if _is_oglos:
+                print(f"  🔗 ODKRYTO: {cu[:100]} | txt={txt[:40]!r} | from={url[:60]}", flush=True)
             if not cu or not allow_url(cu) or cu in dead_set:
+                if _is_oglos:
+                    print(f"  🚫 ODRZUCONO allow/dead: {cu[:100]}", flush=True)
                 continue
             if cu in seen_in_frontier:
+                if _is_oglos:
+                    print(f"  ♻️  JUZ W FRONTIER: {cu[:100]}", flush=True)
                 continue
 
             if ENABLE_LINK_HITS and not is_download_url(cu):
@@ -3123,6 +3160,7 @@ async def worker(
                     allowed_host=allowed_host,
                     content_seen=content_seen,
                     diag=diag,
+                    home_links=set(state.gmina_seeds.get(gkey_approx, {}).get("home_links_list", [])),
                 )
                 p1meta = {"status": "SKIP", "seeds": 0, "phase1_complete": True}
 
@@ -3189,6 +3227,7 @@ async def worker(
                     allowed_host=allowed_host,
                     content_seen=content_seen,
                     diag=diag,
+                    home_links=set(p1meta.get("home_links_list", [])),
                 )
 
             stop_reason = (p2meta or {}).get("stop_reason") or ""
