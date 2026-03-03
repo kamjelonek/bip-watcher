@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.24 - PRODUCTION
+BIP WATCHER v2.25 - PRODUCTION
 Zmiany v2.23 vs v2.22:
 
 [ZMIANA 1] _fetch_links_playwright — pełny mini-BFS przez Playwright (głębokość 1)
@@ -728,12 +728,24 @@ async def fetch_with_playwright(url: str, interact: bool = False) -> tuple:
             )
 
             t0 = time.time()
-            await page.goto(url, wait_until="networkidle", timeout=60000)
+            # [v2.25] load zamiast networkidle — BIP lubelskie.pl ma ciagle XHR/polling
+            # ktore nigdy nie osiagaja networkidle, przez co goto timeout'uje lub zbiera
+            # pusty DOM. Po load czekamy jawnie az DataTables wypelni tabele.
+            try:
+                await page.goto(url, wait_until="load", timeout=45000)
+            except Exception:
+                await page.goto(url, wait_until="domcontentloaded", timeout=30000)
 
             if interact:
+                # Czekaj az tbody wypelni sie wierszami (DataTables/AJAX)
+                try:
+                    await page.wait_for_selector("tbody tr", timeout=8000)
+                except Exception:
+                    pass
+                # Dodatkowe scrollowanie + czas na AJAX
                 for _ in range(3):
                     await page.evaluate("window.scrollBy(0, document.body.scrollHeight)")
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(1.2)
 
             content = await page.content()
             final_url = page.url
@@ -804,6 +816,13 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
                 "a[href]",
                 "els => els.map(e => e.href || '').filter(h => h && !h.startsWith('javascript:') && !h.startsWith('mailto:') && !h.startsWith('tel:'))"
             )
+            # [v2.25] Debug: ile linkow jest w DOM przed filtrowaniem
+            if len(hrefs) == 0:
+                raw_count = await pw_page.eval_on_selector_all("a", "els => els.length")
+                raw_count = raw_count[0] if raw_count else 0
+                tbody_rows = await pw_page.eval_on_selector_all("tbody tr", "els => els.length")
+                tbody_rows = tbody_rows[0] if tbody_rows else 0
+                print(f"      [PW-DBG] a[href]=0 raw_a={raw_count} tbody_tr={tbody_rows} url={base_url[:60]}", flush=True)
             for href in hrefs:
                 if not href: continue
                 try:
@@ -905,12 +924,22 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
                         lambda r: r.abort()
                     )
 
-                    await page.goto(current_url, wait_until="networkidle", timeout=45000)
+                    # [v2.25] load zamiast networkidle — patrz komentarz w fetch_with_playwright
+                    try:
+                        await page.goto(current_url, wait_until="load", timeout=40000)
+                    except Exception:
+                        await page.goto(current_url, wait_until="domcontentloaded", timeout=25000)
 
-                    # Przewijanie dla lazy loading
+                    # Czekaj az tbody wypelni sie wierszami (DataTables inicjalizacja)
+                    try:
+                        await page.wait_for_selector("tbody tr", timeout=8000)
+                    except Exception:
+                        pass  # Strona bez tabeli — OK, kontynuuj
+
+                    # Scrollowanie + czas na doladowanie lazy content
                     for _ in range(2):
                         await page.evaluate("window.scrollBy(0, document.body.scrollHeight)")
-                        await asyncio.sleep(1)
+                        await asyncio.sleep(1.0)
 
                     final_url = page.url
                     pages_crawled += 1
@@ -1012,7 +1041,15 @@ async def playwright_bfs(
                         "**/*.{png,jpg,jpeg,gif,svg,ico,woff,woff2,ttf,eot}",
                         lambda r: r.abort()
                     )
-                    await page.goto(url_bfs, wait_until="networkidle", timeout=60000)
+                    # [v2.25] load zamiast networkidle
+                    try:
+                        await page.goto(url_bfs, wait_until="load", timeout=45000)
+                    except Exception:
+                        await page.goto(url_bfs, wait_until="domcontentloaded", timeout=30000)
+                    try:
+                        await page.wait_for_selector("tbody tr", timeout=8000)
+                    except Exception:
+                        pass
                     try:
                         await page.wait_for_selector("a[href]", timeout=8000)
                     except Exception:
@@ -1631,7 +1668,7 @@ def candidate_start_urls(start_url: str):
                     yield auxu
 
 # ===================== CACHE =====================
-CACHE_SCHEMA = 18  # v2.24
+CACHE_SCHEMA = 18  # v2.25
 
 def _empty_cache():
     return {
