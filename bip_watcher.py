@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.28 - PRODUCTION
+BIP WATCHER v2.31 - PRODUCTION
 Zmiany v2.23 vs v2.22:
 
 [ZMIANA 1] _fetch_links_playwright — pełny mini-BFS przez Playwright (głębokość 1)
@@ -79,7 +79,7 @@ def get_shard_index():
 
 # ===================== GIT / SHARD SAVE =====================
 def _git_commit_file(filepath, message):
-    print(f"📁 (git pominięty — plik zapisany na dysk): {filepath}")
+    pass  # git commit obsługiwany przez GitHub Actions YAML (if: always())
 
 async def save_shard_cache_and_commit(loop=None):
     shard = get_shard_index()
@@ -105,9 +105,7 @@ async def save_shard_cache_and_commit(loop=None):
     except Exception as e:
         print(f"⚠️ Failed to write shard cache: {e}")
         return
-    if loop is None:
-        loop = asyncio.get_event_loop()
-    await loop.run_in_executor(None, _git_commit_file, filename, f"Auto-update cache shard {shard} [skip ci]")
+    # git commit/push obsługiwany przez GitHub Actions YAML — nie robimy tego z Pythona
 
 # ===================== PATHS =====================
 BASE_DIR = Path(__file__).resolve().parent / "data"
@@ -118,7 +116,7 @@ LOG_FILE = BASE_DIR / "log.csv"
 DIAG_GMINY_CSV = BASE_DIR / "diag_gminy.csv"
 DIAG_ERRORS_CSV = BASE_DIR / "diag_errors.csv"
 SUMMARY_FILE = BASE_DIR / "summary_report.txt"
-ONEDRIVE_EXPORT_DIR = Path(r"P:\WORKSPACE\PP_ALL")
+ONEDRIVE_EXPORT_DIR = None  # OneDrive niedostępny w GitHub Actions
 
 # ===================== USER SWITCHES =====================
 UNLIMITED_SCAN = True
@@ -361,6 +359,14 @@ PHASE1_MIN_LINKS_FOR_PW = env_int("PHASE1_MIN_LINKS_FOR_PW", 8)
 # [v2.23] Max stron odwiedzanych przez Playwright w mini-BFS per wywołanie
 PLAYWRIGHT_MINI_BFS_MAX_PAGES = env_int("PLAYWRIGHT_MINI_BFS_MAX_PAGES", 20)
 
+# [v2.29] Max wywołań Playwright do zbierania linków w Phase1 na gminę
+# Po osiągnięciu limitu — reszta stron przez aiohttp (bez PW)
+PHASE1_MAX_PW_FETCHES = env_int("PHASE1_MAX_PW_FETCHES", 50)
+
+# [v2.30] Co ile stron Phase1 zapisuje częściowy frontier do state
+# Zabezpiecza przed utratą pracy gdy job zostanie przerwany w trakcie Phase1
+PHASE1_FRONTIER_CHECKPOINT_EVERY = env_int("PHASE1_FRONTIER_CHECKPOINT_EVERY", 300)
+
 # [v2.23] Min długość tekstu (znaki) aby uznać stronę za HTML (nie JS)
 PHASE2_MIN_TEXT_FOR_HTML = env_int("PHASE2_MIN_TEXT_FOR_HTML", 200)
 
@@ -384,7 +390,7 @@ NO_MATCH_RECHECK_TTL_HOURS = 0
 BLOCKED_RECHECK_TTL_MIN = env_int("BLOCKED_RECHECK_TTL_MIN", 0)
 FAILED_RECHECK_TTL_MIN = env_int("FAILED_RECHECK_TTL_MIN", 0)
 
-FRONTIER_CHECKPOINT_EVERY = 500
+FRONTIER_CHECKPOINT_EVERY = 300
 
 # ===================== USER AGENTS =====================
 USER_AGENTS = [
@@ -485,6 +491,7 @@ def signal_handler(signum, frame):
     print(f"\n🛑 SIGNAL {signum} received (pid={os.getpid()})", flush=True)
     state.request_shutdown()
     _signal_received = True
+    # panic_save wywoływana przez atexit (zdefiniowana niżej w kodzie)
 
 signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGINT, signal_handler)
@@ -1252,6 +1259,9 @@ def panic_save_checkpoint_sync(reason: str = "SIGTERM"):
             print(f"⚠️ PANIC diag save failed: {e}", flush=True)
     except Exception as e:
         print(f"⚠️ PANIC SAVE FAILED [{reason}]: {e}", flush=True)
+
+import atexit
+atexit.register(panic_save_checkpoint_sync, "atexit")
 
 # ===================== URL NORMALIZATION =====================
 def normalize_url(url: str) -> str:
@@ -2391,6 +2401,10 @@ async def phase1_full_crawl(
         # Nie potrzebujemy osobnego sub-crawlera — to bylo zrodlem petli i eksplozji.
         pw_links = set()
         if use_pw:
+            if pw_fetches >= PHASE1_MAX_PW_FETCHES:
+                use_pw = False
+                pw_reason = f"limit_reached({pw_fetches}>={PHASE1_MAX_PW_FETCHES})"
+        if use_pw:
             pw_fetches += 1
             print(
                 f"  🎭 [{gmina}] PW fetch-for-links @ depth={depth} "
@@ -2436,6 +2450,20 @@ async def phase1_full_crawl(
             print(
                 f"  🕷️  BFS [{gmina}] pages={pages_crawled} seeds={len(seeds)} "
                 f"q={len(q)} depth={depth} pw_fetches={pw_fetches} time={elapsed}min",
+                flush=True
+            )
+
+        # [v2.31] Frontier checkpoint co 300 stron Phase1 — zabezpieczenie przed
+        # przerwaniem joba przez GitHub Actions timeout (325min).
+        # save_shard_cache_and_commit zapisuje na dysk; YAML (if: always()) pushuje do git.
+        if pages_crawled % PHASE1_FRONTIER_CHECKPOINT_EVERY == 0 and pages_crawled > 0 and allowed_host:
+            _p1_gkey = gmina_cache_key(gmina, "https://" + allowed_host)
+            _partial_urls = sorted(seeds.keys(), key=lambda u: -seeds.get(u, 0))
+            async with state.cache_lock:
+                state.gmina_frontiers[_p1_gkey] = [[u, 0] for u in _partial_urls]
+            await save_shard_cache_and_commit()
+            print(
+                f"  💾 Phase1 checkpoint [{gmina}]: seeds={len(_partial_urls)} p={pages_crawled}",
                 flush=True
             )
 
@@ -3322,7 +3350,7 @@ async def main():
                 save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds)
         save_diag(state.diag_rows, state.diag_errors)
         write_summary(state.diag_rows, state.new_items_for_mail)
-        export_summary_to_onedrive()
+        # export_summary_to_onedrive() — niedostępne w GitHub Actions
     except Exception as e:
         print(f"⚠️  Final save failed: {e}")
 
