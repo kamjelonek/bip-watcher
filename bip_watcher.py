@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.31 - PRODUCTION
+BIP WATCHER v2.33 - PRODUCTION
 Zmiany v2.23 vs v2.22:
 
 [ZMIANA 1] _fetch_links_playwright — pełny mini-BFS przez Playwright (głębokość 1)
@@ -340,8 +340,8 @@ def is_junk_link_title(title: str, url: str = "") -> bool:
 
 # ===================== PERFORMANCE =====================
 CONCURRENT_GMINY = env_int("CONCURRENT_GMINY", 1)
-CONCURRENT_REQUESTS = env_int("CONCURRENT_REQUESTS", 50)
-LIMIT_PER_HOST = env_int("LIMIT_PER_HOST", 6)
+CONCURRENT_REQUESTS = env_int("CONCURRENT_REQUESTS", 80)
+LIMIT_PER_HOST = env_int("LIMIT_PER_HOST", 10)
 
 PHASE1_MAX_DEPTH = env_int("PHASE1_MAX_DEPTH", 4)
 PHASE1_MAX_URLS = env_int("PHASE1_MAX_URLS", 999999)
@@ -350,7 +350,7 @@ PHASE2_MAX_DEPTH = 4
 PHASE2_MAX_PAGES = 999999
 
 PLAYWRIGHT_MAX_DEPTH = env_int("PLAYWRIGHT_MAX_DEPTH", 4)
-DYNAMIC_SCORE_THRESHOLD = env_int("DYNAMIC_SCORE_THRESHOLD", 3)
+DYNAMIC_SCORE_THRESHOLD = env_int("DYNAMIC_SCORE_THRESHOLD", 5)
 SPA_FALLBACK_MIN_LINKS = env_int("SPA_FALLBACK_MIN_LINKS", 20)
 
 # [v2.23] Próg: jeśli aiohttp znalazł mniej linków — uruchamiamy Playwright
@@ -365,7 +365,7 @@ PHASE1_MAX_PW_FETCHES = env_int("PHASE1_MAX_PW_FETCHES", 50)
 
 # [v2.30] Co ile stron Phase1 zapisuje częściowy frontier do state
 # Zabezpiecza przed utratą pracy gdy job zostanie przerwany w trakcie Phase1
-PHASE1_FRONTIER_CHECKPOINT_EVERY = env_int("PHASE1_FRONTIER_CHECKPOINT_EVERY", 300)
+PHASE1_FRONTIER_CHECKPOINT_EVERY = env_int("PHASE1_FRONTIER_CHECKPOINT_EVERY", 500)
 
 # [v2.23] Min długość tekstu (znaki) aby uznać stronę za HTML (nie JS)
 PHASE2_MIN_TEXT_FOR_HTML = env_int("PHASE2_MIN_TEXT_FOR_HTML", 200)
@@ -390,7 +390,7 @@ NO_MATCH_RECHECK_TTL_HOURS = 0
 BLOCKED_RECHECK_TTL_MIN = env_int("BLOCKED_RECHECK_TTL_MIN", 0)
 FAILED_RECHECK_TTL_MIN = env_int("FAILED_RECHECK_TTL_MIN", 0)
 
-FRONTIER_CHECKPOINT_EVERY = 300
+FRONTIER_CHECKPOINT_EVERY = 500
 
 # ===================== USER AGENTS =====================
 USER_AGENTS = [
@@ -451,7 +451,7 @@ class DomainRateLimiter:
         self.problem_domains[domain] += 1
 
 rate_limiter = DomainRateLimiter(
-    min_delay=env_float("RATE_MIN_DELAY", 0.3),
+    min_delay=env_float("RATE_MIN_DELAY", 0.2),
     max_delay=env_float("RATE_MAX_DELAY", 1.0),
 )
 
@@ -1627,6 +1627,10 @@ def print_hit(tag: str, gmina: str, kw: str, title: str):
     print(f"{tag} {gmina}: [{kw}] -> {shown[:180]}", flush=True)
 
 # ===================== ATTACHMENTS =====================
+# [v2.33] Tylko te rozszerzenia liczą się jako "zmiana załączników" w raporcie.
+# Szeroka lista ATT_EXT pozostaje dla crawlingu (skip href, frontier).
+ATT_SIG_EXT = (".pdf", ".gml", ".zip", ".doc", ".docx")
+
 def attachments_signature(soup: BeautifulSoup, base_url: str) -> set:
     if not soup: return set()
     result = set()
@@ -1635,7 +1639,7 @@ def attachments_signature(soup: BeautifulSoup, base_url: str) -> set:
         if not href: continue
         abs_u = normalize_url(urljoin(base_url, href))
         low = abs_u.lower()
-        if not any(low.endswith(ext) for ext in ATT_EXT): continue
+        if not any(low.endswith(ext) for ext in ATT_SIG_EXT): continue
         p = urlparse(abs_u)
         netloc = p.netloc.lower()
         if netloc.startswith("www."): netloc = netloc[4:]
@@ -2453,7 +2457,7 @@ async def phase1_full_crawl(
                 flush=True
             )
 
-        # [v2.31] Frontier checkpoint co 300 stron Phase1 — zabezpieczenie przed
+        # [v2.31] Frontier checkpoint co 500 stron Phase1 — zabezpieczenie przed
         # przerwaniem joba przez GitHub Actions timeout (325min).
         # save_shard_cache_and_commit zapisuje na dysk; YAML (if: always()) pushuje do git.
         if pages_crawled % PHASE1_FRONTIER_CHECKPOINT_EVERY == 0 and pages_crawled > 0 and allowed_host:
@@ -2672,6 +2676,9 @@ async def phase2_focus(
     pages_skipped_ttl = 0
     new_links_added = 0
     pw_content_fetches = 0
+    # [v2.32] Deduplikacja po hash treści — ten sam blob = ten sam dokument
+    # pod innym URL → nie reportujemy drugi raz w tym samym runie
+    blob_hashes_this_run: set = set()
 
     while q and not state.shutdown_requested:
         if RUN_DEADLINE_MIN > 0 and (time.time() - GLOBAL_T0) > (RUN_DEADLINE_MIN * 60):
@@ -2752,24 +2759,9 @@ async def phase2_focus(
                     need_pw_for_content = True
                     pw_content_reason = f"js_detected(score={dyn_score})"
 
-            if not need_pw_for_content:
-                # [v2.24] Sprawdzenie 3: pusta tabela AJAX
-                # Strona listingu (id=66&p1=sz) ma blob~350 znakow bo <main>
-                # zawiera tylko naglowek - tabela ogloszen ladowana przez DataTables.
-                try:
-                    _soup_chk = safe_soup(html)
-                    if _soup_chk:
-                        for _tbl in _soup_chk.find_all("table"):
-                            _tbody = _tbl.find("tbody")
-                            if _tbody is not None:
-                                _tbody_t = re.sub(r"\s+", " ", _tbody.get_text(" ", strip=True)).strip()
-                                _tbody_r = _tbody.find_all("tr")
-                                if len(_tbody_r) == 0 or len(_tbody_t) < 20:
-                                    need_pw_for_content = True
-                                    pw_content_reason = f"empty_ajax_table(rows={len(_tbody_r)})"
-                                    break
-                except Exception:
-                    pass
+            # [v2.32] empty_ajax_table usunięte z Phase2 — było źródłem fałszywych
+            # Playwright triggers dla stron detail które nigdy nie mają tabel listingów.
+            # Kryterium pozostaje tylko w Phase1 (_needs_playwright_for_links).
 
             if not need_pw_for_content:
                 # [v2.24] Sprawdzenie 4: strona detail z za mala trescia
@@ -2903,6 +2895,14 @@ async def phase2_focus(
             soup, url=url, home_text=home_text
         )
         print(f"    [DEBUG] blob_len={len(blob)} method={_blob_method} removed={_removed_chars} url={url[:60]}")
+
+        # [v2.32] Deduplikacja po hash blob-a — ten sam hash = ta sama treść
+        # pod innym URL (np. /110/240/ vs /50/240/) → pomijamy raport
+        _blob_hash = sha1(blob[:5000])  # pierwsze 5000 znaków wystarczy
+        _blob_is_duplicate = _blob_hash in blob_hashes_this_run
+        if not _blob_is_duplicate and len(blob) > 100:
+            blob_hashes_this_run.add(_blob_hash)
+
         ok_any, kw_any = keyword_match_in_blob(blob)
 
         # Diagnostyka
@@ -2959,12 +2959,16 @@ async def phase2_focus(
 
         if status_new in {"NOWE", "ZMIANA"}:
             diag["counts"][f"hit_{status_new.lower()}"] += 1
-            if final_c not in state.reported_urls_this_run:
+            if final_c not in state.reported_urls_this_run and not _blob_is_duplicate:
                 state.reported_urls_this_run.add(final_c)
                 print_hit(f"🟢 {status_new}", gmina, kw_any, page_title)
                 found.append((gmina, kw_any, page_title, final_c, status_new))
             else:
-                diag["counts"]["dedup_skipped"] += 1
+                if _blob_is_duplicate:
+                    diag["counts"]["blob_dedup_skipped"] += 1
+                    print(f"  🔁 blob_dedup [{gmina}]: pominięto duplikat treści @ {url[:60]}", flush=True)
+                else:
+                    diag["counts"]["dedup_skipped"] += 1
 
         # --- [v2.23] Linki z HTML (aiohttp) → kolejka ---
         for abs_u, txt in iter_links_fast(soup, final_c):
