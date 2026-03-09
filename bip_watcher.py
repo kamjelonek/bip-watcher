@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.33 - PRODUCTION
+BIP WATCHER v2.34 - PRODUCTION
 Zmiany v2.23 vs v2.22:
 
 [ZMIANA 1] _fetch_links_playwright — pełny mini-BFS przez Playwright (głębokość 1)
@@ -1627,7 +1627,7 @@ def print_hit(tag: str, gmina: str, kw: str, title: str):
     print(f"{tag} {gmina}: [{kw}] -> {shown[:180]}", flush=True)
 
 # ===================== ATTACHMENTS =====================
-# [v2.33] Tylko te rozszerzenia liczą się jako "zmiana załączników" w raporcie.
+# [v2.34] Tylko te rozszerzenia liczą się jako "zmiana załączników" w raporcie.
 # Szeroka lista ATT_EXT pozostaje dla crawlingu (skip href, frontier).
 ATT_SIG_EXT = (".pdf", ".gml", ".zip", ".doc", ".docx")
 
@@ -2679,6 +2679,9 @@ async def phase2_focus(
     # [v2.32] Deduplikacja po hash treści — ten sam blob = ten sam dokument
     # pod innym URL → nie reportujemy drugi raz w tym samym runie
     blob_hashes_this_run: set = set()
+    # [v2.34] Deduplikacja po hash kontekstu keyword-a — ten sam fragment wokół
+    # keyword-a na 2+ stronach → widget boczny → nie reportujemy kolejnych trafień
+    context_hashes_this_run: dict = {}  # hash → count
 
     while q and not state.shutdown_requested:
         if RUN_DEADLINE_MIN > 0 and (time.time() - GLOBAL_T0) > (RUN_DEADLINE_MIN * 60):
@@ -2905,6 +2908,18 @@ async def phase2_focus(
 
         ok_any, kw_any = keyword_match_in_blob(blob)
 
+        # [v2.34] Deduplikacja po hash kontekstu keyword-a
+        # Ten sam fragment (~150 znaków) wokół keyword-a na 2+ stronach → widget boczny
+        _context_is_duplicate = False
+        if ok_any and kw_any:
+            _kw_pos = blob.lower().find(kw_any.lower())
+            if _kw_pos >= 0:
+                _ctx_fragment = blob[max(0, _kw_pos - 60): _kw_pos + 90].lower()
+                _ctx_hash = sha1(_ctx_fragment)
+                context_hashes_this_run[_ctx_hash] = context_hashes_this_run.get(_ctx_hash, 0) + 1
+                if context_hashes_this_run[_ctx_hash] >= 2:
+                    _context_is_duplicate = True
+
         # Diagnostyka
         _ul = (url or "").lower()
         _is_detail = "action=details" in _ul or "document_id=" in _ul
@@ -2959,7 +2974,7 @@ async def phase2_focus(
 
         if status_new in {"NOWE", "ZMIANA"}:
             diag["counts"][f"hit_{status_new.lower()}"] += 1
-            if final_c not in state.reported_urls_this_run and not _blob_is_duplicate:
+            if final_c not in state.reported_urls_this_run and not _blob_is_duplicate and not _context_is_duplicate:
                 state.reported_urls_this_run.add(final_c)
                 print_hit(f"🟢 {status_new}", gmina, kw_any, page_title)
                 found.append((gmina, kw_any, page_title, final_c, status_new))
@@ -2967,6 +2982,9 @@ async def phase2_focus(
                 if _blob_is_duplicate:
                     diag["counts"]["blob_dedup_skipped"] += 1
                     print(f"  🔁 blob_dedup [{gmina}]: pominięto duplikat treści @ {url[:60]}", flush=True)
+                elif _context_is_duplicate:
+                    diag["counts"]["context_dedup_skipped"] += 1
+                    print(f"  🔁 ctx_dedup [{gmina}]: pominięto duplikat kontekstu kw={kw_any!r} @ {url[:60]}", flush=True)
                 else:
                     diag["counts"]["dedup_skipped"] += 1
 
