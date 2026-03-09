@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.34 - PRODUCTION
+BIP WATCHER v2.35 - PRODUCTION
 Zmiany v2.23 vs v2.22:
 
 [ZMIANA 1] _fetch_links_playwright — pełny mini-BFS przez Playwright (głębokość 1)
@@ -224,6 +224,10 @@ IGNORE_URL_SUBSTR = [
     "majatk", "majątk", "regulamin", "sygnalis",
     "login", "logowanie", "rejestracja", "newsletter",
     "galeria-zdjec", "galeria_zdjec", "multimedia", "wideo",
+    # [v2.35] Alternatywne formaty tej samej treści — nigdy nie są wartościowe
+    "/xml/", "drukuj.asp", "core/drukuj", "core/pdf",
+    "akcja=drukuj", "akcja=pdf", "format=pdf", "format=xml",
+    "/print/", "/drukuj/",
 ]
 
 IGNORE_URL_PATH_PATTERNS = [
@@ -1627,7 +1631,7 @@ def print_hit(tag: str, gmina: str, kw: str, title: str):
     print(f"{tag} {gmina}: [{kw}] -> {shown[:180]}", flush=True)
 
 # ===================== ATTACHMENTS =====================
-# [v2.34] Tylko te rozszerzenia liczą się jako "zmiana załączników" w raporcie.
+# [v2.35] Tylko te rozszerzenia liczą się jako "zmiana załączników" w raporcie.
 # Szeroka lista ATT_EXT pozostaje dla crawlingu (skip href, frontier).
 ATT_SIG_EXT = (".pdf", ".gml", ".zip", ".doc", ".docx")
 
@@ -2679,7 +2683,7 @@ async def phase2_focus(
     # [v2.32] Deduplikacja po hash treści — ten sam blob = ten sam dokument
     # pod innym URL → nie reportujemy drugi raz w tym samym runie
     blob_hashes_this_run: set = set()
-    # [v2.34] Deduplikacja po hash kontekstu keyword-a — ten sam fragment wokół
+    # [v2.35] Deduplikacja po hash kontekstu keyword-a — ten sam fragment wokół
     # keyword-a na 2+ stronach → widget boczny → nie reportujemy kolejnych trafień
     context_hashes_this_run: dict = {}  # hash → count
 
@@ -2908,7 +2912,7 @@ async def phase2_focus(
 
         ok_any, kw_any = keyword_match_in_blob(blob)
 
-        # [v2.34] Deduplikacja po hash kontekstu keyword-a
+        # [v2.35] Deduplikacja po hash kontekstu keyword-a
         # Ten sam fragment (~150 znaków) wokół keyword-a na 2+ stronach → widget boczny
         _context_is_duplicate = False
         if ok_any and kw_any:
