@@ -95,6 +95,7 @@ async def save_shard_cache_and_commit(loop=None):
     out["gmina_frontiers"] = state.gmina_frontiers or {}
     out["gmina_retry"] = state.gmina_retry or {}
     out["dead_urls"] = getattr(state, "dead_urls", {})
+    out["new_items_for_mail"] = list(state.new_items_for_mail or [])  # [v2.36] backup
     filename = BASE_DIR / f"cache_shard_{shard}.json"
     try:
         tmp = str(filename) + ".tmp"
@@ -116,6 +117,7 @@ LOG_FILE = BASE_DIR / "log.csv"
 DIAG_GMINY_CSV = BASE_DIR / "diag_gminy.csv"
 DIAG_ERRORS_CSV = BASE_DIR / "diag_errors.csv"
 SUMMARY_FILE = BASE_DIR / "summary_report.txt"
+HITS_BACKUP_FILE = BASE_DIR / "hits_backup.jsonl"  # [v2.36] backup ogłoszeń gdy email zawiedzie
 ONEDRIVE_EXPORT_DIR = None  # OneDrive niedostępny w GitHub Actions
 
 # ===================== USER SWITCHES =====================
@@ -389,10 +391,12 @@ CACHE_CHECKPOINT_EVERY_N_GMINY = 3
 SEED_CACHE_TTL_DAYS = 999
 FAST_TEXT_MAX_CHARS = 400_000
 
-HIT_RECHECK_TTL_HOURS = 0
-NO_MATCH_RECHECK_TTL_HOURS = 0
-BLOCKED_RECHECK_TTL_MIN = env_int("BLOCKED_RECHECK_TTL_MIN", 0)
-FAILED_RECHECK_TTL_MIN = env_int("FAILED_RECHECK_TTL_MIN", 0)
+# [v2.36] TTL — krytyczny fix. TTL=0 powoduje że program ignoruje cache
+# i skanuje te same URL-e przy każdym runie, nigdy nie docierając do końca frontieru.
+HIT_RECHECK_TTL_HOURS     = env_int("HIT_RECHECK_TTL_HOURS",     168)  # 7 dni
+NO_MATCH_RECHECK_TTL_HOURS = env_int("NO_MATCH_RECHECK_TTL_HOURS", 72)  # 3 dni
+BLOCKED_RECHECK_TTL_MIN   = env_int("BLOCKED_RECHECK_TTL_MIN",    120)  # 2 godziny
+FAILED_RECHECK_TTL_MIN    = env_int("FAILED_RECHECK_TTL_MIN",      60)  # 1 godzina
 
 FRONTIER_CHECKPOINT_EVERY = 500
 
@@ -1215,7 +1219,7 @@ def write_summary(diag_rows, new_items_for_mail):
         ok = sum(1 for r in (diag_rows or []) if r.get("status") == "OK")
         start_fail = sum(1 for r in (diag_rows or []) if r.get("status") == "START_FAIL")
         lines = [
-            f"BIP WATCHER v2.23 SUMMARY @ {now_iso()}",
+            f"BIP WATCHER v2.36 SUMMARY @ {now_iso()}",
             f"gminy_total={total} ok={ok} start_fail={start_fail}",
             f"mail_items={len(new_items_for_mail or [])}",
             "",
@@ -1230,6 +1234,55 @@ def write_summary(diag_rows, new_items_for_mail):
         print(f"🧾 Summary saved: {SUMMARY_FILE}")
     except Exception as ex:
         print(f"⚠️ write_summary failed: {ex}")
+
+
+def append_hits_to_backup(items: list):
+    """[v2.36] Dopisuje znalezione ogłoszenia do pliku JSONL — backup gdy email zawiedzie
+    lub job zostanie przerwany. Plik rośnie między runami, można go przeglądać ręcznie."""
+    if not items:
+        return
+    try:
+        def _do():
+            with open(HITS_BACKUP_FILE, "a", encoding="utf-8") as f:
+                for item in items:
+                    f.write(json.dumps({"ts": now_iso(), "item": item}, ensure_ascii=False) + "\n")
+        retry_io(_do, tries=4, base_sleep=0.3)
+        print(f"💾 Hits backup: +{len(items)} wpisów → {HITS_BACKUP_FILE}", flush=True)
+    except Exception as ex:
+        print(f"⚠️ hits backup failed: {ex}", flush=True)
+
+
+def _try_send_email_sync():
+    """[v2.36] Wysyła email synchronicznie — wywoływana z CancelledError, panic_save i main().
+    Wysyła zawsze gdy są wyniki — NIE sprawdza shutdown_requested (to błąd z v2.35).
+    Po udanym wysłaniu czyści listę żeby następny run nie wysyłał duplikatów."""
+    if not ENABLE_EMAIL:
+        return
+    items = list(state.new_items_for_mail or [])
+    if not items:
+        print("📨 Email: brak wyników do wysłania.")
+        return
+    try:
+        subject = (
+            f"BIP WATCHER: {len(items)} nowych/zmienionych wpisów "
+            f"({datetime.now().strftime('%Y-%m-%d %H:%M')})"
+        )
+        body = "\n\n".join(items[:1200])
+        if len(items) > 1200:
+            body += f"\n\n... truncated ({len(items)} total)"
+        msg = MIMEText(body, "plain", "utf-8")
+        msg["Subject"] = subject
+        msg["From"] = EMAIL_TO
+        msg["To"] = EMAIL_TO
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as srv:
+            srv.send_message(msg)
+        print(f"📨 Email: SENT ✅ ({len(items)} wpisów)")
+        # [v2.36] Po wysłaniu czyść — żeby następny run nie wysyłał tych samych wyników
+        state.new_items_for_mail.clear()
+        state.mail_dedup.clear()
+    except Exception as e:
+        print(f"⚠️  Email failed: {e}")
+        # Nie czyść listy — następny run spróbuje wysłać ponownie
 
 
 def panic_save_checkpoint_sync(reason: str = "SIGTERM"):
@@ -1247,6 +1300,7 @@ def panic_save_checkpoint_sync(reason: str = "SIGTERM"):
             out["gmina_frontiers"] = state.gmina_frontiers or {}
             out["gmina_retry"] = state.gmina_retry or {}
             out["dead_urls"] = getattr(state, "dead_urls", {})
+            out["new_items_for_mail"] = list(state.new_items_for_mail or [])  # [v2.36] backup
             filename = BASE_DIR / f"cache_shard_{shard}.json"
             tmp = str(filename) + ".tmp"
             with open(tmp, "w", encoding="utf-8") as f:
@@ -1261,6 +1315,12 @@ def panic_save_checkpoint_sync(reason: str = "SIGTERM"):
             print(f"🧯 PANIC SAVE (diag) OK [{reason}]", flush=True)
         except Exception as e:
             print(f"⚠️ PANIC diag save failed: {e}", flush=True)
+        # [v2.36] Ostatnia deska ratunku — wyślij email z tym co zdążyliśmy zebrać
+        try:
+            write_summary(state.diag_rows, state.new_items_for_mail)
+            _try_send_email_sync()
+        except Exception as e:
+            print(f"⚠️ PANIC email failed: {e}", flush=True)
     except Exception as e:
         print(f"⚠️ PANIC SAVE FAILED [{reason}]: {e}", flush=True)
 
@@ -3213,6 +3273,7 @@ async def worker(
                 if mail_line not in state.mail_dedup:
                     state.mail_dedup.add(mail_line)
                     state.new_items_for_mail.append(mail_line)
+                    append_hits_to_backup([mail_line])  # [v2.36] backup natychmiast
                     log_new_item(g, t, u, kw)
 
             checkpoint_counter["done"] = int(checkpoint_counter.get("done", 0)) + 1
@@ -3242,6 +3303,19 @@ async def worker(
             )
 
         except asyncio.CancelledError:
+            # [v2.36] Zamiast po prostu return — zapisz co zdążyliśmy zebrać.
+            # GitHub Actions cancel powoduje CancelledError — bez tego tracimy
+            # wszystkie wyniki z danego runu bezpowrotnie.
+            print(f"⚠️  [{name}] CancelledError — zapisuję wyniki przed wyjściem...", flush=True)
+            try:
+                if USE_CACHE and os.getenv("GITHUB_ACTIONS") and get_shard_index() >= 0:
+                    await save_shard_cache_and_commit(asyncio.get_event_loop())
+                save_diag(state.diag_rows, state.diag_errors)
+                write_summary(state.diag_rows, state.new_items_for_mail)
+                _try_send_email_sync()
+                print(f"✅ [{name}] Dane zapisane po CancelledError", flush=True)
+            except Exception as _ce:
+                print(f"⚠️  [{name}] Zapis po CancelledError failed: {_ce}", flush=True)
             return
         except Exception as e:
             print(f"❌ [{name}] ERROR: {gmina} -> {e}", flush=True)
@@ -3380,23 +3454,20 @@ async def main():
     except Exception as e:
         print(f"⚠️  Final save failed: {e}")
 
+    # [v2.36] Email — zawsze próbuj wysłać (usunięto błędny warunek not shutdown_requested).
+    # Używamy _try_send_email_sync() która po wysłaniu czyści listę (no-resend w nast. runie).
+    _try_send_email_sync()
+
+    # [v2.36] Po wysłaniu emaila — zapisz shard jeszcze raz żeby nowa_items=[],
+    # tak żeby następny run nie wysyłał tych samych wyników ponownie.
     try:
-        if ENABLE_EMAIL and state.new_items_for_mail and not state.shutdown_requested:
-            subject = f"BIP WATCHER: {len(state.new_items_for_mail)} nowych/zmienionych wpisów ({datetime.now().strftime('%Y-%m-%d %H:%M')})"
-            body = "\n\n".join(state.new_items_for_mail[:1200])
-            if len(state.new_items_for_mail) > 1200:
-                body += f"\n\n... truncated ({len(state.new_items_for_mail)} total)"
-            msg = MIMEText(body, "plain", "utf-8")
-            msg["Subject"] = subject
-            msg["From"] = EMAIL_TO
-            msg["To"] = EMAIL_TO
-            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as srv:
-                srv.send_message(msg)
-            print("📨 Email: SENT ✅")
-        else:
-            print("📨 Email: pominięty.")
+        if USE_CACHE:
+            if os.getenv("GITHUB_ACTIONS") and get_shard_index() >= 0:
+                await save_shard_cache_and_commit(asyncio.get_event_loop())
+            else:
+                save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds)
     except Exception as e:
-        print(f"⚠️  Email failed: {e}")
+        print(f"⚠️  Post-email cache save failed: {e}")
 
     print("✅ SKAN ZAKOŃCZONY")
 
