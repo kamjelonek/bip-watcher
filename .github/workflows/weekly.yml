@@ -14,9 +14,14 @@ on:
           - "false"
           - "true"
 
+# [FIX] concurrency tylko dla jobów scan — NIE dla merge.
+# Poprzednio: group: bip-watcher obejmowała CAŁY workflow włącznie z merge.
+# Gdy scheduler odpala nowy run w trakcie działającego — cancel-in-progress
+# zabijał merge który właśnie wysyłał email. Teraz merge ma własną grupę
+# która nigdy nie jest anulowana (cancel-in-progress: false).
 concurrency:
-  group: bip-watcher
-  cancel-in-progress: true
+  group: bip-watcher-scans-${{ github.run_id }}
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -100,7 +105,7 @@ jobs:
   setup:
     name: Build shard matrix
     runs-on: ubuntu-latest
-    timeout-minutes: 315
+    timeout-minutes: 320
     needs: [init_cache_store]
     if: needs.init_cache_store.result == 'success'
     outputs:
@@ -327,13 +332,20 @@ jobs:
 
   # ============================================================
   # KROK 4: Merge + email
+  # [FIX] Własna grupa concurrency — nigdy nie jest anulowana przez nowe runy.
+  # Poprzednio merge był anulowany przez cancel-in-progress gdy scheduler
+  # odprowadzał nowy run podczas działającego merge.
   # ============================================================
   merge:
     name: Merge + email
     runs-on: ubuntu-latest
     needs: [scan]
     if: always()
-    timeout-minutes: 320
+    timeout-minutes: 30
+    # [FIX] Osobna concurrency — merge NIGDY nie jest cancelowany
+    concurrency:
+      group: bip-watcher-merge
+      cancel-in-progress: false
 
     steps:
       - uses: actions/checkout@v4
