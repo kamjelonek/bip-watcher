@@ -15,10 +15,6 @@ on:
           - "true"
 
 # [FIX] concurrency tylko dla jobów scan — NIE dla merge.
-# Poprzednio: group: bip-watcher obejmowała CAŁY workflow włącznie z merge.
-# Gdy scheduler odpala nowy run w trakcie działającego — cancel-in-progress
-# zabijał merge który właśnie wysyłał email. Teraz merge ma własną grupę
-# która nigdy nie jest anulowana (cancel-in-progress: false).
 concurrency:
   group: bip-watcher-scans-${{ github.run_id }}
   cancel-in-progress: false
@@ -29,9 +25,6 @@ permissions:
 
 jobs:
 
-  # ============================================================
-  # KROK 0: Utwórz branch cache-store jeśli nie istnieje
-  # ============================================================
   init_cache_store:
     name: Init cache-store branch
     runs-on: ubuntu-latest
@@ -64,9 +57,6 @@ jobs:
           git commit -m "Initialize cache-store [skip ci]"
           git push origin cache-store
 
-  # ============================================================
-  # KROK 1: FULL RESET (opcjonalny — tylko gdy full_reset=true)
-  # ============================================================
   reset_cache_store:
     name: FULL RESET cache-store
     runs-on: ubuntu-latest
@@ -99,9 +89,6 @@ jobs:
           done
           echo "✅ cache-store wyczyszczony"
 
-  # ============================================================
-  # KROK 2: Zbuduj dynamic matrix (1 shard = 1 gmina)
-  # ============================================================
   setup:
     name: Build shard matrix
     runs-on: ubuntu-latest
@@ -155,9 +142,6 @@ jobs:
           print(f"✅ Gmin: {total}, indeksy: 0..{total-1}")
           PY
 
-  # ============================================================
-  # KROK 3: Skan — 1 job = 1 gmina
-  # ============================================================
   scan:
     name: Scan shard ${{ matrix.shard }}
     runs-on: ubuntu-latest
@@ -238,6 +222,7 @@ jobs:
             echo '{"schema":14,"urls_seen":{},"content_seen":{},"gmina_seeds":{},"gmina_frontiers":{},"gmina_retry":{},"dead_urls":{}}' > data/cache.json
           fi
 
+
       - name: Run watcher
         continue-on-error: true
         timeout-minutes: 320
@@ -291,7 +276,11 @@ jobs:
 
             gzip -9 -c "../${SHARD_JSON}" > "shards/cache_shard_${SHARD_INDEX}.json.gz"
 
+            # [FIX] Commituj hits_backup razem z shardem — prawdziwy backup
+            [ -f "../data/hits_backup.jsonl" ] && cp "../data/hits_backup.jsonl" "hits_backup_${SHARD_INDEX}.jsonl" || true
+
             git add "shards/cache_shard_${SHARD_INDEX}.json.gz"
+            git add "hits_backup_${SHARD_INDEX}.jsonl" 2>/dev/null || true
 
             if git diff --cached --quiet; then
               echo "ℹ️ Shard $SHARD_INDEX — bez zmian, commit pominięty"
@@ -330,19 +319,12 @@ jobs:
             data/diag_gminy.csv
             data/diag_errors.csv
 
-  # ============================================================
-  # KROK 4: Merge + email
-  # [FIX] Własna grupa concurrency — nigdy nie jest anulowana przez nowe runy.
-  # Poprzednio merge był anulowany przez cancel-in-progress gdy scheduler
-  # odprowadzał nowy run podczas działającego merge.
-  # ============================================================
   merge:
     name: Merge + email
     runs-on: ubuntu-latest
     needs: [scan]
     if: always()
     timeout-minutes: 30
-    # [FIX] Osobna concurrency — merge NIGDY nie jest cancelowany
     concurrency:
       group: bip-watcher-merge
       cancel-in-progress: false
@@ -581,5 +563,125 @@ jobs:
               print(f"✅ Email wysłany: {subject}")
           except Exception as e:
               print(f"❌ Błąd emaila: {e}")
+              raise
+          PY
+
+  # ============================================================
+  # KROK 5: Fallback email — odpala się TYLKO gdy merge nie wyszedł
+  # Czyta hits_backup_*.jsonl z cache-store zamiast content_seen
+  # ============================================================
+  email_fallback:
+    name: Email fallback (gdy merge padł)
+    runs-on: ubuntu-latest
+    needs: [merge]
+    if: always() && needs.merge.result != 'success'
+    timeout-minutes: 10
+    concurrency:
+      group: bip-watcher-email-fallback
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cache-store
+          path: cache-store
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Send fallback email from hits_backup
+        shell: bash
+        env:
+          GMAIL_USER: "kamiljelonek227@gmail.com"
+          GMAIL_APP_PASSWORD: "sldy dhtk redc vwrn"
+          MERGE_RESULT: ${{ needs.merge.result }}
+        run: |
+          python3 - <<'PY'
+          import os, json, glob, smtplib
+          from email.mime.text import MIMEText
+          from email.mime.multipart import MIMEMultipart
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          GMAIL_USER         = os.environ.get("GMAIL_USER", "")
+          GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
+          MERGE_RESULT       = os.environ.get("MERGE_RESULT", "unknown")
+
+          if not GMAIL_APP_PASSWORD:
+              print("⚠️ Brak GMAIL_APP_PASSWORD — email pominięty")
+              exit(0)
+
+          now_utc   = datetime.now(timezone.utc)
+          run_date  = now_utc.strftime("%Y-%m-%d %H:%M UTC")
+          CUTOFF_H  = 26
+
+          # Zbierz wpisy z hits_backup_*.jsonl z ostatnich CUTOFF_H godzin
+          backup_files = sorted(glob.glob("cache-store/hits_backup_*.jsonl"))
+          print(f"📂 Znaleziono {len(backup_files)} plików hits_backup")
+
+          items = []
+          seen = set()
+          for bf in backup_files:
+              try:
+                  with open(bf, encoding="utf-8") as f:
+                      for line in f:
+                          line = line.strip()
+                          if not line:
+                              continue
+                          try:
+                              obj = json.loads(line)
+                              ts_str = obj.get("ts", "")
+                              item   = obj.get("item", "")
+                              if not item or item in seen:
+                                  continue
+                              # Filtruj po czasie
+                              if ts_str:
+                                  try:
+                                      ts = datetime.fromisoformat(ts_str)
+                                      if ts.tzinfo is None:
+                                          ts = ts.replace(tzinfo=timezone.utc)
+                                      if (now_utc - ts).total_seconds() / 3600 > CUTOFF_H:
+                                          continue
+                                  except Exception:
+                                      pass
+                              seen.add(item)
+                              items.append(item)
+                          except Exception:
+                              continue
+              except Exception as e:
+                  print(f"⚠️ {bf}: {e}")
+
+          print(f"📊 Znaleziono {len(items)} wpisów z ostatnich {CUTOFF_H}h")
+
+          run_date_short = now_utc.strftime("%Y-%m-%d")
+          if not items:
+              subject = f"BIP Watcher {run_date_short} — FALLBACK — brak nowych wyników (merge: {MERGE_RESULT})"
+              body = f"BIP Watcher — skan {run_date}\nMerge job: {MERGE_RESULT}\n\nBrak nowych ogłoszeń w hits_backup."
+          else:
+              subject = f"BIP Watcher {run_date_short} — FALLBACK — {len(items)} wyników (merge: {MERGE_RESULT})"
+              body = (
+                  f"BIP Watcher — skan {run_date}\n"
+                  f"Merge job: {MERGE_RESULT}\n"
+                  f"Wyniki z hits_backup ({len(items)} wpisów):\n"
+                  + "=" * 65 + "\n\n"
+                  + "\n".join(items[:1200])
+              )
+              if len(items) > 1200:
+                  body += f"\n\n... truncated ({len(items)} total)"
+
+          try:
+              msg = MIMEMultipart("alternative")
+              msg["Subject"] = subject
+              msg["From"]    = GMAIL_USER
+              msg["To"]      = GMAIL_USER
+              msg.attach(MIMEText(body, "plain", "utf-8"))
+              with smtplib.SMTP_SSL("smtp.gmail.com", 465) as srv:
+                  srv.login(GMAIL_USER, GMAIL_APP_PASSWORD)
+                  srv.sendmail(GMAIL_USER, [GMAIL_USER], msg.as_string())
+              print(f"✅ Fallback email wysłany: {subject}")
+          except Exception as e:
+              print(f"❌ Błąd fallback emaila: {e}")
               raise
           PY
