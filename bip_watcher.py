@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.37 - PRODUCTION
+BIP WATCHER v2.38 - PRODUCTION
 Zmiany v2.23 vs v2.22:
 
 [ZMIANA 1] _fetch_links_playwright — pełny mini-BFS przez Playwright (głębokość 1)
@@ -871,7 +871,7 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
                 try:
                     abs_u = normalize_url(urljoin(base_url, href))
                     if not is_valid_url(abs_u): continue
-                    if not same_base_domain(urlparse(abs_u).netloc, allowed_host): continue
+                    if not _host_allowed(urlparse(abs_u).netloc, allowed_host): continue
                     if should_skip_href(abs_u): continue
                     cu = _canon(abs_u)
                     if cu: collected.add(cu)
@@ -892,7 +892,7 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
                     for base in (base_no_query, base_root):
                         detail_url = f"{base}?action=details&document_id={doc_id}"
                         cu = _canon(detail_url)
-                        if cu and same_base_domain(urlparse(cu).netloc, allowed_host):
+                        if cu and _host_allowed(urlparse(cu).netloc, allowed_host):
                             collected.add(cu)
         except Exception:
             pass
@@ -915,7 +915,7 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
                         try:
                             abs_u = normalize_url(urljoin(base_url, m))
                             if not is_valid_url(abs_u): continue
-                            if not same_base_domain(urlparse(abs_u).netloc, allowed_host): continue
+                            if not _host_allowed(urlparse(abs_u).netloc, allowed_host): continue
                             if should_skip_href(abs_u): continue
                             cu = _canon(abs_u)
                             if cu: collected.add(cu)
@@ -938,7 +938,7 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
                         try:
                             abs_u = normalize_url(urljoin(base_url, href))
                             if not is_valid_url(abs_u): continue
-                            if not same_base_domain(urlparse(abs_u).netloc, allowed_host): continue
+                            if not _host_allowed(urlparse(abs_u).netloc, allowed_host): continue
                             if should_skip_href(abs_u): continue
                             cu = _canon(abs_u)
                             if cu: collected.add(cu)
@@ -1136,7 +1136,7 @@ async def playwright_bfs(
                             if not href or href.startswith(("mailto:", "tel:", "javascript:")): continue
                             abs_u = normalize_url(urljoin(final_url, href))
                             if not is_valid_url(abs_u): continue
-                            if not same_base_domain(urlparse(abs_u).netloc, allowed_host): continue
+                            if not _host_allowed(urlparse(abs_u).netloc, allowed_host): continue
                             if should_skip_href(abs_u): continue
                             cu = _canon(abs_u)
                             if not cu or cu in visited: continue
@@ -1462,6 +1462,59 @@ def same_base_domain(host_a: str, host_b: str) -> bool:
     if b.startswith("www."): b = b[4:]
     if a == b: return True
     return base_domain(a) == base_domain(b)
+
+def _host_allowed(netloc: str, allowed_host: str) -> bool:
+    """
+    [v2.38] Uniwersalny check używany w funkcjach pomocniczych (Playwright, extract_links).
+    Respektuje strict BIP mode — jeśli allowed_host to bip.X, akceptuje tylko tę subdomenę.
+    """
+    h = (netloc or "").lower().strip()
+    ah = (allowed_host or "").lower().strip()
+    if not h or not ah: return False
+    if _is_strict_bip_host(ah):
+        return h == ah or h == "www." + ah
+    return same_base_domain(h, ah)
+
+def _is_strict_bip_host(host: str) -> bool:
+    """
+    [v2.38] Zwraca True jeśli host to dedykowana subdomena BIP-u.
+    Wtedy crawler NIE powinien wychodzić na główną domenę gminy.
+    Przykłady True:  bip.miastonowydwor.pl, bip.gminaketrzyn.pl, bip3.wokiss.pl
+    Przykłady False: gminaczarna.biuletyn.net, ugdolhobyczow.bip.lubelskie.pl,
+                     www.granowo.pl, ssdip.bip.gov.pl
+    Reguła: host zaczyna się od 'bip' (bip., bip2., bip3. itp.)
+            ORAZ domena bazowa NIE jest zewnętrznym providerem BIP.
+    """
+    h = (host or "").lower().strip()
+    # zewnętrzne platformy BIP — tam wiele gmin siedzi pod jedną domeną
+    _SHARED_BIP_PROVIDERS = {
+        "biuletyn.net", "bip.net.pl", "bip.lubelskie.pl",
+        "ssdip.bip.gov.pl", "finn.pl", "madkom.pl", "wokiss.pl",
+        "bip.info.pl", "bip.gov.pl",
+    }
+    bd = base_domain(h)
+    if any(h.endswith(p) or bd == p for p in _SHARED_BIP_PROVIDERS):
+        return False
+    # subdomena zaczyna się od 'bip' (bip., bip2., bip3.)
+    sub = h.split(".")[0] if "." in h else ""
+    return bool(sub) and sub.startswith("bip")
+
+def make_allow_url_fn(allowed_host: str):
+    """
+    [v2.38] Fabryka funkcji allow_url.
+    Jeśli allowed_host to dedykowana subdomena BIP (bip.X) →
+      strict mode: akceptuje TYLKO URL-e z dokładnie tą subdomeną.
+    W przeciwnym razie → dotychczasowe zachowanie (same_base_domain).
+    """
+    strict = _is_strict_bip_host(allowed_host)
+    if strict:
+        def allow_url(u: str) -> bool:
+            h = urlparse(u).netloc.lower()
+            return h == allowed_host or h == "www." + allowed_host
+    else:
+        def allow_url(u: str) -> bool:
+            return same_base_domain(urlparse(u).netloc.lower(), allowed_host)
+    return allow_url, strict
 
 def safe_soup(html: str):
     if not html: return None
@@ -2239,7 +2292,7 @@ def _extract_links_from_html(html: str, base_url: str, allowed_host: str) -> set
     soup = safe_soup(html)
     if not soup: return links
     for abs_u, txt in iter_links_fast(soup, base_url):
-        if not same_base_domain(urlparse(abs_u).netloc, allowed_host): continue
+        if not _host_allowed(urlparse(abs_u).netloc, allowed_host): continue
         cu = _canon(abs_u)
         if cu: links.add(cu)
     return links
@@ -2378,8 +2431,10 @@ async def phase1_full_crawl(
         "/", "", "", ""
     ))
 
-    def allow_url(u: str) -> bool:
-        return same_base_domain(urlparse(u).netloc.lower(), allowed_host)
+    # [v2.38] strict mode dla dedykowanych subdomen bip.*
+    allow_url, _strict_bip = make_allow_url_fn(allowed_host)
+    if _strict_bip:
+        print(f"  🔒 [Phase1] strict BIP domain [{gmina}]: tylko {allowed_host}", flush=True)
 
     seeds = {}
     visited = set()
@@ -2748,8 +2803,10 @@ async def phase2_focus(
         flush=True
     )
 
-    def allow_url(u: str) -> bool:
-        return same_base_domain(urlparse(u).netloc.lower(), allowed_host)
+    # [v2.38] strict mode dla dedykowanych subdomen bip.*
+    allow_url, _strict_bip = make_allow_url_fn(allowed_host)
+    if _strict_bip:
+        print(f"  🔒 [Phase2] strict BIP domain [{gmina}]: tylko {allowed_host}", flush=True)
 
     pages_ok = 0
     pages_skipped_ttl = 0
