@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.38 - PRODUCTION
+BIP WATCHER v2.39 - PRODUCTION
 Zmiany v2.23 vs v2.22:
 
 [ZMIANA 1] _fetch_links_playwright — pełny mini-BFS przez Playwright (głębokość 1)
@@ -1226,7 +1226,7 @@ def write_summary(diag_rows, new_items_for_mail):
         ok = sum(1 for r in (diag_rows or []) if r.get("status") == "OK")
         start_fail = sum(1 for r in (diag_rows or []) if r.get("status") == "START_FAIL")
         lines = [
-            f"BIP WATCHER v2.36 SUMMARY @ {now_iso()}",
+            f"BIP WATCHER v2.39 SUMMARY @ {now_iso()}",
             f"gminy_total={total} ok={ok} start_fail={start_fail}",
             f"mail_items={len(new_items_for_mail or [])}",
             "",
@@ -1337,7 +1337,17 @@ atexit.register(panic_save_checkpoint_sync, "atexit")
 # ===================== URL NORMALIZATION =====================
 def normalize_url(url: str) -> str:
     try:
-        p = urlparse(url)
+        # [v2.39 Fix1] Dekoduj &amp; i %26%3B przed parsowaniem query string.
+        # Niektóre CMS-y (np. bip.scinawa.pl, bip.miastonowydwor.pl) generują linki
+        # z HTML-encodeowanymi separatorami: &amp;acc_cr=1 lub %26%3Bacc_cr=1.
+        # urlparse widzi to jako jeden param "amp%3Bacc_cr" zamiast "acc_cr",
+        # przez co stripping acc_* nie działa → eksplozja frontieru.
+        raw = url or ""
+        # Krok 1: zdekoduj %26 → & i %3B → ; (URL-encoded HTML entities)
+        raw = raw.replace("%26", "&").replace("%3B", ";")
+        # Krok 2: zdekoduj &amp; → & (HTML entity w query stringu)
+        raw = raw.replace("&amp;", "&")
+        p = urlparse(raw)
         q = []
         for k, v in parse_qsl(p.query, keep_blank_values=True):
             kl = (k or "").strip().lower()
@@ -1345,6 +1355,12 @@ def normalize_url(url: str) -> str:
             if kl.startswith("utm_"): continue
             # [v2.37] accessibility/CMS noise params (acc_* = kontrast/czcionka/etc.)
             if kl.startswith("acc_"): continue
+            # [v2.39 Fix1b] po zdekodowaniu %3B zostaje "amp;acc_cr" — strip prefix amp;
+            if kl.startswith("amp;"): kl = kl[4:]
+            if not kl: continue
+            if kl.startswith("acc_"): continue
+            # [v2.39 Fix6] accessibility toggle params (switch_extend_*)
+            if kl.startswith("switch_extend_"): continue
             if kl in {"fbclid","gclid","yclid","sid","session","sessionid",
                       "phpsessid","jsessionid","print","format",
                       # [v2.37] dodatkowe CMS/accessibility noise
@@ -1368,6 +1384,21 @@ def canonical_url(url: str) -> str:
         if netloc.startswith("www."): netloc = netloc[4:]
         path = p.path or "/"
         if path != "/" and path.endswith("/"): path = path[:-1]
+
+        # [v2.39 Fix3] Pomiń wariant /xml — to samo co HTML (eksport XML Dmosin).
+        segs = [s for s in path.split("/") if s]
+        if segs and segs[-1].lower() == "xml":
+            path = "/" + "/".join(segs[:-1]) if len(segs) > 1 else "/"
+
+        # [v2.39 Fix2] Breadcrumb canonical dla CMS-ów madkom/wokiss/eSesja.
+        # /a/b/c/930 i /x/y/z/930 → ten sam dokument → normalizuj do /c/930
+        # Warunek: 3+ segmentów, ostatni to liczba, host to strict BIP subdomena.
+        segs = [s for s in path.split("/") if s]
+        if (len(segs) >= 3
+                and segs[-1].isdigit()
+                and _is_strict_bip_host(netloc)):
+            path = "/" + segs[-2] + "/" + segs[-1]
+
         return urlunparse((scheme, netloc, path, "", p.query, ""))
     except Exception:
         return u
@@ -1498,6 +1529,41 @@ def _is_strict_bip_host(host: str) -> bool:
     # subdomena zaczyna się od 'bip' (bip., bip2., bip3.)
     sub = h.split(".")[0] if "." in h else ""
     return bool(sub) and sub.startswith("bip")
+
+def _is_bip_domain(host: str) -> bool:
+    """
+    [v2.39 Fix8] Zwraca True jeśli host wygląda jak BIP — uwzględnia różne warianty.
+    Używane do filtrowania wyników emaila — zbieramy ogłoszenia TYLKO z BIP.
+
+    Warianty BIP w Polsce:
+      - bip.gmina.pl            (subdomena bip.*)
+      - gmina.bip.gov.pl        (pod bip.gov.pl)
+      - gmina.biuletyn.net      (biuletyn.net)
+      - ugdolhobyczow.bip.lubelskie.pl
+      - wokiss.pl, madkom.pl    (shared providers)
+      - finn.pl                 (shared provider)
+    """
+    h = (host or "").lower().strip()
+    if not h:
+        return False
+    # Subdomena zaczyna się od bip lub biuletyn
+    sub = h.split(".")[0] if "." in h else h
+    if sub.startswith("bip") or sub == "biuletyn":
+        return True
+    # Znane shared BIP providers
+    _BIP_PROVIDERS = {
+        "biuletyn.net", "bip.net.pl", "bip.lubelskie.pl",
+        "ssdip.bip.gov.pl", "finn.pl", "madkom.pl", "wokiss.pl",
+        "bip.info.pl", "bip.gov.pl",
+    }
+    bd = base_domain(h)
+    if any(h.endswith(p) or bd == p for p in _BIP_PROVIDERS):
+        return True
+    # Fragment "bip" w pierwszym segmencie domeny (ebip.*, bipgmina.*, itp.)
+    if "bip" in sub:
+        return True
+    return False
+
 
 def make_allow_url_fn(allowed_host: str):
     """
@@ -2822,9 +2888,10 @@ async def phase2_focus(
     while q and not state.shutdown_requested:
         if RUN_DEADLINE_MIN > 0:
             elapsed_min = (time.time() - GLOBAL_T0) / 60
-            # [v2.37] Graceful shutdown 10 min przed twardym limitem GitHub Actions
-            # Daje czas na zapis cache, summary i email zanim SIGKILL
-            _soft_limit = RUN_DEADLINE_MIN - 10
+            # [v2.39 Fix7] Graceful shutdown 20 min przed twardym limitem GitHub Actions
+            # Mamy 6h na run, kończymy ok. 5h20min → zostaje ~40min zapasu.
+            # 20 minut daje pewność że frontier i cache zapisze się w całości.
+            _soft_limit = RUN_DEADLINE_MIN - 20
             if elapsed_min > _soft_limit and not state.shutdown_requested:
                 print(
                     f"⏰ PRE-TIMEOUT graceful shutdown [{gmina}]: "
@@ -2938,6 +3005,13 @@ async def phase2_focus(
         # --- 3. [v2.23] Playwright dla treści (jeśli potrzebny) ---
         pw_extra_links_for_phase2: set = set()
 
+        # [v2.39 Fix5] Nie odpalaj Playwright jeśli zostało <5 min do deadline.
+        # Playwright blokuje pętlę na 30s/call — przy małym oknie lepiej zapisać frontier.
+        if need_pw_for_content and RUN_DEADLINE_MIN > 0:
+            _remaining = RUN_DEADLINE_MIN - (time.time() - GLOBAL_T0) / 60
+            if _remaining < 5:
+                need_pw_for_content = False
+                pw_content_reason = f"skipped_near_deadline(remaining={_remaining:.1f}min)"
         if need_pw_for_content and kind not in ("pdf", "not_modified", "blocked"):
             pw_content_fetches += 1
             print(
@@ -3233,7 +3307,7 @@ async def worker(
 
             if RUN_DEADLINE_MIN > 0:
                 _elapsed_min = (time.time() - GLOBAL_T0) / 60
-                _soft = RUN_DEADLINE_MIN - 10
+                _soft = RUN_DEADLINE_MIN - 20
                 if _elapsed_min > _soft and not state.shutdown_requested:
                     print(f"⏰ PRE-TIMEOUT worker shutdown: {_elapsed_min:.1f}min >= {_soft}min", flush=True)
                     state.request_shutdown()
@@ -3361,6 +3435,17 @@ async def worker(
                 state.diag_errors.append(e)
 
             for (g, kw, t, u, st) in (found or []):
+                # [v2.39 Fix4] Pomijaj PDF/DOC w mailu — chcemy tylko strony HTML
+                _u_low = (u or "").lower()
+                _MAIL_SKIP_EXT = (".pdf", ".doc", ".docx", ".xls", ".xlsx", ".odt", ".rtf",
+                                  ".zip", ".rar", ".7z", ".gml", ".xml")
+                if any(_u_low.endswith(ext) for ext in _MAIL_SKIP_EXT):
+                    continue
+                # [v2.39 Fix8] Tylko URL-e zawierające "bip" w domenie
+                # Zbieramy ogłoszenia wyłącznie z BIP — nie z głównych stron gminy
+                _u_host = urlparse(u).netloc.lower() if u else ""
+                if not _is_bip_domain(_u_host):
+                    continue
                 mail_line = f"[{st}] {g} | {kw} | {t} | {u}"
                 if mail_line not in state.mail_dedup:
                     state.mail_dedup.add(mail_line)
