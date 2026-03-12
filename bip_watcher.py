@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.35 - PRODUCTION
+BIP WATCHER v2.37 - PRODUCTION
 Zmiany v2.23 vs v2.22:
 
 [ZMIANA 1] _fetch_links_playwright — pełny mini-BFS przez Playwright (głębokość 1)
@@ -270,7 +270,14 @@ DOWNLOAD_URL_SEGMENTS = [
 DOWNLOAD_URL_PARAMS = ["file=", "pobierz=", "download=", "attachment=", "getfile="]
 
 _DOWNLOAD_SUFFIX_RE = re.compile(
-    r"(pdf|docx?|xlsx?|odt|rtf|zip|rar|7z|gml|xml|tiff?|dwg|dxf)$", re.IGNORECASE
+    r"(pdf|docx?|xlsx?|odt|rtf|zip|rar|7z|gml|xml|tiff?|dwg|dxf"
+    # [v2.37] binaria i multimedia — Playwright nie powinien ich otwierać
+    r"|exe|msi|dmg|deb|rpm|apk|bat|sh|cmd"
+    r"|dav|avi|mp4|mkv|mov|wmv|flv|webm|mpg|mpeg|m4v"
+    r"|mp3|wav|ogg|flac|aac|wma|m4a"
+    r"|iso|img|bin|vhd|vmdk"
+    r"|dat|bak|tmp"
+    r")$", re.IGNORECASE
 )
 
 _PAGINATION_RE = re.compile(
@@ -1336,8 +1343,16 @@ def normalize_url(url: str) -> str:
             kl = (k or "").strip().lower()
             if not kl: continue
             if kl.startswith("utm_"): continue
+            # [v2.37] accessibility/CMS noise params (acc_* = kontrast/czcionka/etc.)
+            if kl.startswith("acc_"): continue
             if kl in {"fbclid","gclid","yclid","sid","session","sessionid",
-                      "phpsessid","jsessionid","print","format"}: continue
+                      "phpsessid","jsessionid","print","format",
+                      # [v2.37] dodatkowe CMS/accessibility noise
+                      "highlight","lang","language","locale","hl",
+                      "contrast","fontsize","font_size","wcag",
+                      "redirect","ref","referer","source","src",
+                      "nocache","cache","timestamp","_","cb",
+                      "ver","version","v","rev"}: continue
             q.append((kl, v))
         q.sort(key=lambda kv: kv[0])
         return urlunparse(p._replace(fragment="", query=urlencode(q, doseq=True)))
@@ -2748,9 +2763,23 @@ async def phase2_focus(
     context_hashes_this_run: dict = {}  # hash → count
 
     while q and not state.shutdown_requested:
-        if RUN_DEADLINE_MIN > 0 and (time.time() - GLOBAL_T0) > (RUN_DEADLINE_MIN * 60):
-            state.request_shutdown()
-            break
+        if RUN_DEADLINE_MIN > 0:
+            elapsed_min = (time.time() - GLOBAL_T0) / 60
+            # [v2.37] Graceful shutdown 10 min przed twardym limitem GitHub Actions
+            # Daje czas na zapis cache, summary i email zanim SIGKILL
+            _soft_limit = RUN_DEADLINE_MIN - 10
+            if elapsed_min > _soft_limit and not state.shutdown_requested:
+                print(
+                    f"⏰ PRE-TIMEOUT graceful shutdown [{gmina}]: "
+                    f"{elapsed_min:.1f}min >= {_soft_limit}min (limit={RUN_DEADLINE_MIN}min)",
+                    flush=True
+                )
+                state.request_shutdown()
+                break
+            # Twardy limit jako fallback
+            if elapsed_min > RUN_DEADLINE_MIN:
+                state.request_shutdown()
+                break
 
         url, depth = q.popleft()
 
@@ -3145,8 +3174,14 @@ async def worker(
             gmina, start_url = await queue.get()
             got_item = True
 
-            if RUN_DEADLINE_MIN > 0 and (time.time() - GLOBAL_T0) > (RUN_DEADLINE_MIN * 60):
-                state.request_shutdown()
+            if RUN_DEADLINE_MIN > 0:
+                _elapsed_min = (time.time() - GLOBAL_T0) / 60
+                _soft = RUN_DEADLINE_MIN - 10
+                if _elapsed_min > _soft and not state.shutdown_requested:
+                    print(f"⏰ PRE-TIMEOUT worker shutdown: {_elapsed_min:.1f}min >= {_soft}min", flush=True)
+                    state.request_shutdown()
+                elif _elapsed_min > RUN_DEADLINE_MIN:
+                    state.request_shutdown()
 
             if state.shutdown_requested:
                 try: await queue.put((gmina, start_url))
