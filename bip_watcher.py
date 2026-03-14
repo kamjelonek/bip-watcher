@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.39 - PRODUCTION
+BIP WATCHER v2.40 - PRODUCTION
 Zmiany v2.23 vs v2.22:
 
 [ZMIANA 1] _fetch_links_playwright — pełny mini-BFS przez Playwright (głębokość 1)
@@ -265,6 +265,9 @@ DOWNLOAD_URL_SEGMENTS = [
     "/getfile/", "/get-file/", "/dokumenty/pobierz/", "/media/", "/uploads/",
     "/file_add/", "/file_add/download/", "/filedownload/", "/file-download/",
     "/pobierz-plik/", "/get-file/",
+    # [v2.40 Fix4] Sulechów CMS i podobne — /pliki/NUMER to pliki binarne (PDF/DOC)
+    # serwowane przez CMS pod numerycznym ID. Nie są stronami HTML.
+    "/pliki/",
 ]
 
 DOWNLOAD_URL_PARAMS = ["file=", "pobierz=", "download=", "attachment=", "getfile="]
@@ -1226,7 +1229,7 @@ def write_summary(diag_rows, new_items_for_mail):
         ok = sum(1 for r in (diag_rows or []) if r.get("status") == "OK")
         start_fail = sum(1 for r in (diag_rows or []) if r.get("status") == "START_FAIL")
         lines = [
-            f"BIP WATCHER v2.39 SUMMARY @ {now_iso()}",
+            f"BIP WATCHER v2.40 SUMMARY @ {now_iso()}",
             f"gminy_total={total} ok={ok} start_fail={start_fail}",
             f"mail_items={len(new_items_for_mail or [])}",
             "",
@@ -1368,7 +1371,11 @@ def normalize_url(url: str) -> str:
                       "contrast","fontsize","font_size","wcag",
                       "redirect","ref","referer","source","src",
                       "nocache","cache","timestamp","_","cb",
-                      "ver","version","v","rev"}: continue
+                      "ver","version","v","rev",
+                      # [v2.40 Fix4] paginacja listingów — każda strona generuje
+                      # te same NOWE (LINK) z tymi samymi dokumentami → spam w mailu.
+                      # start= (Sulechów bipkod), str1= (Złotoryja rej_zmian)
+                      "start", "str1"}: continue
             q.append((kl, v))
         q.sort(key=lambda kv: kv[0])
         return urlunparse(p._replace(fragment="", query=urlencode(q, doseq=True)))
@@ -1496,15 +1503,32 @@ def same_base_domain(host_a: str, host_b: str) -> bool:
 
 def _host_allowed(netloc: str, allowed_host: str) -> bool:
     """
-    [v2.38] Uniwersalny check używany w funkcjach pomocniczych (Playwright, extract_links).
-    Respektuje strict BIP mode — jeśli allowed_host to bip.X, akceptuje tylko tę subdomenę.
+    [v2.38/v2.40] Uniwersalny check używany w funkcjach pomocniczych (Playwright, extract_links).
+    Respektuje strict BIP mode i pinned shared provider mode.
     """
     h = (netloc or "").lower().strip()
     ah = (allowed_host or "").lower().strip()
     if not h or not ah: return False
-    if _is_strict_bip_host(ah):
+    # strict BIP (bip.gmina.pl) lub pinned shared provider (gmina.biuletyn.net)
+    if _is_strict_bip_host(ah) or _is_shared_bip_provider(ah):
         return h == ah or h == "www." + ah
     return same_base_domain(h, ah)
+
+# [v2.40] Shared BIP providers — każda gmina siedzi pod własną subdomeną providera.
+# Crawler powinien być przypięty do konkretnej subdomeny gminy, nie do całej domeny bazowej.
+# Np. ugobsza.bip.lubelskie.pl → akceptuj TYLKO ugobsza.bip.lubelskie.pl
+#     gminabojanowo.biuletyn.net → akceptuj TYLKO gminabojanowo.biuletyn.net
+_SHARED_BIP_PROVIDERS = {
+    "biuletyn.net", "bip.net.pl", "bip.lubelskie.pl",
+    "ssdip.bip.gov.pl", "finn.pl", "madkom.pl", "wokiss.pl",
+    "bip.info.pl", "bip.gov.pl",
+}
+
+def _is_shared_bip_provider(host: str) -> bool:
+    """Zwraca True jeśli host jest subdomieną known shared BIP providera."""
+    h = (host or "").lower().strip()
+    bd = base_domain(h)
+    return any(h.endswith("." + p) or h == p or bd == p for p in _SHARED_BIP_PROVIDERS)
 
 def _is_strict_bip_host(host: str) -> bool:
     """
@@ -1517,12 +1541,6 @@ def _is_strict_bip_host(host: str) -> bool:
             ORAZ domena bazowa NIE jest zewnętrznym providerem BIP.
     """
     h = (host or "").lower().strip()
-    # zewnętrzne platformy BIP — tam wiele gmin siedzi pod jedną domeną
-    _SHARED_BIP_PROVIDERS = {
-        "biuletyn.net", "bip.net.pl", "bip.lubelskie.pl",
-        "ssdip.bip.gov.pl", "finn.pl", "madkom.pl", "wokiss.pl",
-        "bip.info.pl", "bip.gov.pl",
-    }
     bd = base_domain(h)
     if any(h.endswith(p) or bd == p for p in _SHARED_BIP_PROVIDERS):
         return False
@@ -1567,20 +1585,30 @@ def _is_bip_domain(host: str) -> bool:
 
 def make_allow_url_fn(allowed_host: str):
     """
-    [v2.38] Fabryka funkcji allow_url.
-    Jeśli allowed_host to dedykowana subdomena BIP (bip.X) →
-      strict mode: akceptuje TYLKO URL-e z dokładnie tą subdomeną.
-    W przeciwnym razie → dotychczasowe zachowanie (same_base_domain).
+    [v2.38/v2.40] Fabryka funkcji allow_url.
+
+    Tryby:
+    1. Strict BIP (bip.gmina.pl) → akceptuje TYLKO tę subdomenę.
+    2. Shared BIP provider (gmina.biuletyn.net, ugobsza.bip.lubelskie.pl) →
+       [v2.40] akceptuje TYLKO tę konkretną subdomenę gminy — NIE całą domenę providera.
+       Problem: same_base_domain("mapa-rpo2016.rpo.lubelskie.pl", "ugobsza.bip.lubelskie.pl")
+       zwracało True bo base_domain = "lubelskie.pl". Teraz pinujemy do exact hosta.
+    3. Pozostałe → same_base_domain (dotychczasowe zachowanie).
     """
-    strict = _is_strict_bip_host(allowed_host)
-    if strict:
+    ah = (allowed_host or "").lower().strip()
+    strict = _is_strict_bip_host(ah)
+    pinned = not strict and _is_shared_bip_provider(ah)
+
+    if strict or pinned:
+        mode = "strict" if strict else "pinned_shared"
         def allow_url(u: str) -> bool:
             h = urlparse(u).netloc.lower()
-            return h == allowed_host or h == "www." + allowed_host
+            return h == ah or h == "www." + ah
+        return allow_url, True  # zwracamy True żeby logi pokazywały 🔒
     else:
         def allow_url(u: str) -> bool:
-            return same_base_domain(urlparse(u).netloc.lower(), allowed_host)
-    return allow_url, strict
+            return same_base_domain(urlparse(u).netloc.lower(), ah)
+        return allow_url, False
 
 def safe_soup(html: str):
     if not html: return None
@@ -2500,7 +2528,8 @@ async def phase1_full_crawl(
     # [v2.38] strict mode dla dedykowanych subdomen bip.*
     allow_url, _strict_bip = make_allow_url_fn(allowed_host)
     if _strict_bip:
-        print(f"  🔒 [Phase1] strict BIP domain [{gmina}]: tylko {allowed_host}", flush=True)
+        _mode = "strict BIP" if _is_strict_bip_host(allowed_host) else "pinned shared BIP"
+        print(f"  🔒 [Phase1] {_mode} [{gmina}]: tylko {allowed_host}", flush=True)
 
     seeds = {}
     visited = set()
@@ -2872,7 +2901,8 @@ async def phase2_focus(
     # [v2.38] strict mode dla dedykowanych subdomen bip.*
     allow_url, _strict_bip = make_allow_url_fn(allowed_host)
     if _strict_bip:
-        print(f"  🔒 [Phase2] strict BIP domain [{gmina}]: tylko {allowed_host}", flush=True)
+        _mode = "strict BIP" if _is_strict_bip_host(allowed_host) else "pinned shared BIP"
+        print(f"  🔒 [Phase2] {_mode} [{gmina}]: tylko {allowed_host}", flush=True)
 
     pages_ok = 0
     pages_skipped_ttl = 0
@@ -2962,6 +2992,14 @@ async def phase2_focus(
         need_pw_for_content = False
         pw_content_reason = ""
 
+        # [v2.40 Fix3] is_download_url jako PIERWSZY warunek — zanim cokolwiek innego.
+        # Problem Czarne: .dav plik → js_detected(score=6) → Playwright → "Download is starting"
+        # → crash całego joba. Binaria nigdy nie powinny trafiać do Playwright.
+        if is_download_url(url):
+            # Traktuj jak PDF — skip bez Playwright
+            if kind not in ("pdf", "not_modified", "blocked"):
+                kind = "pdf"  # przekieruj do ścieżki skip
+
         if kind in ("pdf", "not_modified", "blocked"):
             pass
         elif kind != "html" or not html:
@@ -3029,6 +3067,20 @@ async def phase2_focus(
                 )
                 # Aktualizuj zmienne robocze
                 html, final, kind, status, ctype = pw_html, pw_final, pw_kind, pw_status, pw_ctype
+
+                # [v2.40 Fix2] Zapisz placeholder pod ORYGINALNYM url_dedup już teraz.
+                # Problem Jarocin: aiohttp http_err → Playwright OK → final_url inny niż url
+                # → status zapisywany tylko pod final_url → oryginalny URL nie dostaje statusu
+                # → pw_extra_links_for_phase2 dodaje go z powrotem → 860x ten sam URL w pętli.
+                # Rozwiązanie: od razu oznacz oryginalny URL żeby seen_in_frontier go nie wpuściło.
+                async with state.cache_lock:
+                    if url_dedup not in content_seen:
+                        content_seen[url_dedup] = {
+                            "found_at": now_iso(), "last_checked": now_iso(),
+                            "etag": "", "last_modified": "",
+                            "gmina": gmina, "title": "", "url": url,
+                            "keywords": [], "att_sig": "", "status": "PW_PROCESSING",
+                        }
 
                 # [v2.23] Zbierz też linki z wyrenderowanej strony — mogą być nowe
                 pw_soup_links = safe_soup(pw_html)
