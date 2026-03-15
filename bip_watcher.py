@@ -228,7 +228,7 @@ def keyword_match_in_blob(blob: str):
 # ===================== IGNORE =====================
 IGNORE_URL_SUBSTR = [
     "kontakt", "mapa-strony", "mapa_strony", "wyszukiwarka", "statystyka",
-    "rodo", "cookies", "deklaracja-dostepnosci", "deklaracja_dostepnosci",
+    "cookies", "deklaracja-dostepnosci", "deklaracja_dostepnosci",
     "majatk", "majątk", "regulamin", "sygnalis",
     "login", "logowanie", "rejestracja", "newsletter",
     # Galerie, multimedia, zdjęcia — nigdy nie zawierają ogłoszeń planistycznych
@@ -239,6 +239,13 @@ IGNORE_URL_SUBSTR = [
     "absolwenci", "uczniowie", "nauczyciele", "szkola", "szkoła",
     # Aktualności i newsy gminne (nie BIP) — nie zawierają aktów planistycznych
     "readmore=", "news.php", "aktualnosci.php", "artykul.php",
+    # Akcje systemowe CMS — nigdy nie zwracają treści HTML do analizy
+    # action=save, action=show, action=edit itp. to endpointy zapisu/podglądu raw
+    # które zwracają pusty response (115B) lub JSON, nie stronę dokumentu
+    "action=save", "action=show&", "action=edit", "action=delete",
+    "action=export", "action=download", "action=print",
+    # p=print, p=document — alternatywne widoki/akcje w bip.net.pl i podobnych
+    "p=print", "p=document", "p=edit", "p=save",
     # Alternatywne formaty tej samej treści — nigdy nie są wartościowe
     "/xml/", "drukuj.asp", "core/drukuj", "core/pdf",
     "akcja=drukuj", "akcja=pdf", "format=pdf", "format=xml",
@@ -248,6 +255,8 @@ IGNORE_URL_SUBSTR = [
 IGNORE_URL_PATH_PATTERNS = [
     r"prognoza.pogody", r"prognoza_pogody",
     r"/wersja/\d+/?$", r"/wersja[_/]",
+    # rodo jako osobny segment — nie uderza w srodowisk*, ochrona-srodowiska itp.
+    r"[/=\-]rodo[/.\-_]", r"[/=\-]rodo$", r"/rodo/",
 ]
 
 IGNORE_ANCHOR_TEXT = [
@@ -684,6 +693,14 @@ class DynamicPageDetector:
                 elif html_size > 5000 and text_len < 300:
                     total += 2
                     reasons.append(f"sparse_text(text={text_len},html={html_size})")
+                elif html_size > 50000 and text_len > 0:
+                    # Stosunek tekstu do HTML < 2% przy dużym HTML — serwer zwrócił layout/menu
+                    # zamiast treści dokumentu. Dotyczy każdego CMS który serwuje stronę główną
+                    # niezależnie od parametrów (np. bip.lubelskie.pl z action=details).
+                    ratio = text_len / html_size
+                    if ratio < 0.02:
+                        total += 3
+                        reasons.append(f"low_text_ratio({ratio:.3f},text={text_len},html={html_size})")
         except Exception:
             pass
 
@@ -3156,14 +3173,40 @@ async def phase2_focus(
                             "keywords": [], "att_sig": "", "status": "PW_PROCESSING",
                         }
 
+                # [v2.41] Gdy Playwright dał redirect (final_url != url), dodaj final_c
+                # do seen_in_frontier natychmiast — bez tego final_c może wrócić do kolejki
+                # przez pw_extra_links lub następny Phase1, powodując nieskończoną pętlę.
+                # Problem Kamieniec/wokiss: /rada-gmi → redirect → /organy-wladzy-publiczne
+                # → Playwright zbiera linki → /organy-wladzy-publiczne dodany do frontieru
+                # → przy następnym wejściu znowu aiohttp_failed → znowu Playwright → pętla.
+                _pw_final_c = _canon(pw_final or url)
+                if _pw_final_c and _pw_final_c != _canon(url):
+                    seen_in_frontier.add(_pw_final_c)
+                    # Też zapisz placeholder w content_seen żeby TTL działał
+                    _pw_final_dedup = sha1(canonical_url(_pw_final_c))
+                    async with state.cache_lock:
+                        if _pw_final_dedup not in content_seen:
+                            content_seen[_pw_final_dedup] = {
+                                "found_at": now_iso(), "last_checked": now_iso(),
+                                "etag": "", "last_modified": "",
+                                "gmina": gmina, "title": "", "url": _pw_final_c,
+                                "keywords": [], "att_sig": "", "status": "PW_PROCESSING",
+                            }
+
                 # [v2.23] Zbierz też linki z wyrenderowanej strony — mogą być nowe
+                # [v2.41] Dodaj tylko URL-e których nie ma jeszcze w content_seen —
+                # linki nawigacyjne już odwiedzone nie powinny trafiać z powrotem do frontieru.
                 pw_soup_links = safe_soup(pw_html)
                 if pw_soup_links:
                     for abs_u, _txt in iter_links_fast(pw_soup_links, pw_final or url):
                         cu_pw = _canon(abs_u)
-                        if cu_pw and allow_url(cu_pw) and cu_pw not in seen_in_frontier:
-                            if not any(cu_pw.lower().endswith(ext) for ext in ATT_EXT):
-                                pw_extra_links_for_phase2.add(cu_pw)
+                        if not cu_pw or not allow_url(cu_pw): continue
+                        if cu_pw in seen_in_frontier: continue
+                        if any(cu_pw.lower().endswith(ext) for ext in ATT_EXT): continue
+                        # Nie dodawaj URL-i które były już przetworzone (mają status w content_seen)
+                        _cu_pw_dedup = sha1(canonical_url(cu_pw))
+                        if _cu_pw_dedup in content_seen: continue
+                        pw_extra_links_for_phase2.add(cu_pw)
 
                 diag["counts"]["pw_content_ok"] = int(diag["counts"].get("pw_content_ok", 0)) + 1
             else:
@@ -3249,10 +3292,12 @@ async def phase2_focus(
         )
         print(f"    [DEBUG] blob_len={len(blob)} method={_blob_method} removed={_removed_chars} url={url[:60]}")
 
+        # Oblicz hash blob-a już tutaj — potrzebny do deduplikacji i raportowania
+        _blob_hash = sha1(blob[:5000])
+        _blob_is_duplicate = _blob_hash in blob_hashes_this_run
+
         # [v2.32] Deduplikacja po hash blob-a — ten sam hash = ta sama treść
         # pod innym URL (np. /110/240/ vs /50/240/) → pomijamy raport
-        _blob_hash = sha1(blob[:5000])  # pierwsze 5000 znaków wystarczy
-        _blob_is_duplicate = _blob_hash in blob_hashes_this_run
         if not _blob_is_duplicate and len(blob) > 100:
             blob_hashes_this_run.add(_blob_hash)
 
@@ -3348,12 +3393,16 @@ async def phase2_focus(
                     diag["counts"]["dedup_skipped"] += 1
 
         # --- [v2.23] Linki z HTML (aiohttp) → kolejka ---
+        # [v2.41] Gdy blob jest duplikatem → ta strona zwraca tę samą treść co poprzednia
+        # (strona błędu, catch-all, nawigacja bez treści). Jej linki nawigacyjne są identyczne
+        # z linkami już zebranymi — nie dodawaj ich do kolejki bo frontier będzie rósł.
+        # LINK_HITS działa ZAWSZE — keyword w anchor text raportujemy niezależnie od duplikatu.
         for abs_u, txt in iter_links_fast(soup, final_c):
             cu = _canon(abs_u)
             if not cu or not allow_url(cu) or cu in dead_set: continue
-            if cu in seen_in_frontier: continue
 
-            if ENABLE_LINK_HITS and not is_download_url(cu):
+            # LINK_HITS: zawsze sprawdzaj anchor text, nawet na stronie błędu
+            if ENABLE_LINK_HITS and not is_download_url(cu) and cu not in seen_in_frontier:
                 filename = urlparse(cu).path.split("/")[-1]
                 ok_link, kw_link = keyword_match_in_blob(f"{txt} {filename}")
                 if ok_link:
@@ -3372,17 +3421,24 @@ async def phase2_focus(
                         found.append((gmina, kw_link, (txt or filename)[:240], cu, "NOWE"))
                         diag["counts"]["link_hits_new"] += 1
 
+            # Dodaj do kolejki tylko gdy blob nie jest duplikatem
+            # Strona błędu/catch-all ma identyczny blob — jej linki nawigacyjne
+            # są tymi samymi linkami co już w frontierze → nie dodawaj ponownie
+            if _blob_is_duplicate: continue
+            if cu in seen_in_frontier: continue
             seen_in_frontier.add(cu)
             q.append((cu, depth + 1))
             new_links_added += 1
 
         # --- [v2.23] Linki z Playwright → też do kolejki ---
-        for cu in pw_extra_links_for_phase2:
-            if cu in dead_set or cu in seen_in_frontier: continue
-            seen_in_frontier.add(cu)
-            q.append((cu, depth + 1))
-            new_links_added += 1
-            diag["counts"]["pw_extra_links_phase2"] = int(diag["counts"].get("pw_extra_links_phase2", 0)) + 1
+        # Gdy blob duplikat → nie dodawaj linków z Playwright (ta sama logika)
+        if not _blob_is_duplicate:
+            for cu in pw_extra_links_for_phase2:
+                if cu in dead_set or cu in seen_in_frontier: continue
+                seen_in_frontier.add(cu)
+                q.append((cu, depth + 1))
+                new_links_added += 1
+                diag["counts"]["pw_extra_links_phase2"] = int(diag["counts"].get("pw_extra_links_phase2", 0)) + 1
 
     async with state.cache_lock:
         if q:
