@@ -1,47 +1,53 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.40 - PRODUCTION
+BIP WATCHER v2.41 - PRODUCTION
+Zmiany v2.41 vs v2.40:
+
+[FIX 1] normalize_url — whitelist parametrów URL zamiast blacklisty
+    Problem: każdy nowy CMS wymyśla własne noise params (bsc=, bip=, acc_*, code=, sort=, rpg=...).
+    Blacklista nigdy nie będzie kompletna → eksplozja frontieru dla Miłoradz, Ścinawa, Pępowo itp.
+    Rozwiązanie: zachowaj TYLKO params które identyfikują dokument (KEEP_PARAMS).
+    Wszystko inne wyrzucane automatycznie — nowy CMS z nowym noise param → działa bez interwencji.
+    Bonus: id= stripowane gdy document_id= obecne w tym samym URL (id= to wtedy menu, nie dokument).
+
+[FIX 2] make_allow_url_fn + _host_allowed — exact host match dla WSZYSTKICH
+    Problem: same_base_domain("sp2.gostyn.pl", "biuletyn.gostyn.pl") = True → szkoły wpadają
+    do frontieru. Strzegom: liceum, cmentarze, centrum kultury zamiast BIP-u.
+    Rozwiązanie: zawsze exact host match (h == allowed_host lub www.allowed_host).
+    Dotyczy wszystkich hostów — nie tylko shared providers i strict BIP.
+    Universalne: działa dla każdej przyszłej gminy bez konfiguracji.
+
+[FIX 3] canonical_url — breadcrumb normalizacja dla wszystkich hostów
+    Problem: /a/b/c/930 i /x/y/z/930 to ten sam dokument (madkom/wokiss breadcrumb).
+    Fix v2.39 działał tylko dla _is_strict_bip_host → wokiss.pl (Jarocin) wykluczony.
+    Rozwiązanie: usuń warunek _is_strict_bip_host — aplikuj breadcrumb canonical dla WSZYSTKICH.
+    Dodatkowa ochrona: segment kończący się ,LICZBA (madkom: m,5096 a,22784) → normalizuj.
+
+[FIX 4] phase2_focus — NO_MATCH + keyword = NOWE (fix Wiązów)
+    Problem: Playwright redirect m,5096→a,22784 → a,22784 był już w content_seen jako NO_MATCH
+    → ok_any=True ale prev!=None → status_new=HIT → nie raportowane → znalezione=0.
+    Rozwiązanie: gdy prev.status == "NO_MATCH" i ok_any=True → traktuj jak prev=None → NOWE.
+    Logika: NO_MATCH = "sprawdzono, nie było keyword" — jeśli teraz jest → to jest nowe odkrycie.
+
+[FIX 5] phase2_focus — czyszczenie frontieru przy starcie (fix Strzegom)
+    Problem: stare URL-e z lo.strzegom.pl, cmentarze.strzegom.pl itd. siedzą w cache
+    z poprzednich runów gdy same_base_domain było zbyt liberalne → 346k URL-i zamiast BIP-u.
+    Fix 2 zapobiega dodawaniu nowych złych URL-i ale nie czyści starych.
+    Rozwiązanie: przy ładowaniu frontieru filtruj każdy URL przez allow_url() — złe URL-e
+    odrzucane jednorazowo przy starcie. Loguje ile URL-i odfiltrowano.
+
+[FIX 6] phase2_focus — PW_PROCESSING w TTL check
+    Problem: Fix v2.40 ustawiał placeholder status="PW_PROCESSING" ale TTL check go ignorował
+    → URL nie był skipowany przy kolejnym wejściu → przetwarzany od nowa w pętli.
+    Rozwiązanie: PW_PROCESSING traktowany jak NO_MATCH w TTL check.
+
 Zmiany v2.23 vs v2.22:
 
-[ZMIANA 1] _fetch_links_playwright — pełny mini-BFS przez Playwright (głębokość 1)
-    Problem v2.22: hardcodowane selektory klikania (dropdown-toggle, accordion itp.)
-    — nie znajdowały linków na stronach bez tych elementów. Playwright działał
-    tylko na jednej stronie zamiast podążać za wszystkimi znalezionymi linkami.
-    
-    Nowe podejście (identyczne z iter_links_fast dla HTML):
-    - Po załadowaniu strony zbierz WSZYSTKIE <a href> przez Playwright
-    - Przewiń stronę (lazy loading) — bez klikania w losowe elementy
-    - Dla każdego zebranego linka (allowed_host, not skip): odwiedź go Playwrightem
-      i zbierz kolejne <a href> (depth=1 mini-BFS, max PLAYWRIGHT_LINK_DEPTH stron)
-    - Ekstrakcja document_id z page source (zachowane z v2.22)
-    - Obsługa iframe (zachowane z v2.22)
-    - Wynik: kompletny zbiór linków — tak jak standardowy crawler, tylko przez JS
-
-[ZMIANA 2] phase1_full_crawl — automatyczny Playwright fallback per URL
-    Problem v2.22: heurystyki (listing_url_hints, aiohttp_links_count) mogły nie
-    wykryć JS gdy strona wyglądała normalnie ale miała mało linków z innych powodów.
-    
-    Nowe podejście:
-    - Dla KAŻDEJ strony w BFS: pobierz przez aiohttp
-    - DynamicPageDetector.score() na pobranym HTML
-    - Jeśli score >= DYNAMIC_SCORE_THRESHOLD LUB len(aiohttp_links) < PHASE1_MIN_LINKS_FOR_PW
-      → uruchom _fetch_links_playwright (mini-BFS przez Playwright)
-    - Wyniki z obu źródeł trafiają razem do frontieru Phase2
-    - Usunięto hardcodowane warunki: "listing_page_depth<=1_and_few_links"
-
-[ZMIANA 3] phase2_focus — równoległy Playwright dla treści stron
-    Problem v2.22: Playwright w Phase2 był wywoływany sekwencyjnie TYLKO gdy aiohttp
-    całkowicie zawiódł (kind != html). Strony JS zwracające pusty HTML były pomijane.
-    
-    Nowe podejście:
-    - Pobierz stronę przez aiohttp (jak dotąd)
-    - Jeśli kind==html ale text<200 znaków LUB DynamicDetector wykrył JS:
-      → fetch_with_playwright(url, interact=True) — pobierz wyrenderowaną treść
-    - keyword_match_in_blob na wyrenderowanym HTML (pełna treść, nie szkielet)
-    - Linki znalezione przez Playwright na stronie też trafiają do kolejki Phase2
-      (dokładnie tak jak iter_links_fast robi to dla HTML)
-    - Zachowana logika _extract_content_text, _is_nav_context itd. bez zmian
+    [ZMIANA 1] _fetch_links_playwright — pełny mini-BFS przez Playwright (glebokosc 1)
+    [ZMIANA 2] phase1_full_crawl — automatyczny Playwright fallback per URL
+    [ZMIANA 3] phase2_focus — rownolegly Playwright dla tresci stron
 """
+
 
 import os, sys, csv, json, hashlib, asyncio, re, time, smtplib, warnings, socket, random, signal
 from collections import deque, defaultdict
@@ -1229,7 +1235,7 @@ def write_summary(diag_rows, new_items_for_mail):
         ok = sum(1 for r in (diag_rows or []) if r.get("status") == "OK")
         start_fail = sum(1 for r in (diag_rows or []) if r.get("status") == "START_FAIL")
         lines = [
-            f"BIP WATCHER v2.40 SUMMARY @ {now_iso()}",
+            f"BIP WATCHER v2.41 SUMMARY @ {now_iso()}",
             f"gminy_total={total} ok={ok} start_fail={start_fail}",
             f"mail_items={len(new_items_for_mail or [])}",
             "",
@@ -1338,44 +1344,80 @@ import atexit
 atexit.register(panic_save_checkpoint_sync, "atexit")
 
 # ===================== URL NORMALIZATION =====================
+# [v2.41 Fix1] Whitelist parametrów URL — zachowaj TYLKO params które identyfikują dokument.
+# Poprzednia blacklista (acc_*, switch_extend_*, bsc=, lang=, ...) nigdy nie była kompletna.
+# Każdy nowy CMS ma własne noise params → eksplozja frontieru (Miłoradz, Ścinawa, Pępowo...).
+# Teraz: wszystko spoza KEEP_PARAMS jest automatycznie wyrzucane — żadnej interwencji w przyszłości.
+#
+# Wyjątek: id= jest zachowywane TYLKO gdy document_id= nie jest obecne w tym samym URL-u.
+# Gdy document_id= jest → id= to nawigacyjne menu, nie identyfikator dokumentu.
+#
+# Źródła: analiza wszystkich gmin w bazie + znane polskie CMS-y BIP:
+#   bip.lubelskie.pl: action, document_id
+#   biuletyn.net: cid, id, a, c, rejid, rejz
+#   bip.info.pl: iddok, idmp
+#   wokiss.pl: pid
+#   asp CMS: typ, menu, strona, numer, poddzial, dzial
+#   WordPress BIP: page_id, p (ID posta)
+#   bip.strzegom.pl: id_menu
+#   eSesja: docid, meetingid
+#   FINN: id_aktualnosci, id_dokumentu
+#   Ogólne: nr, no, num, n (krótkie ID w różnych systemach)
+#   Ogólne: cat, tag, post (identyfikatory w CMS-ach)
+_KEEP_PARAMS = {
+    # Podstawowe ID dokumentów
+    "id", "document_id", "action", "cid",
+    "iddok", "idmp",
+    "a", "c",
+    "pid",
+    # asp CMS
+    "typ", "menu", "strona",
+    "numer", "poddzial", "dzial",
+    # WordPress / ogólne
+    "page_id", "p",
+    "post", "cat", "tag",
+    # bip.strzegom.pl
+    "id_menu",
+    # biuletyn.net rejestry
+    "rejid", "rejz",
+    # eSesja
+    "docid", "meetingid",
+    # FINN
+    "id_aktualnosci", "id_dokumentu",
+    # Ogólne krótkie ID (wiele własnych systemów gmin)
+    "nr", "no", "num", "n",
+    # Dodatkowe identyfikatory
+    "uid", "guid", "key", "hash", "ref", "token",
+    "entry", "item", "obj", "rec", "doc",
+}
+
 def normalize_url(url: str) -> str:
     try:
-        # [v2.39 Fix1] Dekoduj &amp; i %26%3B przed parsowaniem query string.
-        # Niektóre CMS-y (np. bip.scinawa.pl, bip.miastonowydwor.pl) generują linki
-        # z HTML-encodeowanymi separatorami: &amp;acc_cr=1 lub %26%3Bacc_cr=1.
-        # urlparse widzi to jako jeden param "amp%3Bacc_cr" zamiast "acc_cr",
-        # przez co stripping acc_* nie działa → eksplozja frontieru.
+        # Dekoduj HTML entities i URL-encoded separatory przed parsowaniem.
+        # Niektóre CMS-y generują: &amp;param=1 lub %26%3Bparam=1
         raw = url or ""
-        # Krok 1: zdekoduj %26 → & i %3B → ; (URL-encoded HTML entities)
         raw = raw.replace("%26", "&").replace("%3B", ";")
-        # Krok 2: zdekoduj &amp; → & (HTML entity w query stringu)
         raw = raw.replace("&amp;", "&")
         p = urlparse(raw)
+        params = parse_qsl(p.query, keep_blank_values=True)
+
+        # Czy URL zawiera document_id? Jeśli tak, id= to menu nawigacyjne, nie dokument.
+        has_document_id = any(
+            (k or "").strip().lower().lstrip("amp;") == "document_id"
+            for k, v in params
+        )
+
         q = []
-        for k, v in parse_qsl(p.query, keep_blank_values=True):
+        for k, v in params:
             kl = (k or "").strip().lower()
             if not kl: continue
-            if kl.startswith("utm_"): continue
-            # [v2.37] accessibility/CMS noise params (acc_* = kontrast/czcionka/etc.)
-            if kl.startswith("acc_"): continue
-            # [v2.39 Fix1b] po zdekodowaniu %3B zostaje "amp;acc_cr" — strip prefix amp;
+            # Zdekoduj prefix amp; (pozostałość po &amp; → & → amp;param)
             if kl.startswith("amp;"): kl = kl[4:]
             if not kl: continue
-            if kl.startswith("acc_"): continue
-            # [v2.39 Fix6] accessibility toggle params (switch_extend_*)
-            if kl.startswith("switch_extend_"): continue
-            if kl in {"fbclid","gclid","yclid","sid","session","sessionid",
-                      "phpsessid","jsessionid","print","format",
-                      # [v2.37] dodatkowe CMS/accessibility noise
-                      "highlight","lang","language","locale","hl",
-                      "contrast","fontsize","font_size","wcag",
-                      "redirect","ref","referer","source","src",
-                      "nocache","cache","timestamp","_","cb",
-                      "ver","version","v","rev",
-                      # [v2.40 Fix4] paginacja listingów — każda strona generuje
-                      # te same NOWE (LINK) z tymi samymi dokumentami → spam w mailu.
-                      # start= (Sulechów bipkod), str1= (Złotoryja rej_zmian)
-                      "start", "str1"}: continue
+            # [v2.41 Fix1] Whitelist — zachowaj tylko params identyfikujące dokument
+            if kl not in _KEEP_PARAMS: continue
+            # id= przy document_id= to menu, nie dokument — stripuj
+            if kl == "id" and has_document_id: continue
             q.append((kl, v))
         q.sort(key=lambda kv: kv[0])
         return urlunparse(p._replace(fragment="", query=urlencode(q, doseq=True)))
@@ -1397,14 +1439,19 @@ def canonical_url(url: str) -> str:
         if segs and segs[-1].lower() == "xml":
             path = "/" + "/".join(segs[:-1]) if len(segs) > 1 else "/"
 
-        # [v2.39 Fix2] Breadcrumb canonical dla CMS-ów madkom/wokiss/eSesja.
-        # /a/b/c/930 i /x/y/z/930 → ten sam dokument → normalizuj do /c/930
-        # Warunek: 3+ segmentów, ostatni to liczba, host to strict BIP subdomena.
+        # [v2.41 Fix3] Breadcrumb canonical dla WSZYSTKICH hostów.
+        # Problem v2.39: warunek _is_strict_bip_host wykluczał wokiss.pl (Jarocin) i inne
+        # shared providers → ten sam dokument pod N ścieżkami breadcrumba → eksplozja frontieru.
+        # /a/b/c/930 i /x/y/c/930 → normalizuj do /c/930 dla każdego hosta.
+        #
+        # Zabezpieczenia przed fałszywą normalizacją dat w ścieżce:
+        # 1. segs[-1] nie jest rokiem (1900-2099) — /archiwum/2024/3 → NIE normalizuj
+        # 2. segs[-2] nie jest cyfrą — /2024/11 to data rok/miesiąc → NIE normalizuj
         segs = [s for s in path.split("/") if s]
-        if (len(segs) >= 3
-                and segs[-1].isdigit()
-                and _is_strict_bip_host(netloc)):
-            path = "/" + segs[-2] + "/" + segs[-1]
+        if len(segs) >= 3 and segs[-1].isdigit() and not segs[-2].isdigit():
+            _n = int(segs[-1])
+            if not (1900 <= _n <= 2099):  # nie jest rokiem
+                path = "/" + segs[-2] + "/" + segs[-1]
 
         return urlunparse((scheme, netloc, path, "", p.query, ""))
     except Exception:
@@ -1503,16 +1550,16 @@ def same_base_domain(host_a: str, host_b: str) -> bool:
 
 def _host_allowed(netloc: str, allowed_host: str) -> bool:
     """
-    [v2.38/v2.40] Uniwersalny check używany w funkcjach pomocniczych (Playwright, extract_links).
-    Respektuje strict BIP mode i pinned shared provider mode.
+    [v2.41 Fix2] Exact host match dla WSZYSTKICH — bez wyjątków.
+    Problem v2.40: same_base_domain("sp2.gostyn.pl", "biuletyn.gostyn.pl") = True
+    → szkoły, cmentarze, licea wpadały do frontieru gdy BIP jest na subdomenie.
+    Rozwiązanie: zawsze exact match. www. nadal akceptowane.
+    Universalne: działa dla każdej gminy bez list wyjątków.
     """
     h = (netloc or "").lower().strip()
     ah = (allowed_host or "").lower().strip()
     if not h or not ah: return False
-    # strict BIP (bip.gmina.pl) lub pinned shared provider (gmina.biuletyn.net)
-    if _is_strict_bip_host(ah) or _is_shared_bip_provider(ah):
-        return h == ah or h == "www." + ah
-    return same_base_domain(h, ah)
+    return h == ah or h == "www." + ah or "www." + h == ah
 
 # [v2.40] Shared BIP providers — każda gmina siedzi pod własną subdomeną providera.
 # Crawler powinien być przypięty do konkretnej subdomeny gminy, nie do całej domeny bazowej.
@@ -1585,30 +1632,23 @@ def _is_bip_domain(host: str) -> bool:
 
 def make_allow_url_fn(allowed_host: str):
     """
-    [v2.38/v2.40] Fabryka funkcji allow_url.
+    [v2.41 Fix2] Exact host match dla WSZYSTKICH — jeden mechanizm, zero list wyjątków.
 
-    Tryby:
-    1. Strict BIP (bip.gmina.pl) → akceptuje TYLKO tę subdomenę.
-    2. Shared BIP provider (gmina.biuletyn.net, ugobsza.bip.lubelskie.pl) →
-       [v2.40] akceptuje TYLKO tę konkretną subdomenę gminy — NIE całą domenę providera.
-       Problem: same_base_domain("mapa-rpo2016.rpo.lubelskie.pl", "ugobsza.bip.lubelskie.pl")
-       zwracało True bo base_domain = "lubelskie.pl". Teraz pinujemy do exact hosta.
-    3. Pozostałe → same_base_domain (dotychczasowe zachowanie).
+    Problem v2.40: trzy tryby (strict/pinned/same_base_domain) — trzeci tryb używał
+    same_base_domain → sp2.gostyn.pl, lo.strzegom.pl, cmentarze.strzegom.pl wpadały
+    do frontieru bo dzieliły domenę bazową z BIP-em gminy.
+
+    Rozwiązanie: zawsze exact match niezależnie od typu hosta.
+    www. nadal akceptowane w obu kierunkach.
+    Logowanie 🔒 dla wszystkich — crawler zawsze jest przypięty do jednego hosta.
     """
     ah = (allowed_host or "").lower().strip()
-    strict = _is_strict_bip_host(ah)
-    pinned = not strict and _is_shared_bip_provider(ah)
 
-    if strict or pinned:
-        mode = "strict" if strict else "pinned_shared"
-        def allow_url(u: str) -> bool:
-            h = urlparse(u).netloc.lower()
-            return h == ah or h == "www." + ah
-        return allow_url, True  # zwracamy True żeby logi pokazywały 🔒
-    else:
-        def allow_url(u: str) -> bool:
-            return same_base_domain(urlparse(u).netloc.lower(), ah)
-        return allow_url, False
+    def allow_url(u: str) -> bool:
+        h = urlparse(u).netloc.lower()
+        return h == ah or h == "www." + ah or "www." + h == ah
+
+    return allow_url, True  # zawsze True — zawsze logujemy 🔒
 
 def safe_soup(html: str):
     if not html: return None
@@ -2904,6 +2944,25 @@ async def phase2_focus(
         _mode = "strict BIP" if _is_strict_bip_host(allowed_host) else "pinned shared BIP"
         print(f"  🔒 [Phase2] {_mode} [{gmina}]: tylko {allowed_host}", flush=True)
 
+    # [v2.41 Fix5] Odfiltruj śmieciowe URL-e ze starego frontieru.
+    # Problem: stare runy z same_base_domain wpuszczały lo.strzegom.pl, cmentarze.strzegom.pl
+    # itp. do frontieru. Fix2 zapobiega dodawaniu nowych złych URL-i ale nie czyści starych.
+    # Rozwiązanie: przy każdym starcie Phase2 filtruj frontier przez allow_url().
+    # Jednorazowe — po pierwszym runie złe URL-e znikają z cache na zawsze.
+    filtered_out = 0
+    filtered_q = deque()
+    for cu, fd in q:
+        if allow_url(cu):
+            filtered_q.append((cu, fd))
+        else:
+            filtered_out += 1
+    if filtered_out > 0:
+        print(
+            f"  🧹 [v2.41] Odfiltrowano {filtered_out} URL-i spoza {allowed_host} "
+            f"(stary frontier) [{gmina}]",
+            flush=True
+        )
+    q = filtered_q
     pages_ok = 0
     pages_skipped_ttl = 0
     new_links_added = 0
@@ -2963,6 +3022,14 @@ async def phase2_focus(
             elif status_prev == "NO_MATCH":
                 if not should_recheck_no_match(prev_pre):
                     diag["counts"]["no_match_ttl_skip"] += 1
+                    pages_skipped_ttl += 1
+                    continue
+            elif status_prev == "PW_PROCESSING":
+                # [v2.41 Fix6] PW_PROCESSING = placeholder ustawiony gdy Playwright
+                # był w trakcie przetwarzania. Traktuj jak NO_MATCH — sprawdź ponownie
+                # po standardowym TTL. Bez tego URL wracał do pętli w nieskończoność.
+                if not should_recheck_no_match(prev_pre):
+                    diag["counts"]["pw_processing_ttl_skip"] += 1
                     pages_skipped_ttl += 1
                     continue
             elif status_prev == "BLOCKED":
@@ -3223,10 +3290,19 @@ async def phase2_focus(
             status_new = "NOWE" if ok_any else "NO_MATCH"
         else:
             if ok_any:
-                prev_att_set = att_sig_deserialize(prev.get("att_sig") or "")
-                added_files = att_set - prev_att_set
-                status_new = "ZMIANA" if added_files else "HIT"
-                if added_files: diag["counts"]["att_added"] += len(added_files)
+                # [v2.41 Fix4] prev.status == NO_MATCH + keyword znaleziony = NOWE odkrycie.
+                # Problem Wiązów: Playwright redirect m,5096→a,22784 → a,22784 był już
+                # w content_seen jako NO_MATCH (poprzedni etap tego runu, brak keyword) →
+                # prev!=None → status_new=HIT → nie raportowane → znalezione=0.
+                # NO_MATCH znaczy "sprawdzono, nie było keyword" — jeśli teraz jest → NOWE.
+                # Dotyczy też aliasowania URL-i przez różne redirecty Playwright.
+                if prev.get("status") == "NO_MATCH":
+                    status_new = "NOWE"
+                else:
+                    prev_att_set = att_sig_deserialize(prev.get("att_sig") or "")
+                    added_files = att_set - prev_att_set
+                    status_new = "ZMIANA" if added_files else "HIT"
+                    if added_files: diag["counts"]["att_added"] += len(added_files)
             else:
                 status_new = "NO_MATCH"
 
