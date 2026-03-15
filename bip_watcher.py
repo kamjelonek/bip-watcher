@@ -231,8 +231,15 @@ IGNORE_URL_SUBSTR = [
     "rodo", "cookies", "deklaracja-dostepnosci", "deklaracja_dostepnosci",
     "majatk", "majątk", "regulamin", "sygnalis",
     "login", "logowanie", "rejestracja", "newsletter",
-    "galeria-zdjec", "galeria_zdjec", "multimedia", "wideo",
-    # [v2.35] Alternatywne formaty tej samej treści — nigdy nie są wartościowe
+    # Galerie, multimedia, zdjęcia — nigdy nie zawierają ogłoszeń planistycznych
+    "galeria-zdjec", "galeria_zdjec", "galeria-fotografii", "galeria_fotografii",
+    "galeria/", "/galeria", "photo", "photogallery", "zdjecia", "zdjęcia",
+    "multimedia", "wideo", "video", "film", "filmy",
+    # Szkoły, instytucje podrzędne — nie są BIP-em gminy
+    "absolwenci", "uczniowie", "nauczyciele", "szkola", "szkoła",
+    # Aktualności i newsy gminne (nie BIP) — nie zawierają aktów planistycznych
+    "readmore=", "news.php", "aktualnosci.php", "artykul.php",
+    # Alternatywne formaty tej samej treści — nigdy nie są wartościowe
     "/xml/", "drukuj.asp", "core/drukuj", "core/pdf",
     "akcja=drukuj", "akcja=pdf", "format=pdf", "format=xml",
     "/print/", "/drukuj/",
@@ -410,7 +417,7 @@ FAST_TEXT_MAX_CHARS = 400_000
 # [v2.36] TTL — krytyczny fix. TTL=0 powoduje że program ignoruje cache
 # i skanuje te same URL-e przy każdym runie, nigdy nie docierając do końca frontieru.
 HIT_RECHECK_TTL_HOURS     = env_int("HIT_RECHECK_TTL_HOURS",     168)  # 7 dni
-NO_MATCH_RECHECK_TTL_HOURS = env_int("NO_MATCH_RECHECK_TTL_HOURS", 72)  # 3 dni
+NO_MATCH_RECHECK_TTL_HOURS = env_int("NO_MATCH_RECHECK_TTL_HOURS", 168)  # 7 dni — identyczne z HIT
 BLOCKED_RECHECK_TTL_MIN   = env_int("BLOCKED_RECHECK_TTL_MIN",    120)  # 2 godziny
 FAILED_RECHECK_TTL_MIN    = env_int("FAILED_RECHECK_TTL_MIN",      60)  # 1 godzina
 
@@ -3012,7 +3019,7 @@ async def phase2_focus(
         prev_pre = content_seen.get(url_dedup)
         is_listing = is_listing_url(url) or is_home_url(url)
 
-        if USE_CACHE and prev_pre and not is_listing:
+        if USE_CACHE and prev_pre:
             status_prev = prev_pre.get("status")
             if status_prev in {"NOWE", "ZMIANA", "HIT"}:
                 if not should_recheck_hit(prev_pre):
