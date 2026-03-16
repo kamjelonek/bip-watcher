@@ -2901,6 +2901,7 @@ async def phase2_focus(
     diag,
     home_links: set = None,
     home_text: str = "",
+    home_url: str = "",
 ) -> tuple:
     """
     Phase2 v2.23 — sprawdzanie treści + równoległy Playwright fallback.
@@ -3151,12 +3152,25 @@ async def phase2_focus(
                 await fetch_with_playwright(url, interact=True)
 
             if pw_kind == "html" and pw_html:
+                # [v2.41] Gdy Playwright dał redirect na stronę główną BIP —
+                # oryginalny URL jest martwym linkiem (endpoint systemowy, API, eksport).
+                # Universalne: działa dla każdego CMS który redirectuje nieistniejące endpointy
+                # na home (np. /auction/628/getAuctionExport/auction → strona główna Oleszyce).
+                _pw_final_canon = _canon(pw_final or url)
+                _home_canon = _canon(home_url) if home_url else ""
+                if _home_canon and _pw_final_canon == _home_canon and _pw_final_canon != _canon(url):
+                    dead_add(dead_key, dead_set, _canon(url))
+                    diag["counts"]["home_redirect_dead"] = int(diag["counts"].get("home_redirect_dead", 0)) + 1
+                    print(f"  💀 home_redirect_dead: {url[:70]}", flush=True)
+                    continue
+
                 # Playwright dał wyrenderowany HTML — użyj go zamiast/obok aiohttp
                 print(
                     f"  🎭 Phase2 Playwright OK: {len(pw_html)}B @ {url[:60]}",
                     flush=True
                 )
-                # Aktualizuj zmienne robocze
+                # Aktualizuj zmienne robocze — soup i att_set będą przeliczone z pw_html
+                # na linii pages_ok += 1 → soup = safe_soup(html) gdzie html = pw_html
                 html, final, kind, status, ctype = pw_html, pw_final, pw_kind, pw_status, pw_ctype
 
                 # [v2.40 Fix2] Zapisz placeholder pod ORYGINALNYM url_dedup już teraz.
@@ -3290,11 +3304,19 @@ async def phase2_focus(
         blob, _removed_chars, _blob_method = _extract_content_text(
             soup, url=url, home_text=home_text
         )
-        print(f"    [DEBUG] blob_len={len(blob)} method={_blob_method} removed={_removed_chars} url={url[:60]}")
 
         # Oblicz hash blob-a już tutaj — potrzebny do deduplikacji i raportowania
         _blob_hash = sha1(blob[:5000])
         _blob_is_duplicate = _blob_hash in blob_hashes_this_run
+
+        # [v2.41] Gdy blob jest duplikatem i URL redirectował (final_c != url_c) →
+        # oryginalny URL jest martwym linkiem (strona błędu, catch-all, nieistniejący endpoint).
+        # Oznacz jako dead żeby nie wracał co 168h na zawsze.
+        # Warunek redirect (final_c != url) eliminuje false positive dla stron z przypadkowo
+        # identyczną treścią bez redirectu.
+        if _blob_is_duplicate and final_c != _canon(url):
+            dead_add(dead_key, dead_set, _canon(url))
+            diag["counts"]["blob_dedup_dead"] = int(diag["counts"].get("blob_dedup_dead", 0)) + 1
 
         # [v2.32] Deduplikacja po hash blob-a — ten sam hash = ta sama treść
         # pod innym URL (np. /110/240/ vs /50/240/) → pomijamy raport
@@ -3538,6 +3560,7 @@ async def worker(
                     diag=diag,
                     home_links=set(state.gmina_seeds.get(gkey_approx, {}).get("home_links_list", [])),
                     home_text=state.gmina_seeds.get(gkey_approx, {}).get("home_text", ""),
+                    home_url=state.gmina_seeds.get(gkey_approx, {}).get("start_final", ""),
                 )
                 p1meta = {"status": "SKIP", "seeds": 0, "phase1_complete": True}
 
@@ -3596,6 +3619,7 @@ async def worker(
                     diag=diag,
                     home_links=set(p1meta.get("home_links_list", [])),
                     home_text=p1meta.get("home_text", ""),
+                    home_url=p1meta.get("start_final", ""),
                 )
 
             stop_reason = (p2meta or {}).get("stop_reason") or ""
