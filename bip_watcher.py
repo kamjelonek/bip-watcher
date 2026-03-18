@@ -188,22 +188,6 @@ KEYWORDS = [
 STRICT_ONLY = {"wz", "oze", "ris"}
 
 # ===================== NAV CONTEXT =====================
-_NAV_CONTEXT_WORDS = [
-    "aktualności", "ogłoszenia", "zamówienia publiczne", "rejestr instytucji",
-    "rada gminy", "prawo miejscowe", "ochrona środowiska", "informacje o gminie",
-    "jednostki organizacyjne", "strona główna", "zawiadomienia o zgromadzeniach",
-    "biuletyn informacji", "cyberbezpieczeństwo", "ochrona danych osobowych",
-    "plan ogólny gminy", "plan ogólny miasta", "planu ogólnego",
-    "studium uwarunkowań", "warunki zabudowy", "decyzje środowiskowe",
-    "rejestr zmian", "mapa strony", "drukuj stronę", "wersja kontrastowa",
-    "accessibility", "polityka prywatności",
-]
-
-def _is_nav_context(text_lower: str, kw_pos: int, window: int = 300) -> bool:
-    ctx = text_lower[max(0, kw_pos - window): min(len(text_lower), kw_pos + window)]
-    nav_hits = sum(1 for w in _NAV_CONTEXT_WORDS if w in ctx)
-    return nav_hits >= 2
-
 def keyword_match_in_blob(blob: str):
     t = re.sub(r"\s+", " ", (blob or "")).strip().lower()
     if not t:
@@ -215,14 +199,11 @@ def keyword_match_in_blob(blob: str):
             continue
         if (k in strict_only) or (len(k) <= 3):
             m = re.search(rf"(?<!\w){re.escape(k)}(?!\w)", t)
-            if m and not _is_nav_context(t, m.start()):
+            if m:
                 return (True, kw)
         else:
-            pos = t.find(k)
-            while pos >= 0:
-                if not _is_nav_context(t, pos):
-                    return (True, kw)
-                pos = t.find(k, pos + 1)
+            if k in t:
+                return (True, kw)
     return (False, None)
 
 # ===================== IGNORE =====================
@@ -3304,6 +3285,39 @@ async def phase2_focus(
         blob, _removed_chars, _blob_method = _extract_content_text(
             soup, url=url, home_text=home_text
         )
+
+        # [v2.41] Post-blob Playwright retry — gdy blob jest za mały przy dużym HTML
+        # i Playwright nie był jeszcze użyty. Dotyczy serwerów które zwracają duży layout
+        # nawigacyjny (bip.lubelskie.pl: 214kB HTML, 312ch blob po ekstrakcji nawigacji).
+        # text_len był wystarczający żeby nie triggerować Playwright przed ekstrakcją,
+        # ale po ekstrakcji okazuje się że treść dokumentu to tylko kilkaset znaków.
+        # Universalne: działa dla każdego serwera z takim zachowaniem.
+        if (not need_pw_for_content and len(blob) < 400 and len(html) > 50000):
+            _remaining = (RUN_DEADLINE_MIN - (time.time() - GLOBAL_T0) / 60) if RUN_DEADLINE_MIN > 0 else 999
+            if _remaining >= 5:
+                pw_content_fetches += 1
+                print(
+                    f"  🎭 Phase2 Playwright retry (small_blob={len(blob)},html={len(html)}) @ {url[:60]}",
+                    flush=True
+                )
+                _rpw_html, _rpw_final, _rpw_kind, _rpw_status, _rpw_ctype, _rpw_err, _rpw_ms, _ = \
+                    await fetch_with_playwright(url, interact=True)
+                if _rpw_kind == "html" and _rpw_html and len(_rpw_html) > len(html):
+                    html = _rpw_html
+                    final = _rpw_final or final
+                    _rpw_soup = safe_soup(_rpw_html)
+                    if _rpw_soup:
+                        soup = _rpw_soup
+                        att_set = attachments_signature(soup, _canon(_rpw_final or url))
+                        for tag in soup(["script", "style", "noscript"]): tag.decompose()
+                        blob, _removed_chars, _blob_method = _extract_content_text(
+                            soup, url=url, home_text=home_text
+                        )
+                        print(
+                            f"  🎭 Phase2 Playwright retry OK: blob={len(blob)} @ {url[:60]}",
+                            flush=True
+                        )
+                    diag["counts"]["pw_small_blob_retry"] = int(diag["counts"].get("pw_small_blob_retry", 0)) + 1
 
         # Oblicz hash blob-a już tutaj — potrzebny do deduplikacji i raportowania
         _blob_hash = sha1(blob[:5000])
