@@ -1,53 +1,62 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.41 - PRODUCTION
-Zmiany v2.41 vs v2.40:
+BIP WATCHER v2.42 - PRODUCTION (hybryda v2.28 + v2.41)
 
-[FIX 1] normalize_url — whitelist parametrów URL zamiast blacklisty
-    Problem: każdy nowy CMS wymyśla własne noise params (bsc=, bip=, acc_*, code=, sort=, rpg=...).
-    Blacklista nigdy nie będzie kompletna → eksplozja frontieru dla Miłoradz, Ścinawa, Pępowo itp.
-    Rozwiązanie: zachowaj TYLKO params które identyfikują dokument (KEEP_PARAMS).
-    Wszystko inne wyrzucane automatycznie — nowy CMS z nowym noise param → działa bez interwencji.
-    Bonus: id= stripowane gdy document_id= obecne w tym samym URL (id= to wtedy menu, nie dokument).
+Zmiany v2.42 vs v2.41:
 
-[FIX 2] make_allow_url_fn + _host_allowed — exact host match dla WSZYSTKICH
-    Problem: same_base_domain("sp2.gostyn.pl", "biuletyn.gostyn.pl") = True → szkoły wpadają
-    do frontieru. Strzegom: liceum, cmentarze, centrum kultury zamiast BIP-u.
-    Rozwiązanie: zawsze exact host match (h == allowed_host lub www.allowed_host).
-    Dotyczy wszystkich hostów — nie tylko shared providers i strict BIP.
-    Universalne: działa dla każdej przyszłej gminy bez konfiguracji.
+[FIX 1] normalize_url — przywrócono z v2.28
+    Blacklista tracking params (utm_, fbclid itp.), sortowanie parametrów,
+    usunięcie fragmentu. BEZ dekodowania &amp; — BeautifulSoup robi to automatycznie
+    przy ekstrakcji href, więc ręczne dekodowanie było zbędne i powodowało podwójne
+    przetwarzanie w Playwright (e.href już zdekodowane przez DOM).
 
-[FIX 3] canonical_url — breadcrumb normalizacja dla wszystkich hostów
-    Problem: /a/b/c/930 i /x/y/z/930 to ten sam dokument (madkom/wokiss breadcrumb).
-    Fix v2.39 działał tylko dla _is_strict_bip_host → wokiss.pl (Jarocin) wykluczony.
-    Rozwiązanie: usuń warunek _is_strict_bip_host — aplikuj breadcrumb canonical dla WSZYSTKICH.
-    Dodatkowa ochrona: segment kończący się ,LICZBA (madkom: m,5096 a,22784) → normalizuj.
+[FIX 2] canonical_url — usunięto breadcrumb normalizację
+    Problem v2.41 Fix3: /a/b/c/930 i /x/y/c/930 → /c/930 powodowało że dwa RÓŻNE
+    dokumenty z tym samym numerem ID pod różnymi sekcjami były traktowane jako jeden.
+    Przywrócono v2.28: https + strip www + trailing slash. Zostaje tylko strip /xml.
 
-[FIX 4] phase2_focus — NO_MATCH + keyword = NOWE (fix Wiązów)
-    Problem: Playwright redirect m,5096→a,22784 → a,22784 był już w content_seen jako NO_MATCH
-    → ok_any=True ale prev!=None → status_new=HIT → nie raportowane → znalezione=0.
-    Rozwiązanie: gdy prev.status == "NO_MATCH" i ok_any=True → traktuj jak prev=None → NOWE.
-    Logika: NO_MATCH = "sprawdzono, nie było keyword" — jeśli teraz jest → to jest nowe odkrycie.
+[FIX 3] _host_allowed / make_allow_url_fn — logika "bip w nazwie"
+    Zamiast zawsze exact match (v2.41) lub zawsze same_base_domain (v2.28):
+    - jeśli "bip" w dowolnym segmencie hostnamu LUB host na liście shared providers
+      → exact match (nie wychodzimy na inne subdomeny)
+    - w pozostałych przypadkach → same_base_domain (jak v2.28)
+    Efekt: bip.gmina.pl, ugdolhobyczow.bip.lubelskie.pl, gminaczarna.biuletyn.net
+    → wszystkie exact match. www.granowo.pl → same_base_domain.
+    Pilnujemy BIP-u nie wychodząc na szkoły/cmentarze, ale nie blokujemy małych gmin
+    które mają BIP na głównej domenie bez subdomeny "bip".
 
-[FIX 5] phase2_focus — czyszczenie frontieru przy starcie (fix Strzegom)
-    Problem: stare URL-e z lo.strzegom.pl, cmentarze.strzegom.pl itd. siedzą w cache
-    z poprzednich runów gdy same_base_domain było zbyt liberalne → 346k URL-i zamiast BIP-u.
-    Fix 2 zapobiega dodawaniu nowych złych URL-i ale nie czyści starych.
-    Rozwiązanie: przy ładowaniu frontieru filtruj każdy URL przez allow_url() — złe URL-e
-    odrzucane jednorazowo przy starcie. Loguje ile URL-i odfiltrowano.
+[FIX 4] blob_dedup + context_dedup — usunięto całkowicie
+    Problem: deduplikacja po treści pomijała realne ogłoszenia gdy BIP serwował
+    podobne treści pod różnymi URL-ami (np. lista i szczegół z tym samym tytułem).
+    v2.28 nie miał tego mechanizmu — powracamy do prostego raportowania.
 
-[FIX 6] phase2_focus — PW_PROCESSING w TTL check
-    Problem: Fix v2.40 ustawiał placeholder status="PW_PROCESSING" ale TTL check go ignorował
-    → URL nie był skipowany przy kolejnym wejściu → przetwarzany od nowa w pętli.
-    Rozwiązanie: PW_PROCESSING traktowany jak NO_MATCH w TTL check.
+[FIX 5] dead_urls — usunięto blokowanie frontieru
+    Problem: URL błędnie oznaczony jako dead (chwilowy błąd serwera) był trwale
+    pomijany. v2.28 nie miał mechanizmu dead_urls.
+    Teraz: dead_add() tylko loguje do diag, NIE blokuje URL-a.
+    URL wraca normalnie po TTL jak każdy inny.
 
-Zmiany v2.23 vs v2.22:
+[FIX 6] Phase1 Playwright — przywrócono mini-BFS (_fetch_links_playwright)
+    Problem v2.41: fetch_with_playwright() pobierał tylko JEDNĄ stronę i wyciągał
+    z niej linki przez HTML parser — identycznie jak aiohttp, bez wartości dodanej.
+    Przywrócono v2.28: _fetch_links_playwright() odwiedza stronę startową PLUS
+    wszystkie znalezione linki (głębokość 1, max PLAYWRIGHT_MINI_BFS_MAX_PAGES stron).
+    Efekt: dla stron JS z listami generowanymi przez JS zbieramy pełny zbiór linków.
 
-    [ZMIANA 1] _fetch_links_playwright — pełny mini-BFS przez Playwright (glebokosc 1)
-    [ZMIANA 2] phase1_full_crawl — automatyczny Playwright fallback per URL
-    [ZMIANA 3] phase2_focus — rownolegly Playwright dla tresci stron
+Zachowane z v2.41:
+- TTL 168h (HIT_RECHECK, NO_MATCH_RECHECK)
+- PW_PROCESSING placeholder (fix pętli Playwright/Kamieniec)
+- NO_MATCH + keyword = NOWE (Fix4 v2.41 — fix Wiązów)
+- Filtrowanie frontieru przez allow_url przy starcie Phase2 (Fix5 v2.41)
+- Post-blob Playwright retry dla małych blob przy dużym HTML
+- home_redirect_dead (fix Oleszyce)
+- ATT_SIG_EXT (tylko pdf/gml/zip/doc/docx w sygnaturze załączników)
+- PHASE1_MAX_PW_FETCHES (limit wywołań PW w Phase1)
+- IGNORE_URL_SUBSTR rozszerzona lista
+- Graceful shutdown 20 min przed deadline
+- append_hits_to_backup / _try_send_email_sync
+- PHASE1_FRONTIER_CHECKPOINT_EVERY
 """
-
 
 import os, sys, csv, json, hashlib, asyncio, re, time, smtplib, warnings, socket, random, signal
 from collections import deque, defaultdict
@@ -101,7 +110,7 @@ async def save_shard_cache_and_commit(loop=None):
     out["gmina_frontiers"] = state.gmina_frontiers or {}
     out["gmina_retry"] = state.gmina_retry or {}
     out["dead_urls"] = getattr(state, "dead_urls", {})
-    out["new_items_for_mail"] = list(state.new_items_for_mail or [])  # [v2.36] backup
+    out["new_items_for_mail"] = list(state.new_items_for_mail or [])
     filename = BASE_DIR / f"cache_shard_{shard}.json"
     try:
         tmp = str(filename) + ".tmp"
@@ -112,7 +121,6 @@ async def save_shard_cache_and_commit(loop=None):
     except Exception as e:
         print(f"⚠️ Failed to write shard cache: {e}")
         return
-    # git commit/push obsługiwany przez GitHub Actions YAML — nie robimy tego z Pythona
 
 # ===================== PATHS =====================
 BASE_DIR = Path(__file__).resolve().parent / "data"
@@ -123,8 +131,8 @@ LOG_FILE = BASE_DIR / "log.csv"
 DIAG_GMINY_CSV = BASE_DIR / "diag_gminy.csv"
 DIAG_ERRORS_CSV = BASE_DIR / "diag_errors.csv"
 SUMMARY_FILE = BASE_DIR / "summary_report.txt"
-HITS_BACKUP_FILE = BASE_DIR / "hits_backup.jsonl"  # [v2.36] backup ogłoszeń gdy email zawiedzie
-ONEDRIVE_EXPORT_DIR = None  # OneDrive niedostępny w GitHub Actions
+HITS_BACKUP_FILE = BASE_DIR / "hits_backup.jsonl"
+ONEDRIVE_EXPORT_DIR = None
 
 # ===================== USER SWITCHES =====================
 UNLIMITED_SCAN = True
@@ -187,7 +195,9 @@ KEYWORDS = [
 
 STRICT_ONLY = {"wz", "oze", "ris"}
 
-# ===================== NAV CONTEXT =====================
+# ===================== KEYWORD MATCH =====================
+# [v2.42] Brak _is_nav_context — usunięty w v2.41, zostawiamy tak.
+# Filtrowanie kontekstu nawigacyjnego blokowało realne ogłoszenia (Wałcz: 416 zablokowanych).
 def keyword_match_in_blob(blob: str):
     t = re.sub(r"\s+", " ", (blob or "")).strip().lower()
     if not t:
@@ -220,14 +230,12 @@ IGNORE_URL_SUBSTR = [
     "absolwenci", "uczniowie", "nauczyciele", "szkola", "szkoła",
     # Aktualności i newsy gminne (nie BIP) — nie zawierają aktów planistycznych
     "readmore=", "news.php", "aktualnosci.php", "artykul.php",
-    # Akcje systemowe CMS — nigdy nie zwracają treści HTML do analizy
-    # action=save, action=show, action=edit itp. to endpointy zapisu/podglądu raw
-    # które zwracają pusty response (115B) lub JSON, nie stronę dokumentu
+    # Akcje systemowe CMS — zwracają pusty response lub JSON
     "action=save", "action=show&", "action=edit", "action=delete",
     "action=export", "action=download", "action=print",
-    # p=print, p=document — alternatywne widoki/akcje w bip.net.pl i podobnych
+    # p=print, p=document — alternatywne widoki/akcje
     "p=print", "p=document", "p=edit", "p=save",
-    # Alternatywne formaty tej samej treści — nigdy nie są wartościowe
+    # Alternatywne formaty tej samej treści
     "/xml/", "drukuj.asp", "core/drukuj", "core/pdf",
     "akcja=drukuj", "akcja=pdf", "format=pdf", "format=xml",
     "/print/", "/drukuj/",
@@ -236,7 +244,6 @@ IGNORE_URL_SUBSTR = [
 IGNORE_URL_PATH_PATTERNS = [
     r"prognoza.pogody", r"prognoza_pogody",
     r"/wersja/\d+/?$", r"/wersja[_/]",
-    # rodo jako osobny segment — nie uderza w srodowisk*, ochrona-srodowiska itp.
     r"[/=\-]rodo[/.\-_]", r"[/=\-]rodo$", r"/rodo/",
 ]
 
@@ -262,14 +269,15 @@ ATT_EXT = (
     ".tif", ".tiff",
 )
 
+# [v2.35] Tylko te rozszerzenia liczą się jako "zmiana załączników" w raporcie.
+ATT_SIG_EXT = (".pdf", ".gml", ".zip", ".doc", ".docx")
+
 DOWNLOAD_URL_SEGMENTS = [
     "/pobierz/", "/download/", "/pobieranie/",
     "/file/", "/files/", "/attachment/", "/attachments/",
     "/getfile/", "/get-file/", "/dokumenty/pobierz/", "/media/", "/uploads/",
     "/file_add/", "/file_add/download/", "/filedownload/", "/file-download/",
     "/pobierz-plik/", "/get-file/",
-    # [v2.40 Fix4] Sulechów CMS i podobne — /pliki/NUMER to pliki binarne (PDF/DOC)
-    # serwowane przez CMS pod numerycznym ID. Nie są stronami HTML.
     "/pliki/",
 ]
 
@@ -277,7 +285,6 @@ DOWNLOAD_URL_PARAMS = ["file=", "pobierz=", "download=", "attachment=", "getfile
 
 _DOWNLOAD_SUFFIX_RE = re.compile(
     r"(pdf|docx?|xlsx?|odt|rtf|zip|rar|7z|gml|xml|tiff?|dwg|dxf"
-    # [v2.37] binaria i multimedia — Playwright nie powinien ich otwierać
     r"|exe|msi|dmg|deb|rpm|apk|bat|sh|cmd"
     r"|dav|avi|mp4|mkv|mov|wmv|flv|webm|mpg|mpeg|m4v"
     r"|mp3|wav|ogg|flac|aac|wma|m4a"
@@ -372,21 +379,10 @@ PLAYWRIGHT_MAX_DEPTH = env_int("PLAYWRIGHT_MAX_DEPTH", 4)
 DYNAMIC_SCORE_THRESHOLD = env_int("DYNAMIC_SCORE_THRESHOLD", 5)
 SPA_FALLBACK_MIN_LINKS = env_int("SPA_FALLBACK_MIN_LINKS", 20)
 
-# [v2.23] Próg: jeśli aiohttp znalazł mniej linków — uruchamiamy Playwright
 PHASE1_MIN_LINKS_FOR_PW = env_int("PHASE1_MIN_LINKS_FOR_PW", 8)
-
-# [v2.23] Max stron odwiedzanych przez Playwright w mini-BFS per wywołanie
 PLAYWRIGHT_MINI_BFS_MAX_PAGES = env_int("PLAYWRIGHT_MINI_BFS_MAX_PAGES", 20)
-
-# [v2.29] Max wywołań Playwright do zbierania linków w Phase1 na gminę
-# Po osiągnięciu limitu — reszta stron przez aiohttp (bez PW)
 PHASE1_MAX_PW_FETCHES = env_int("PHASE1_MAX_PW_FETCHES", 50)
-
-# [v2.30] Co ile stron Phase1 zapisuje częściowy frontier do state
-# Zabezpiecza przed utratą pracy gdy job zostanie przerwany w trakcie Phase1
 PHASE1_FRONTIER_CHECKPOINT_EVERY = env_int("PHASE1_FRONTIER_CHECKPOINT_EVERY", 500)
-
-# [v2.23] Min długość tekstu (znaki) aby uznać stronę za HTML (nie JS)
 PHASE2_MIN_TEXT_FOR_HTML = env_int("PHASE2_MIN_TEXT_FOR_HTML", 200)
 
 REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=None, sock_connect=12, sock_read=35)
@@ -404,12 +400,11 @@ CACHE_CHECKPOINT_EVERY_N_GMINY = 3
 SEED_CACHE_TTL_DAYS = 999
 FAST_TEXT_MAX_CHARS = 400_000
 
-# [v2.36] TTL — krytyczny fix. TTL=0 powoduje że program ignoruje cache
-# i skanuje te same URL-e przy każdym runie, nigdy nie docierając do końca frontieru.
-HIT_RECHECK_TTL_HOURS     = env_int("HIT_RECHECK_TTL_HOURS",     168)  # 7 dni
-NO_MATCH_RECHECK_TTL_HOURS = env_int("NO_MATCH_RECHECK_TTL_HOURS", 168)  # 7 dni — identyczne z HIT
-BLOCKED_RECHECK_TTL_MIN   = env_int("BLOCKED_RECHECK_TTL_MIN",    120)  # 2 godziny
-FAILED_RECHECK_TTL_MIN    = env_int("FAILED_RECHECK_TTL_MIN",      60)  # 1 godzina
+# TTL 168h (7 dni) — URL odwiedzony w ostatnim tygodniu jest pomijany
+HIT_RECHECK_TTL_HOURS      = env_int("HIT_RECHECK_TTL_HOURS",      168)
+NO_MATCH_RECHECK_TTL_HOURS = env_int("NO_MATCH_RECHECK_TTL_HOURS", 168)
+BLOCKED_RECHECK_TTL_MIN    = env_int("BLOCKED_RECHECK_TTL_MIN",    120)
+FAILED_RECHECK_TTL_MIN     = env_int("FAILED_RECHECK_TTL_MIN",      60)
 
 FRONTIER_CHECKPOINT_EVERY = 500
 
@@ -512,7 +507,6 @@ def signal_handler(signum, frame):
     print(f"\n🛑 SIGNAL {signum} received (pid={os.getpid()})", flush=True)
     state.request_shutdown()
     _signal_received = True
-    # panic_save wywoływana przez atexit (zdefiniowana niżej w kodzie)
 
 signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGINT, signal_handler)
@@ -547,9 +541,15 @@ def retry_add(gkey: str, retry_seen: set, url: str):
     state.gmina_retry.setdefault(gkey, []).append(cu)
 
 def dead_add(dead_key: str, dead_set: set, url: str):
+    """
+    [v2.42 Fix5] dead_add tylko loguje do diag — NIE blokuje URL-a na stałe.
+    URL wróci normalnie po TTL. v2.28 nie miał mechanizmu dead_urls.
+    dead_set używany tylko do liczenia w diag.
+    """
     cu = _canon(url)
     if not cu or cu in dead_set: return
     dead_set.add(cu)
+    # Nadal zapisujemy do state.dead_urls dla kompatybilności z cache
     state.dead_urls.setdefault(dead_key, []).append(cu)
 
 def pick_rows_for_shard(rows, shard_index: int, shard_total: int):
@@ -675,9 +675,6 @@ class DynamicPageDetector:
                     total += 2
                     reasons.append(f"sparse_text(text={text_len},html={html_size})")
                 elif html_size > 50000 and text_len > 0:
-                    # Stosunek tekstu do HTML < 2% przy dużym HTML — serwer zwrócił layout/menu
-                    # zamiast treści dokumentu. Dotyczy każdego CMS który serwuje stronę główną
-                    # niezależnie od parametrów (np. bip.lubelskie.pl z action=details).
                     ratio = text_len / html_size
                     if ratio < 0.02:
                         total += 3
@@ -736,7 +733,6 @@ class DynamicPageDetector:
         score, reasons = self.score(html, url, kind, status)
         return score >= DYNAMIC_SCORE_THRESHOLD, score, reasons
 
-
 dynamic_detector = DynamicPageDetector()
 
 
@@ -776,21 +772,16 @@ async def fetch_with_playwright(url: str, interact: bool = False) -> tuple:
             )
 
             t0 = time.time()
-            # [v2.25] load zamiast networkidle — BIP lubelskie.pl ma ciagle XHR/polling
-            # ktore nigdy nie osiagaja networkidle, przez co goto timeout'uje lub zbiera
-            # pusty DOM. Po load czekamy jawnie az DataTables wypelni tabele.
             try:
                 await page.goto(url, wait_until="load", timeout=45000)
             except Exception:
                 await page.goto(url, wait_until="domcontentloaded", timeout=30000)
 
             if interact:
-                # Czekaj az tbody wypelni sie wierszami (DataTables/AJAX)
                 try:
                     await page.wait_for_selector("tbody tr", timeout=8000)
                 except Exception:
                     pass
-                # Dodatkowe scrollowanie + czas na AJAX
                 for _ in range(3):
                     await page.evaluate("window.scrollBy(0, document.body.scrollHeight)")
                     await asyncio.sleep(1.2)
@@ -811,17 +802,14 @@ async def fetch_with_playwright(url: str, interact: bool = False) -> tuple:
                 except Exception: pass
 
 
-# ===================== [v2.23] _fetch_links_playwright — mini-BFS =====================
+# ===================== [v2.23 / v2.42] _fetch_links_playwright — mini-BFS =====================
 
 async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
     """
-    [v2.23] Zbiera linki przez Playwright używając mini-BFS (głębokość 1).
-
-    Działa IDENTYCZNIE jak standardowy BFS dla HTML (iter_links_fast), ale
-    zamiast aiohttp używa Playwright do renderowania stron JS.
+    [v2.23 przywrócony w v2.42] Zbiera linki przez Playwright używając mini-BFS (głębokość 1).
 
     Algorytm:
-    1. Załaduj stronę startową przez Playwright (networkidle)
+    1. Załaduj stronę startową przez Playwright
     2. Przewiń stronę aby załadować lazy content
     3. Zbierz WSZYSTKIE <a href> z wyrenderowanego DOM + iframe + document_id z source
     4. Dla każdego nowego linka (allowed_host, not skip):
@@ -829,8 +817,7 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
        - Zbierz kolejne <a href> z tej podstrony
     5. Zwróć kompletny zbiór canonicznych URL-i
 
-    Brak klikania w losowe elementy — zamiast tego podążamy za linkami
-    dokładnie jak standardowy crawler.
+    [v2.42] Używa _host_allowed() z nową logiką "bip w nazwie" (nie same_base_domain).
     """
     try:
         from playwright.async_api import async_playwright
@@ -839,7 +826,6 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
         return set()
 
     found_links: set = set()
-    # Kolejka do mini-BFS: (url, depth)
     bfs_queue: deque = deque()
     bfs_visited: set = set()
 
@@ -851,26 +837,19 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
     pages_crawled = 0
 
     async def _collect_links_from_playwright_page(pw_page, base_url: str) -> set:
-        """
-        Zbiera wszystkie dostępne linki z wyrenderowanej strony Playwright.
-        Identyczna logika jak iter_links_fast, ale operuje na żywym DOM.
-        Obejmuje: <a href>, atrybuty onclick/data-href, document_id, iframe.
-        """
         collected = set()
 
-        # --- 1. Standardowe <a href> z DOM ---
+        # 1. Standardowe <a href> z DOM
         try:
             hrefs = await pw_page.eval_on_selector_all(
                 "a[href]",
                 "els => els.map(e => e.href || '').filter(h => h && !h.startsWith('javascript:') && !h.startsWith('mailto:') && !h.startsWith('tel:'))"
             )
-            # [v2.25] Debug: ile linkow jest w DOM przed filtrowaniem
             if len(hrefs) == 0:
                 raw_count = await pw_page.eval_on_selector_all("a", "els => els.length")
                 raw_count = raw_count[0] if raw_count else 0
                 tbody_rows = await pw_page.eval_on_selector_all("tbody tr", "els => els.length")
                 tbody_rows = tbody_rows[0] if tbody_rows else 0
-                # [v2.26] Dodatkowy debug: tytul i snippet body
                 try:
                     _title = await pw_page.title()
                     _body_snip = await pw_page.evaluate("() => document.body ? document.body.innerText.slice(0,150).replace(/\n/g,' ') : 'NO_BODY'")
@@ -894,7 +873,7 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
         except Exception:
             pass
 
-        # --- 2. document_id z całego source (dla systemów BIP z AJAX) ---
+        # 2. document_id z całego source (dla systemów BIP z AJAX)
         try:
             page_source = await pw_page.content()
             doc_ids = set(re.findall(r'document_id[=\'":\s]+(\d+)', page_source, re.IGNORECASE))
@@ -911,7 +890,7 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
         except Exception:
             pass
 
-        # --- 3. onclick / data-href / data-url —linki w atrybutach JS ---
+        # 3. onclick / data-href / data-url
         try:
             js_attrs = await pw_page.eval_on_selector_all(
                 "[onclick], [data-href], [data-url]",
@@ -922,9 +901,8 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
                 }))"""
             )
             for attrs in js_attrs:
-                for val in (attrs.get("onclick",""), attrs.get("dataHref",""), attrs.get("dataUrl","")):
+                for val in (attrs.get("onclick", ""), attrs.get("dataHref", ""), attrs.get("dataUrl", "")):
                     if not val: continue
-                    # Wyciągnij URL-e z wartości atrybutu
                     for m in re.findall(r"['\"]([^'\"]*?(?:[?&][^'\"]*|/[^'\"]+))['\"]", val):
                         try:
                             abs_u = normalize_url(urljoin(base_url, m))
@@ -938,7 +916,7 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
         except Exception:
             pass
 
-        # --- 4. iframe — zbierz linki z zagnieżdżonych ramek ---
+        # 4. iframe
         try:
             frames = pw_page.frames
             for frame in frames:
@@ -972,7 +950,7 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
                 headless=True,
                 args=[
                     "--no-sandbox", "--disable-setuid-sandbox",
-                    "--ignore-certificate-errors",  # jak ssl=False w aiohttp
+                    "--ignore-certificate-errors",
                     "--disable-blink-features=AutomationControlled",
                 ]
             )
@@ -993,7 +971,6 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
                         lambda r: r.abort()
                     )
 
-                    # [v2.26] goto z logowaniem bledow — SSL ignore + bot bypass headers
                     _goto_ok = False
                     _goto_err = None
                     for _wait in ("load", "domcontentloaded"):
@@ -1008,13 +985,11 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
                         pages_crawled += 1
                         continue
 
-                    # Czekaj az tbody wypelni sie wierszami (DataTables inicjalizacja)
                     try:
                         await page.wait_for_selector("tbody tr", timeout=8000)
                     except Exception:
                         pass
 
-                    # Scrollowanie + czas na doladowanie lazy content
                     for _ in range(2):
                         try:
                             await page.evaluate("window.scrollBy(0, document.body.scrollHeight)")
@@ -1025,7 +1000,6 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
                     final_url = page.url
                     pages_crawled += 1
 
-                    # Zbierz linki z tej strony
                     page_links = await _collect_links_from_playwright_page(page, final_url)
                     new_links = page_links - found_links
                     found_links.update(page_links)
@@ -1037,14 +1011,10 @@ async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
                         flush=True
                     )
 
-                    # Dodaj nowe linki do BFS (głębokość +1) — tylko jeśli to strony HTML
-                    # (nie pliki, nie zbyt długie URL-e)
                     for cu in new_links:
                         if cu in bfs_visited: continue
                         if any(cu.lower().endswith(ext) for ext in ATT_EXT): continue
                         bfs_visited.add(cu)
-                        # depth=0: odwiedzamy podstrony znalezione na stronie startowej
-                        # depth=1: odwiedzamy linki z podstron (jeśli PLAYWRIGHT_MINI_BFS_MAX_PAGES pozwala)
                         if depth < 1:
                             bfs_queue.append((cu, depth + 1))
 
@@ -1122,7 +1092,6 @@ async def playwright_bfs(
                         "**/*.{png,jpg,jpeg,gif,svg,ico,woff,woff2,ttf,eot}",
                         lambda r: r.abort()
                     )
-                    # [v2.25] load zamiast networkidle
                     try:
                         await page.goto(url_bfs, wait_until="load", timeout=45000)
                     except Exception:
@@ -1240,7 +1209,7 @@ def write_summary(diag_rows, new_items_for_mail):
         ok = sum(1 for r in (diag_rows or []) if r.get("status") == "OK")
         start_fail = sum(1 for r in (diag_rows or []) if r.get("status") == "START_FAIL")
         lines = [
-            f"BIP WATCHER v2.41 SUMMARY @ {now_iso()}",
+            f"BIP WATCHER v2.42 SUMMARY @ {now_iso()}",
             f"gminy_total={total} ok={ok} start_fail={start_fail}",
             f"mail_items={len(new_items_for_mail or [])}",
             "",
@@ -1258,8 +1227,6 @@ def write_summary(diag_rows, new_items_for_mail):
 
 
 def append_hits_to_backup(items: list):
-    """[v2.36] Dopisuje znalezione ogłoszenia do pliku JSONL — backup gdy email zawiedzie
-    lub job zostanie przerwany. Plik rośnie między runami, można go przeglądać ręcznie."""
     if not items:
         return
     try:
@@ -1274,9 +1241,6 @@ def append_hits_to_backup(items: list):
 
 
 def _try_send_email_sync():
-    """[v2.36] Wysyła email synchronicznie — wywoływana z CancelledError, panic_save i main().
-    Wysyła zawsze gdy są wyniki — NIE sprawdza shutdown_requested (to błąd z v2.35).
-    Po udanym wysłaniu czyści listę żeby następny run nie wysyłał duplikatów."""
     if not ENABLE_EMAIL:
         return
     items = list(state.new_items_for_mail or [])
@@ -1298,12 +1262,10 @@ def _try_send_email_sync():
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as srv:
             srv.send_message(msg)
         print(f"📨 Email: SENT ✅ ({len(items)} wpisów)")
-        # [v2.36] Po wysłaniu czyść — żeby następny run nie wysyłał tych samych wyników
         state.new_items_for_mail.clear()
         state.mail_dedup.clear()
     except Exception as e:
         print(f"⚠️  Email failed: {e}")
-        # Nie czyść listy — następny run spróbuje wysłać ponownie
 
 
 def panic_save_checkpoint_sync(reason: str = "SIGTERM"):
@@ -1321,7 +1283,7 @@ def panic_save_checkpoint_sync(reason: str = "SIGTERM"):
             out["gmina_frontiers"] = state.gmina_frontiers or {}
             out["gmina_retry"] = state.gmina_retry or {}
             out["dead_urls"] = getattr(state, "dead_urls", {})
-            out["new_items_for_mail"] = list(state.new_items_for_mail or [])  # [v2.36] backup
+            out["new_items_for_mail"] = list(state.new_items_for_mail or [])
             filename = BASE_DIR / f"cache_shard_{shard}.json"
             tmp = str(filename) + ".tmp"
             with open(tmp, "w", encoding="utf-8") as f:
@@ -1336,7 +1298,6 @@ def panic_save_checkpoint_sync(reason: str = "SIGTERM"):
             print(f"🧯 PANIC SAVE (diag) OK [{reason}]", flush=True)
         except Exception as e:
             print(f"⚠️ PANIC diag save failed: {e}", flush=True)
-        # [v2.36] Ostatnia deska ratunku — wyślij email z tym co zdążyliśmy zebrać
         try:
             write_summary(state.diag_rows, state.new_items_for_mail)
             _try_send_email_sync()
@@ -1349,24 +1310,37 @@ import atexit
 atexit.register(panic_save_checkpoint_sync, "atexit")
 
 
+# ===================== URL NORMALIZATION =====================
+
 def normalize_url(url: str) -> str:
+    """
+    [v2.42 Fix1] Przywrócono z v2.28 — blacklista tracking params, sortowanie,
+    usunięcie fragmentu. BEZ dekodowania &amp; — BeautifulSoup robi to automatycznie
+    przy ekstrakcji href z HTML, Playwright zwraca e.href już zdekodowane przez DOM.
+    """
     try:
-        # Dekoduj HTML entities i URL-encoded separatory przed parsowaniem.
-        # Niektóre CMS-y generują: &amp;param=1 lub %26%3Bparam=1
-        raw = url or ""
-        raw = raw.replace("%26", "&").replace("%3B", ";")
-        raw = raw.replace("&amp;", "&")
-        p = urlparse(raw)
-        # Zachowuj wszystkie parametry bez żadnej modyfikacji.
-        # Filtrowanie hostów (exact match) zapewnia że nie wychodzimy poza BIP.
-        # Jedyne co robimy to strip fragment (#...) który nie jest częścią URL dokumentu.
-        return urlunparse(p._replace(fragment=""))
+        p = urlparse(url)
+        q = []
+        for k, v in parse_qsl(p.query, keep_blank_values=True):
+            kl = (k or "").strip().lower()
+            if not kl: continue
+            if kl.startswith("utm_"): continue
+            if kl in {"fbclid", "gclid", "yclid", "sid", "session", "sessionid",
+                      "phpsessid", "jsessionid", "print", "format"}: continue
+            q.append((kl, v))
+        q.sort(key=lambda kv: kv[0])
+        return urlunparse(p._replace(fragment="", query=urlencode(q, doseq=True)))
     except Exception:
         return url
 
 
-
 def canonical_url(url: str) -> str:
+    """
+    [v2.42 Fix2] Usunięto breadcrumb normalizację z v2.41.
+    Problem: /a/b/c/930 i /x/y/c/930 → /c/930 powodowało że dwa RÓŻNE dokumenty
+    z tym samym ID pod różnymi sekcjami były traktowane jako jeden.
+    Przywrócono v2.28: https + strip www + trailing slash + strip /xml.
+    """
     u = normalize_url((url or "").strip())
     try:
         p = urlparse(u)
@@ -1376,28 +1350,15 @@ def canonical_url(url: str) -> str:
         path = p.path or "/"
         if path != "/" and path.endswith("/"): path = path[:-1]
 
-        # [v2.39 Fix3] Pomiń wariant /xml — to samo co HTML (eksport XML Dmosin).
+        # Pomiń wariant /xml — to samo co HTML (eksport XML Dmosin)
         segs = [s for s in path.split("/") if s]
         if segs and segs[-1].lower() == "xml":
             path = "/" + "/".join(segs[:-1]) if len(segs) > 1 else "/"
 
-        # [v2.41 Fix3] Breadcrumb canonical dla WSZYSTKICH hostów.
-        # Problem v2.39: warunek _is_strict_bip_host wykluczał wokiss.pl (Jarocin) i inne
-        # shared providers → ten sam dokument pod N ścieżkami breadcrumba → eksplozja frontieru.
-        # /a/b/c/930 i /x/y/c/930 → normalizuj do /c/930 dla każdego hosta.
-        #
-        # Zabezpieczenia przed fałszywą normalizacją dat w ścieżce:
-        # 1. segs[-1] nie jest rokiem (1900-2099) — /archiwum/2024/3 → NIE normalizuj
-        # 2. segs[-2] nie jest cyfrą — /2024/11 to data rok/miesiąc → NIE normalizuj
-        segs = [s for s in path.split("/") if s]
-        if len(segs) >= 3 and segs[-1].isdigit() and not segs[-2].isdigit():
-            _n = int(segs[-1])
-            if not (1900 <= _n <= 2099):  # nie jest rokiem
-                path = "/" + segs[-2] + "/" + segs[-1]
-
         return urlunparse((scheme, netloc, path, "", p.query, ""))
     except Exception:
         return u
+
 
 def is_home_url(u: str) -> bool:
     try:
@@ -1477,7 +1438,7 @@ def base_domain(host: str) -> str:
     if h.startswith("www."): h = h[4:]
     parts = [p for p in h.split(".") if p]
     if len(parts) <= 2: return h
-    if parts[-2] in {"com","net","org","gov","edu"} and parts[-1] in {"pl","uk"} and len(parts) >= 3:
+    if parts[-2] in {"com", "net", "org", "gov", "edu"} and parts[-1] in {"pl", "uk"} and len(parts) >= 3:
         return ".".join(parts[-3:])
     return ".".join(parts[-2:])
 
@@ -1490,107 +1451,106 @@ def same_base_domain(host_a: str, host_b: str) -> bool:
     if a == b: return True
     return base_domain(a) == base_domain(b)
 
-def _host_allowed(netloc: str, allowed_host: str) -> bool:
-    """
-    [v2.41 Fix2] Exact host match dla WSZYSTKICH — bez wyjątków.
-    Problem v2.40: same_base_domain("sp2.gostyn.pl", "biuletyn.gostyn.pl") = True
-    → szkoły, cmentarze, licea wpadały do frontieru gdy BIP jest na subdomenie.
-    Rozwiązanie: zawsze exact match. www. nadal akceptowane.
-    Universalne: działa dla każdej gminy bez list wyjątków.
-    """
-    h = (netloc or "").lower().strip()
-    ah = (allowed_host or "").lower().strip()
-    if not h or not ah: return False
-    return h == ah or h == "www." + ah or "www." + h == ah
 
-# [v2.40] Shared BIP providers — każda gmina siedzi pod własną subdomeną providera.
-# Crawler powinien być przypięty do konkretnej subdomeny gminy, nie do całej domeny bazowej.
-# Np. ugobsza.bip.lubelskie.pl → akceptuj TYLKO ugobsza.bip.lubelskie.pl
-#     gminabojanowo.biuletyn.net → akceptuj TYLKO gminabojanowo.biuletyn.net
+# ===================== HOST FILTERING — logika "bip w nazwie" =====================
+
+# Znane shared BIP providers — każda gmina pod własną subdomeną.
+# Dla nich zawsze exact match (nie same_base_domain).
 _SHARED_BIP_PROVIDERS = {
     "biuletyn.net", "bip.net.pl", "bip.lubelskie.pl",
     "ssdip.bip.gov.pl", "finn.pl", "madkom.pl", "wokiss.pl",
     "bip.info.pl", "bip.gov.pl",
 }
 
-def _is_shared_bip_provider(host: str) -> bool:
+def _host_has_bip(host: str) -> bool:
+    """
+    [v2.42] Zwraca True jeśli "bip" lub "biuletyn" pojawia się w dowolnym segmencie hostnamu.
+    Dla takich hostów stosujemy exact match — nie wychodzimy na inne subdomeny.
+
+    Przykłady True:
+      bip.gmina.pl               → segment "bip"
+      bip3.gmina.pl              → segment "bip3" (startswith bip)
+      ugdolhobyczow.bip.lubelskie.pl → segment "bip"
+      gmina.bip.gov.pl           → segment "bip"
+      biuletyn.gostyn.pl         → segment "biuletyn"
+      gminaczarna.biuletyn.net   → segment "biuletyn"
+
+    Przykłady False:
+      www.granowo.pl             → brak "bip"/"biuletyn"
+      finn.pl                    → brak (ale jest w _SHARED_BIP_PROVIDERS)
+    """
+    h = (host or "").lower().strip()
+    if h.startswith("www."): h = h[4:]
+    return any(
+        seg == "bip" or seg.startswith("bip") or seg == "biuletyn"
+        for seg in h.split(".")
+    )
+
+def _is_shared_provider(host: str) -> bool:
     """Zwraca True jeśli host jest subdomieną known shared BIP providera."""
     h = (host or "").lower().strip()
     bd = base_domain(h)
     return any(h.endswith("." + p) or h == p or bd == p for p in _SHARED_BIP_PROVIDERS)
 
-def _is_strict_bip_host(host: str) -> bool:
+def _host_allowed(netloc: str, allowed_host: str) -> bool:
     """
-    [v2.38] Zwraca True jeśli host to dedykowana subdomena BIP-u.
-    Wtedy crawler NIE powinien wychodzić na główną domenę gminy.
-    Przykłady True:  bip.miastonowydwor.pl, bip.gminaketrzyn.pl, bip3.wokiss.pl
-    Przykłady False: gminaczarna.biuletyn.net, ugdolhobyczow.bip.lubelskie.pl,
-                     www.granowo.pl, ssdip.bip.gov.pl
-    Reguła: host zaczyna się od 'bip' (bip., bip2., bip3. itp.)
-            ORAZ domena bazowa NIE jest zewnętrznym providerem BIP.
-    """
-    h = (host or "").lower().strip()
-    bd = base_domain(h)
-    if any(h.endswith(p) or bd == p for p in _SHARED_BIP_PROVIDERS):
-        return False
-    # subdomena zaczyna się od 'bip' (bip., bip2., bip3.)
-    sub = h.split(".")[0] if "." in h else ""
-    return bool(sub) and sub.startswith("bip")
+    [v2.42 Fix3] Logika "bip w nazwie":
+    - jeśli allowed_host zawiera "bip" w segmencie LUB jest shared providerem → exact match
+    - w pozostałych przypadkach → same_base_domain (jak v2.28)
 
-def _is_bip_domain(host: str) -> bool:
+    Uzasadnienie:
+    - bip.gmina.pl → exact: nie wychodzimy na szkola.gmina.pl, cmentarze.gmina.pl
+    - ugdolhobyczow.bip.lubelskie.pl → exact: nie wychodzimy na inne.bip.lubelskie.pl
+    - gminaczarna.biuletyn.net → exact (shared provider): nie wychodzimy na inne.biuletyn.net
+    - www.granowo.pl → same_base_domain: granowo.pl = www.granowo.pl, bez subdomen
     """
-    [v2.39 Fix8] Zwraca True jeśli host wygląda jak BIP — uwzględnia różne warianty.
-    Używane do filtrowania wyników emaila — zbieramy ogłoszenia TYLKO z BIP.
+    h = (netloc or "").lower().strip()
+    ah = (allowed_host or "").lower().strip()
+    if not h or not ah: return False
 
-    Warianty BIP w Polsce:
-      - bip.gmina.pl            (subdomena bip.*)
-      - gmina.bip.gov.pl        (pod bip.gov.pl)
-      - gmina.biuletyn.net      (biuletyn.net)
-      - ugdolhobyczow.bip.lubelskie.pl
-      - wokiss.pl, madkom.pl    (shared providers)
-      - finn.pl                 (shared provider)
-    """
-    h = (host or "").lower().strip()
-    if not h:
+    # Exact match zawsze akceptowany (www. w obu kierunkach)
+    if h == ah or h == "www." + ah or "www." + h == ah:
+        return True
+
+    # Dla hostów z "bip" w nazwie lub shared providerów — tylko exact match
+    if _host_has_bip(ah) or _is_shared_provider(ah):
         return False
-    # Subdomena zaczyna się od bip lub biuletyn
-    sub = h.split(".")[0] if "." in h else h
-    if sub.startswith("bip") or sub == "biuletyn":
-        return True
-    # Znane shared BIP providers
-    _BIP_PROVIDERS = {
-        "biuletyn.net", "bip.net.pl", "bip.lubelskie.pl",
-        "ssdip.bip.gov.pl", "finn.pl", "madkom.pl", "wokiss.pl",
-        "bip.info.pl", "bip.gov.pl",
-    }
-    bd = base_domain(h)
-    if any(h.endswith(p) or bd == p for p in _BIP_PROVIDERS):
-        return True
-    # Fragment "bip" w pierwszym segmencie domeny (ebip.*, bipgmina.*, itp.)
-    if "bip" in sub:
-        return True
-    return False
+
+    # Dla pozostałych — same_base_domain (jak v2.28)
+    return same_base_domain(h, ah)
 
 
 def make_allow_url_fn(allowed_host: str):
     """
-    [v2.41 Fix2] Exact host match dla WSZYSTKICH — jeden mechanizm, zero list wyjątków.
-
-    Problem v2.40: trzy tryby (strict/pinned/same_base_domain) — trzeci tryb używał
-    same_base_domain → sp2.gostyn.pl, lo.strzegom.pl, cmentarze.strzegom.pl wpadały
-    do frontieru bo dzieliły domenę bazową z BIP-em gminy.
-
-    Rozwiązanie: zawsze exact match niezależnie od typu hosta.
-    www. nadal akceptowane w obu kierunkach.
-    Logowanie 🔒 dla wszystkich — crawler zawsze jest przypięty do jednego hosta.
+    [v2.42 Fix3] Zwraca funkcję allow_url opartą na _host_allowed.
+    Drugi element krotki (bool) oznacza czy tryb jest "strict" (exact match).
     """
     ah = (allowed_host or "").lower().strip()
+    is_strict = _host_has_bip(ah) or _is_shared_provider(ah)
 
     def allow_url(u: str) -> bool:
-        h = urlparse(u).netloc.lower()
-        return h == ah or h == "www." + ah or "www." + h == ah
+        return _host_allowed(urlparse(u).netloc.lower(), ah)
 
-    return allow_url, True  # zawsze True — zawsze logujemy 🔒
+    return allow_url, is_strict
+
+
+def _is_bip_domain(host: str) -> bool:
+    """
+    Zwraca True jeśli host wygląda jak BIP — używane do filtrowania wyników emaila.
+    Zbieramy ogłoszenia TYLKO z BIP, nie z głównych stron gminy.
+    """
+    h = (host or "").lower().strip()
+    if not h: return False
+    sub = h.split(".")[0] if "." in h else h
+    if sub.startswith("bip") or sub == "biuletyn":
+        return True
+    bd = base_domain(h)
+    if any(h.endswith(p) or bd == p for p in _SHARED_BIP_PROVIDERS):
+        return True
+    if "bip" in sub:
+        return True
+    return False
+
 
 def safe_soup(html: str):
     if not html: return None
@@ -1835,10 +1795,6 @@ def print_hit(tag: str, gmina: str, kw: str, title: str):
     print(f"{tag} {gmina}: [{kw}] -> {shown[:180]}", flush=True)
 
 # ===================== ATTACHMENTS =====================
-# [v2.35] Tylko te rozszerzenia liczą się jako "zmiana załączników" w raporcie.
-# Szeroka lista ATT_EXT pozostaje dla crawlingu (skip href, frontier).
-ATT_SIG_EXT = (".pdf", ".gml", ".zip", ".doc", ".docx")
-
 def attachments_signature(soup: BeautifulSoup, base_url: str) -> set:
     if not soup: return set()
     result = set()
@@ -1935,7 +1891,7 @@ def candidate_start_urls(start_url: str):
                     yield auxu
 
 # ===================== CACHE =====================
-CACHE_SCHEMA = 18  # v2.28
+CACHE_SCHEMA = 18
 
 def _empty_cache():
     return {
@@ -1994,6 +1950,11 @@ def load_cache_v2():
         gf = _ensure_dict("gmina_frontiers")
         gr = _ensure_dict("gmina_retry")
         dead = _ensure_dict("dead_urls")
+
+        # Przywróć new_items_for_mail jeśli zapisane w shardzie
+        if isinstance(c.get("new_items_for_mail"), list):
+            state.new_items_for_mail = list(c["new_items_for_mail"])
+            print(f"📨 Przywrócono {len(state.new_items_for_mail)} wyników z poprzedniego runu")
 
         print(f"📦 Cache loaded: {len(urls)} URLs, {len(content)} content, {len(gseeds)} seeds, {len(gf)} frontiers")
         return c, set(urls.keys()), content, gseeds, gf, gr, dead
@@ -2359,7 +2320,7 @@ def mark_frontier_reset(gkey: str):
 
 
 # ============================================================
-# PHASE 1 — Adaptacyjny BFS z automatycznym Playwright fallback (v2.23)
+# PHASE 1 — Adaptacyjny BFS z automatycznym Playwright fallback
 # ============================================================
 
 def _extract_links_from_html(html: str, base_url: str, allowed_host: str) -> set:
@@ -2384,36 +2345,23 @@ def _html_visible_text_len(html: str) -> int:
 
 def _needs_playwright_for_links(html: str, url: str, aiohttp_links_count: int) -> tuple[bool, str]:
     """
-    [v2.23] Automatyczna decyzja: czy ta strona potrzebuje Playwright do zbierania linków?
-    
-    Kryteria (każde wystarczy):
-    1. DynamicPageDetector wykrył JS (score >= threshold)
-    2. Za mało linków z aiohttp (< PHASE1_MIN_LINKS_FOR_PW)
-    3. HTML jest duży ale widocznego tekstu mało (SPA pattern)
-    
-    NIE używamy hardcodowanych list URL hints — decyzja opiera się wyłącznie
-    na analizie pobranego HTML, co jest bardziej niezawodne.
+    Automatyczna decyzja: czy ta strona potrzebuje Playwright do zbierania linków?
     """
     if not html:
         return True, "no_html"
 
-    # Kryterium 1: DynamicPageDetector
     is_dyn, dyn_score, dyn_reasons = dynamic_detector.is_dynamic(html=html, url=url)
     if is_dyn:
         return True, f"js_detected(score={dyn_score},reasons={dyn_reasons[:2]})"
 
-    # Kryterium 2: Za mało linków — strona może renderować listę przez JS
     if aiohttp_links_count < PHASE1_MIN_LINKS_FOR_PW:
         return True, f"few_links({aiohttp_links_count}<{PHASE1_MIN_LINKS_FOR_PW})"
 
-    # Kryterium 3: Duży HTML, mało tekstu — wzorzec SPA/lazy rendering
     if len(html) > 8000:
         text_len = _html_visible_text_len(html)
         if text_len < 300:
             return True, f"spa_pattern(html={len(html)},text={text_len})"
 
-    # [v2.24] Kryterium 4: pusta tabela AJAX
-    # bip.lubelskie.pl - tabela ogloszen ladowana przez DataTables/XHR.
     try:
         soup_check = safe_soup(html)
         if soup_check:
@@ -2427,7 +2375,6 @@ def _needs_playwright_for_links(html: str, url: str, aiohttp_links_count: int) -
     except Exception:
         pass
 
-    # [v2.24] Kryterium 5: sygnaly AJAX bez document_id w source
     _html_lk5 = html.lower()
     _ajax_sigs_k5 = ["datatables", "datatable", "ajax.reload", "ajax: {", "ajax:{",
                      "datatables.net", "table.ajax", "loadingoverlay", "$.ajax("]
@@ -2448,13 +2395,11 @@ async def phase1_full_crawl(
     diag,
 ) -> tuple:
     """
-    Phase1 v2.23 — adaptacyjny BFS z automatycznym Playwright fallback.
-    
-    Dla każdej strony w BFS:
-    1. Pobierz przez aiohttp
-    2. Uruchom _needs_playwright_for_links() na wyniku
-    3. Jeśli tak → uruchom _fetch_links_playwright() (mini-BFS przez Playwright)
-    4. Połącz linki z obu źródeł → frontier Phase2
+    Phase1 — adaptacyjny BFS z automatycznym Playwright fallback.
+
+    [v2.42 Fix6] Playwright używa _fetch_links_playwright() (mini-BFS, głębokość 1)
+    zamiast fetch_with_playwright() (tylko jedna strona). Dzięki temu dla stron JS
+    z listami generowanymi dynamicznie zbieramy pełny zbiór linków.
     """
     if state.shutdown_requested:
         return [], {"status": "SHUTDOWN"}
@@ -2507,11 +2452,9 @@ async def phase1_full_crawl(
         "/", "", "", ""
     ))
 
-    # [v2.38] strict mode dla dedykowanych subdomen bip.*
-    allow_url, _strict_bip = make_allow_url_fn(allowed_host)
-    if _strict_bip:
-        _mode = "strict BIP" if _is_strict_bip_host(allowed_host) else "pinned shared BIP"
-        print(f"  🔒 [Phase1] {_mode} [{gmina}]: tylko {allowed_host}", flush=True)
+    allow_url, is_strict = make_allow_url_fn(allowed_host)
+    _mode = "strict (bip w nazwie)" if is_strict else "same_base_domain"
+    print(f"  🔒 [Phase1] {_mode} [{gmina}]: allowed_host={allowed_host}", flush=True)
 
     seeds = {}
     visited = set()
@@ -2578,10 +2521,8 @@ async def phase1_full_crawl(
 
         pages_crawled += 1
 
-        # --- Linki przez aiohttp ---
         aiohttp_links = _extract_links_from_html(html, final, allowed_host)
 
-        # --- Zbierz home data (depth=0) ---
         if depth == 0 and not home_links:
             home_links = set(aiohttp_links)
             try:
@@ -2593,10 +2534,8 @@ async def phase1_full_crawl(
                 home_text_for_phase2 = ""
             print(f"  🏠 [{gmina}] home_links={len(home_links)} home_text={len(home_text_for_phase2)}ch", flush=True)
 
-        # --- [v2.23] Automatyczna decyzja czy użyć Playwright ---
         use_pw, pw_reason = _needs_playwright_for_links(html, final, len(aiohttp_links))
 
-        # Debug dla pierwszych 30 stron
         if pages_crawled <= 30:
             try:
                 _lnk_dbg = len(safe_soup(html).find_all("a", href=True)) if safe_soup(html) else 0
@@ -2611,9 +2550,9 @@ async def phase1_full_crawl(
                 flush=True
             )
 
-        # --- [v2.28] Playwright dla linkow — pobierz TYLKO te strone, bez mini-BFS ---
-        # Glowny BFS sam odwiedzi kazdy znaleziony link (przez aiohttp lub PW).
-        # Nie potrzebujemy osobnego sub-crawlera — to bylo zrodlem petli i eksplozji.
+        # [v2.42 Fix6] Playwright mini-BFS — przywrócony z v2.28
+        # _fetch_links_playwright() odwiedza stronę + jej podstrony (głębokość 1)
+        # zamiast tylko jednej strony (fetch_with_playwright z v2.41)
         pw_links = set()
         if use_pw:
             if pw_fetches >= PHASE1_MAX_PW_FETCHES:
@@ -2622,32 +2561,25 @@ async def phase1_full_crawl(
         if use_pw:
             pw_fetches += 1
             print(
-                f"  🎭 [{gmina}] PW fetch-for-links @ depth={depth} "
+                f"  🎭 [{gmina}] PW mini-BFS @ depth={depth} "
                 f"reason={pw_reason} url={url[:70]}",
                 flush=True
             )
             try:
-                pw_html, pw_final, pw_kind, _, _, pw_err, pw_ms, _ = await fetch_with_playwright(
-                    final or url, interact=True
+                pw_links = await _fetch_links_playwright(final or url, allowed_host)
+                new_from_pw = len(pw_links - aiohttp_links)
+                pw_extra_links += new_from_pw
+                print(
+                    f"  🎭 PW mini-BFS result: {len(pw_links)} linków "
+                    f"(+{new_from_pw} nowych ponad aiohttp) @ {url[:60]}",
+                    flush=True
                 )
-                if pw_html:
-                    pw_links = _extract_links_from_html(pw_html, pw_final or final or url, allowed_host)
-                    new_from_pw = len(pw_links - aiohttp_links)
-                    pw_extra_links += new_from_pw
-                    print(
-                        f"  🎭 PW links: {len(pw_links)} ({new_from_pw} nowych) "
-                        f"html={len(pw_html)}B ms={pw_ms} @ {url[:60]}",
-                        flush=True
-                    )
-                    diag["counts"]["pw_mini_bfs_calls"] = int(diag["counts"].get("pw_mini_bfs_calls", 0)) + 1
-                    diag["counts"]["pw_mini_bfs_extra_links"] = int(diag["counts"].get("pw_mini_bfs_extra_links", 0)) + new_from_pw
-                else:
-                    print(f"  🎭 PW fetch-for-links: brak HTML ({pw_err}) @ {url[:60]}", flush=True)
+                diag["counts"]["pw_mini_bfs_calls"] = int(diag["counts"].get("pw_mini_bfs_calls", 0)) + 1
+                diag["counts"]["pw_mini_bfs_extra_links"] = int(diag["counts"].get("pw_mini_bfs_extra_links", 0)) + new_from_pw
             except Exception as ex:
                 diag["notes"].append(f"PW_ERR {url[:50]}: {str(ex)[:60]}")
-                print(f"    ⚠️ PW fetch-for-links error: {ex}", flush=True)
+                print(f"    ⚠️ PW mini-BFS error: {ex}", flush=True)
 
-        # --- Połącz linki z obu źródeł ---
         all_links = aiohttp_links | pw_links
 
         for cu in all_links:
@@ -2668,9 +2600,6 @@ async def phase1_full_crawl(
                 flush=True
             )
 
-        # [v2.31] Frontier checkpoint co 500 stron Phase1 — zabezpieczenie przed
-        # przerwaniem joba przez GitHub Actions timeout (325min).
-        # save_shard_cache_and_commit zapisuje na dysk; YAML (if: always()) pushuje do git.
         if pages_crawled % PHASE1_FRONTIER_CHECKPOINT_EVERY == 0 and pages_crawled > 0 and allowed_host:
             _p1_gkey = gmina_cache_key(gmina, "https://" + allowed_host)
             _partial_urls = sorted(seeds.keys(), key=lambda u: -seeds.get(u, 0))
@@ -2716,13 +2645,12 @@ async def phase1_full_crawl(
 
 
 # ============================================================
-# PHASE 2 — content check + Playwright fallback dla treści (v2.23)
+# PHASE 2 — content check + Playwright fallback dla treści
 # ============================================================
 
 def _extract_content_text(soup_orig, url: str, home_text: str = "") -> tuple:
     """
     Wyciąga tekst TYLKO z treści strony, z pominięciem menu nawigacyjnego.
-    Zachowana bez zmian z v2.22 (FIX 2 już zawarty).
     """
     import copy
 
@@ -2736,7 +2664,6 @@ def _extract_content_text(soup_orig, url: str, home_text: str = "") -> tuple:
 
     full_text_raw = re.sub(r"\s+", " ", soup_orig.get_text(" ", strip=True)).strip()
 
-    # Strategia 1: Strony DETAIL — szukaj sekcji "Szczegóły dokumentu"
     if _is_detail:
         anchor = None
         for tag in soup_orig.find_all(["h1", "h2", "h3", "h4"]):
@@ -2752,7 +2679,6 @@ def _extract_content_text(soup_orig, url: str, home_text: str = "") -> tuple:
             if len(content) > 50:
                 return f"{all_headings} {content}", len(full_text_raw) - len(content), "detail_section"
 
-    # Strategia 2: Główny kontener treści
     for sel in [
         "#content", "#tresc", "#main-content", ".content", ".tresc",
         "main", "article", "[role='main']", "#page-content",
@@ -2778,7 +2704,6 @@ def _extract_content_text(soup_orig, url: str, home_text: str = "") -> tuple:
         except Exception:
             continue
 
-    # Strategia 3: Usuń nav/header/footer/aside
     soup2 = copy.copy(soup_orig)
     removed_tags = 0
     for tag in soup2.find_all(["nav", "header", "footer", "aside"]):
@@ -2790,7 +2715,6 @@ def _extract_content_text(soup_orig, url: str, home_text: str = "") -> tuple:
         if removed > 500:
             return f"{all_headings} {stripped}", removed, "strip_nav"
 
-    # Strategia 4: Sliding window z home_text
     if home_text and len(home_text) > 200:
         clean = full_text_raw
         cl = clean.lower()
@@ -2822,14 +2746,10 @@ async def phase2_focus(
     home_url: str = "",
 ) -> tuple:
     """
-    Phase2 v2.23 — sprawdzanie treści + równoległy Playwright fallback.
-    
-    Dla każdej strony:
-    1. Pobierz przez aiohttp
-    2. Sprawdź jakość HTML (widoczny tekst, dynamic detector)
-    3. Jeśli HTML wygląda jak JS shell → pobierz przez Playwright (wyrenderowana treść)
-    4. Keyword match na treści z obu źródeł
-    5. Linki znalezione przez Playwright też trafiają do kolejki (jak iter_links_fast)
+    Phase2 — sprawdzanie treści + Playwright fallback.
+
+    [v2.42 Fix4] Brak blob_dedup i context_dedup — proste raportowanie jak v2.28.
+    [v2.42 Fix5] dead_urls nie blokuje URL-i w frontierze.
     """
     if state.shutdown_requested:
         return [], {"status": "SHUTDOWN"}
@@ -2837,6 +2757,7 @@ async def phase2_focus(
     found = []
     gkey = gmina_cache_key(gmina, "https://" + allowed_host)
     dead_key = f"dead_{gkey}"
+    # dead_set używany tylko do liczenia w diag — NIE blokuje URL-i
     dead_set = set(state.dead_urls.get(dead_key, []) or [])
     retry_seen = set()
 
@@ -2847,6 +2768,7 @@ async def phase2_focus(
 
     q = deque()
     seen_in_frontier = set()
+    # [v2.42 Fix5] NIE filtrujemy przez dead_set przy budowaniu kolejki
     for item in raw_frontier:
         try:
             fu = item[0] if isinstance(item, list) else str(item)
@@ -2854,7 +2776,7 @@ async def phase2_focus(
         except Exception:
             continue
         cu = _canon(fu)
-        if cu and cu not in seen_in_frontier and cu not in dead_set:
+        if cu and cu not in seen_in_frontier:
             seen_in_frontier.add(cu)
             q.append((cu, fd))
 
@@ -2864,7 +2786,7 @@ async def phase2_focus(
     retry_added = 0
     for u in retry_list:
         cu = _canon(u)
-        if cu and cu not in seen_in_frontier and cu not in dead_set:
+        if cu and cu not in seen_in_frontier:
             seen_in_frontier.add(cu)
             q.appendleft((cu, 0))
             retry_seen.add(sha1(cu))
@@ -2877,21 +2799,15 @@ async def phase2_focus(
 
     print(
         f"  🔍 Phase2 start [{gmina}]: "
-        f"frontier={total_in_frontier} | retry={retry_added} | dead={len(dead_set)}",
+        f"frontier={total_in_frontier} | retry={retry_added} | dead_logged={len(dead_set)}",
         flush=True
     )
 
-    # [v2.38] strict mode dla dedykowanych subdomen bip.*
-    allow_url, _strict_bip = make_allow_url_fn(allowed_host)
-    if _strict_bip:
-        _mode = "strict BIP" if _is_strict_bip_host(allowed_host) else "pinned shared BIP"
-        print(f"  🔒 [Phase2] {_mode} [{gmina}]: tylko {allowed_host}", flush=True)
+    allow_url, is_strict = make_allow_url_fn(allowed_host)
+    _mode = "strict (bip w nazwie)" if is_strict else "same_base_domain"
+    print(f"  🔒 [Phase2] {_mode} [{gmina}]: allowed_host={allowed_host}", flush=True)
 
-    # [v2.41 Fix5] Odfiltruj śmieciowe URL-e ze starego frontieru.
-    # Problem: stare runy z same_base_domain wpuszczały lo.strzegom.pl, cmentarze.strzegom.pl
-    # itp. do frontieru. Fix2 zapobiega dodawaniu nowych złych URL-i ale nie czyści starych.
-    # Rozwiązanie: przy każdym starcie Phase2 filtruj frontier przez allow_url().
-    # Jednorazowe — po pierwszym runie złe URL-e znikają z cache na zawsze.
+    # [v2.41 Fix5] Odfiltruj śmieciowe URL-e ze starego frontieru (stary same_base_domain)
     filtered_out = 0
     filtered_q = deque()
     for cu, fd in q:
@@ -2901,28 +2817,20 @@ async def phase2_focus(
             filtered_out += 1
     if filtered_out > 0:
         print(
-            f"  🧹 [v2.41] Odfiltrowano {filtered_out} URL-i spoza {allowed_host} "
+            f"  🧹 Odfiltrowano {filtered_out} URL-i spoza {allowed_host} "
             f"(stary frontier) [{gmina}]",
             flush=True
         )
     q = filtered_q
+
     pages_ok = 0
     pages_skipped_ttl = 0
     new_links_added = 0
     pw_content_fetches = 0
-    # [v2.32] Deduplikacja po hash treści — ten sam blob = ten sam dokument
-    # pod innym URL → nie reportujemy drugi raz w tym samym runie
-    blob_hashes_this_run: set = set()
-    # [v2.35] Deduplikacja po hash kontekstu keyword-a — ten sam fragment wokół
-    # keyword-a na 2+ stronach → widget boczny → nie reportujemy kolejnych trafień
-    context_hashes_this_run: dict = {}  # hash → count
 
     while q and not state.shutdown_requested:
         if RUN_DEADLINE_MIN > 0:
             elapsed_min = (time.time() - GLOBAL_T0) / 60
-            # [v2.39 Fix7] Graceful shutdown 20 min przed twardym limitem GitHub Actions
-            # Mamy 6h na run, kończymy ok. 5h20min → zostaje ~40min zapasu.
-            # 20 minut daje pewność że frontier i cache zapisze się w całości.
             _soft_limit = RUN_DEADLINE_MIN - 20
             if elapsed_min > _soft_limit and not state.shutdown_requested:
                 print(
@@ -2932,7 +2840,6 @@ async def phase2_focus(
                 )
                 state.request_shutdown()
                 break
-            # Twardy limit jako fallback
             if elapsed_min > RUN_DEADLINE_MIN:
                 state.request_shutdown()
                 break
@@ -2953,7 +2860,6 @@ async def phase2_focus(
 
         url_dedup = sha1(canonical_url(url))
         prev_pre = content_seen.get(url_dedup)
-        is_listing = is_listing_url(url) or is_home_url(url)
 
         if USE_CACHE and prev_pre:
             status_prev = prev_pre.get("status")
@@ -2968,9 +2874,7 @@ async def phase2_focus(
                     pages_skipped_ttl += 1
                     continue
             elif status_prev == "PW_PROCESSING":
-                # [v2.41 Fix6] PW_PROCESSING = placeholder ustawiony gdy Playwright
-                # był w trakcie przetwarzania. Traktuj jak NO_MATCH — sprawdź ponownie
-                # po standardowym TTL. Bez tego URL wracał do pętli w nieskończoność.
+                # [v2.41 Fix6] PW_PROCESSING traktowany jak NO_MATCH w TTL
                 if not should_recheck_no_match(prev_pre):
                     diag["counts"]["pw_processing_ttl_skip"] += 1
                     pages_skipped_ttl += 1
@@ -2992,23 +2896,17 @@ async def phase2_focus(
         if prev_pre and prev_pre.get("last_modified"):
             extra_headers["If-Modified-Since"] = prev_pre["last_modified"]
 
-        # --- 1. Pobierz przez aiohttp ---
         html, final, kind, status, ctype, err, ms, resp_meta = await fetch_conditional(
             session_crawl, url, extra_headers
         )
 
-        # --- 2. [v2.23] Zdecyduj czy potrzebny Playwright do treści ---
-        #    Playwright pobiera treść gdy aiohttp fail LUB gdy strona wygląda na JS
+        # Binaria — skip przed Playwright
+        if is_download_url(url):
+            if kind not in ("pdf", "not_modified", "blocked"):
+                kind = "pdf"
+
         need_pw_for_content = False
         pw_content_reason = ""
-
-        # [v2.40 Fix3] is_download_url jako PIERWSZY warunek — zanim cokolwiek innego.
-        # Problem Czarne: .dav plik → js_detected(score=6) → Playwright → "Download is starting"
-        # → crash całego joba. Binaria nigdy nie powinny trafiać do Playwright.
-        if is_download_url(url):
-            # Traktuj jak PDF — skip bez Playwright
-            if kind not in ("pdf", "not_modified", "blocked"):
-                kind = "pdf"  # przekieruj do ścieżki skip
 
         if kind in ("pdf", "not_modified", "blocked"):
             pass
@@ -3027,20 +2925,13 @@ async def phase2_focus(
                     need_pw_for_content = True
                     pw_content_reason = f"js_detected(score={dyn_score})"
 
-            # [v2.32] empty_ajax_table usunięte z Phase2 — było źródłem fałszywych
-            # Playwright triggers dla stron detail które nigdy nie mają tabel listingów.
-            # Kryterium pozostaje tylko w Phase1 (_needs_playwright_for_links).
-
             if not need_pw_for_content:
-                # [v2.24] Sprawdzenie 4: strona detail z za mala trescia
-                # action=details&document_id=... powinna miec >600 znakow
                 _url_l = (url or "").lower()
                 if ("action=details" in _url_l or "document_id=" in _url_l) and text_len < 600:
                     need_pw_for_content = True
                     pw_content_reason = f"detail_too_short(text={text_len}<600)"
 
             if not need_pw_for_content:
-                # [v2.24] Sprawdzenie 5: sygnaly AJAX bez danych
                 _html_l = html.lower()
                 _ajax_sigs = ["datatables", "ajax.reload", "ajax: {", "ajax:{",
                               "loadingoverlay", "spinner-border", "$.ajax("]
@@ -3050,16 +2941,14 @@ async def phase2_focus(
                     need_pw_for_content = True
                     pw_content_reason = "ajax_signals_no_data"
 
-        # --- 3. [v2.23] Playwright dla treści (jeśli potrzebny) ---
         pw_extra_links_for_phase2: set = set()
 
-        # [v2.39 Fix5] Nie odpalaj Playwright jeśli zostało <5 min do deadline.
-        # Playwright blokuje pętlę na 30s/call — przy małym oknie lepiej zapisać frontier.
         if need_pw_for_content and RUN_DEADLINE_MIN > 0:
             _remaining = RUN_DEADLINE_MIN - (time.time() - GLOBAL_T0) / 60
             if _remaining < 5:
                 need_pw_for_content = False
                 pw_content_reason = f"skipped_near_deadline(remaining={_remaining:.1f}min)"
+
         if need_pw_for_content and kind not in ("pdf", "not_modified", "blocked"):
             pw_content_fetches += 1
             print(
@@ -3070,10 +2959,7 @@ async def phase2_focus(
                 await fetch_with_playwright(url, interact=True)
 
             if pw_kind == "html" and pw_html:
-                # [v2.41] Gdy Playwright dał redirect na stronę główną BIP —
-                # oryginalny URL jest martwym linkiem (endpoint systemowy, API, eksport).
-                # Universalne: działa dla każdego CMS który redirectuje nieistniejące endpointy
-                # na home (np. /auction/628/getAuctionExport/auction → strona główna Oleszyce).
+                # home_redirect_dead — Playwright zwrócił stronę główną zamiast dokumentu
                 _pw_final_canon = _canon(pw_final or url)
                 _home_canon = _canon(home_url) if home_url else ""
                 if _home_canon and _pw_final_canon == _home_canon and _pw_final_canon != _canon(url):
@@ -3082,20 +2968,10 @@ async def phase2_focus(
                     print(f"  💀 home_redirect_dead: {url[:70]}", flush=True)
                     continue
 
-                # Playwright dał wyrenderowany HTML — użyj go zamiast/obok aiohttp
-                print(
-                    f"  🎭 Phase2 Playwright OK: {len(pw_html)}B @ {url[:60]}",
-                    flush=True
-                )
-                # Aktualizuj zmienne robocze — soup i att_set będą przeliczone z pw_html
-                # na linii pages_ok += 1 → soup = safe_soup(html) gdzie html = pw_html
+                print(f"  🎭 Phase2 Playwright OK: {len(pw_html)}B @ {url[:60]}", flush=True)
                 html, final, kind, status, ctype = pw_html, pw_final, pw_kind, pw_status, pw_ctype
 
-                # [v2.40 Fix2] Zapisz placeholder pod ORYGINALNYM url_dedup już teraz.
-                # Problem Jarocin: aiohttp http_err → Playwright OK → final_url inny niż url
-                # → status zapisywany tylko pod final_url → oryginalny URL nie dostaje statusu
-                # → pw_extra_links_for_phase2 dodaje go z powrotem → 860x ten sam URL w pętli.
-                # Rozwiązanie: od razu oznacz oryginalny URL żeby seen_in_frontier go nie wpuściło.
+                # PW_PROCESSING placeholder — zapobiega pętli (Fix v2.41)
                 async with state.cache_lock:
                     if url_dedup not in content_seen:
                         content_seen[url_dedup] = {
@@ -3105,16 +2981,9 @@ async def phase2_focus(
                             "keywords": [], "att_sig": "", "status": "PW_PROCESSING",
                         }
 
-                # [v2.41] Gdy Playwright dał redirect (final_url != url), dodaj final_c
-                # do seen_in_frontier natychmiast — bez tego final_c może wrócić do kolejki
-                # przez pw_extra_links lub następny Phase1, powodując nieskończoną pętlę.
-                # Problem Kamieniec/wokiss: /rada-gmi → redirect → /organy-wladzy-publiczne
-                # → Playwright zbiera linki → /organy-wladzy-publiczne dodany do frontieru
-                # → przy następnym wejściu znowu aiohttp_failed → znowu Playwright → pętla.
                 _pw_final_c = _canon(pw_final or url)
                 if _pw_final_c and _pw_final_c != _canon(url):
                     seen_in_frontier.add(_pw_final_c)
-                    # Też zapisz placeholder w content_seen żeby TTL działał
                     _pw_final_dedup = sha1(canonical_url(_pw_final_c))
                     async with state.cache_lock:
                         if _pw_final_dedup not in content_seen:
@@ -3125,9 +2994,6 @@ async def phase2_focus(
                                 "keywords": [], "att_sig": "", "status": "PW_PROCESSING",
                             }
 
-                # [v2.23] Zbierz też linki z wyrenderowanej strony — mogą być nowe
-                # [v2.41] Dodaj tylko URL-e których nie ma jeszcze w content_seen —
-                # linki nawigacyjne już odwiedzone nie powinny trafiać z powrotem do frontieru.
                 pw_soup_links = safe_soup(pw_html)
                 if pw_soup_links:
                     for abs_u, _txt in iter_links_fast(pw_soup_links, pw_final or url):
@@ -3135,17 +3001,13 @@ async def phase2_focus(
                         if not cu_pw or not allow_url(cu_pw): continue
                         if cu_pw in seen_in_frontier: continue
                         if any(cu_pw.lower().endswith(ext) for ext in ATT_EXT): continue
-                        # Nie dodawaj URL-i które były już przetworzone (mają status w content_seen)
                         _cu_pw_dedup = sha1(canonical_url(cu_pw))
                         if _cu_pw_dedup in content_seen: continue
                         pw_extra_links_for_phase2.add(cu_pw)
 
                 diag["counts"]["pw_content_ok"] = int(diag["counts"].get("pw_content_ok", 0)) + 1
             else:
-                print(
-                    f"  🎭 Phase2 Playwright FAIL: {pw_err or '?'} @ {url[:60]}",
-                    flush=True
-                )
+                print(f"  🎭 Phase2 Playwright FAIL: {pw_err or '?'} @ {url[:60]}", flush=True)
                 diag["counts"]["pw_content_fail"] = int(diag["counts"].get("pw_content_fail", 0)) + 1
 
         final_c = _canon(final or url)
@@ -3155,7 +3017,7 @@ async def phase2_focus(
         if final_c != url:
             diag["counts"]["redirected"] += 1
 
-        # --- Obsługa stanów specjalnych ---
+        # Obsługa stanów specjalnych
         if kind == "not_modified":
             async with state.cache_lock:
                 if url_dedup_final in content_seen:
@@ -3223,12 +3085,7 @@ async def phase2_focus(
             soup, url=url, home_text=home_text
         )
 
-        # [v2.41] Post-blob Playwright retry — gdy blob jest za mały przy dużym HTML
-        # i Playwright nie był jeszcze użyty. Dotyczy serwerów które zwracają duży layout
-        # nawigacyjny (bip.lubelskie.pl: 214kB HTML, 312ch blob po ekstrakcji nawigacji).
-        # text_len był wystarczający żeby nie triggerować Playwright przed ekstrakcją,
-        # ale po ekstrakcji okazuje się że treść dokumentu to tylko kilkaset znaków.
-        # Universalne: działa dla każdego serwera z takim zachowaniem.
+        # Post-blob Playwright retry — mały blob przy dużym HTML (bip.lubelskie.pl)
         if (not need_pw_for_content and len(blob) < 400 and len(html) > 50000):
             _remaining = (RUN_DEADLINE_MIN - (time.time() - GLOBAL_T0) / 60) if RUN_DEADLINE_MIN > 0 else 999
             if _remaining >= 5:
@@ -3250,43 +3107,10 @@ async def phase2_focus(
                         blob, _removed_chars, _blob_method = _extract_content_text(
                             soup, url=url, home_text=home_text
                         )
-                        print(
-                            f"  🎭 Phase2 Playwright retry OK: blob={len(blob)} @ {url[:60]}",
-                            flush=True
-                        )
+                        print(f"  🎭 Phase2 Playwright retry OK: blob={len(blob)} @ {url[:60]}", flush=True)
                     diag["counts"]["pw_small_blob_retry"] = int(diag["counts"].get("pw_small_blob_retry", 0)) + 1
 
-        # Oblicz hash blob-a już tutaj — potrzebny do deduplikacji i raportowania
-        _blob_hash = sha1(blob[:5000])
-        _blob_is_duplicate = _blob_hash in blob_hashes_this_run
-
-        # [v2.41] Gdy blob jest duplikatem i URL redirectował (final_c != url_c) →
-        # oryginalny URL jest martwym linkiem (strona błędu, catch-all, nieistniejący endpoint).
-        # Oznacz jako dead żeby nie wracał co 168h na zawsze.
-        # Warunek redirect (final_c != url) eliminuje false positive dla stron z przypadkowo
-        # identyczną treścią bez redirectu.
-        if _blob_is_duplicate and final_c != _canon(url):
-            dead_add(dead_key, dead_set, _canon(url))
-            diag["counts"]["blob_dedup_dead"] = int(diag["counts"].get("blob_dedup_dead", 0)) + 1
-
-        # [v2.32] Deduplikacja po hash blob-a — ten sam hash = ta sama treść
-        # pod innym URL (np. /110/240/ vs /50/240/) → pomijamy raport
-        if not _blob_is_duplicate and len(blob) > 100:
-            blob_hashes_this_run.add(_blob_hash)
-
         ok_any, kw_any = keyword_match_in_blob(blob)
-
-        # [v2.35] Deduplikacja po hash kontekstu keyword-a
-        # Ten sam fragment (~150 znaków) wokół keyword-a na 2+ stronach → widget boczny
-        _context_is_duplicate = False
-        if ok_any and kw_any:
-            _kw_pos = blob.lower().find(kw_any.lower())
-            if _kw_pos >= 0:
-                _ctx_fragment = blob[max(0, _kw_pos - 60): _kw_pos + 90].lower()
-                _ctx_hash = sha1(_ctx_fragment)
-                context_hashes_this_run[_ctx_hash] = context_hashes_this_run.get(_ctx_hash, 0) + 1
-                if context_hashes_this_run[_ctx_hash] >= 2:
-                    _context_is_duplicate = True
 
         # Diagnostyka
         _ul = (url or "").lower()
@@ -3311,16 +3135,12 @@ async def phase2_focus(
         if not page_title:
             page_title = final_c
 
+        # [v2.42 Fix4] Prosta logika statusu — brak blob_dedup/context_dedup jak v2.28
         if prev is None:
             status_new = "NOWE" if ok_any else "NO_MATCH"
         else:
             if ok_any:
-                # [v2.41 Fix4] prev.status == NO_MATCH + keyword znaleziony = NOWE odkrycie.
-                # Problem Wiązów: Playwright redirect m,5096→a,22784 → a,22784 był już
-                # w content_seen jako NO_MATCH (poprzedni etap tego runu, brak keyword) →
-                # prev!=None → status_new=HIT → nie raportowane → znalezione=0.
-                # NO_MATCH znaczy "sprawdzono, nie było keyword" — jeśli teraz jest → NOWE.
-                # Dotyczy też aliasowania URL-i przez różne redirecty Playwright.
+                # [v2.41 Fix4] NO_MATCH + keyword = NOWE odkrycie (zachowane)
                 if prev.get("status") == "NO_MATCH":
                     status_new = "NOWE"
                 else:
@@ -3349,32 +3169,22 @@ async def phase2_focus(
             if ALIAS_FINAL_AND_SOURCE_KEYS and url_dedup != url_dedup_final:
                 content_seen[url_dedup] = meta.copy()
 
+        # [v2.42 Fix4] Proste raportowanie bez blob_dedup/context_dedup
         if status_new in {"NOWE", "ZMIANA"}:
             diag["counts"][f"hit_{status_new.lower()}"] += 1
-            if final_c not in state.reported_urls_this_run and not _blob_is_duplicate and not _context_is_duplicate:
+            if final_c not in state.reported_urls_this_run:
                 state.reported_urls_this_run.add(final_c)
                 print_hit(f"🟢 {status_new}", gmina, kw_any, page_title)
                 found.append((gmina, kw_any, page_title, final_c, status_new))
             else:
-                if _blob_is_duplicate:
-                    diag["counts"]["blob_dedup_skipped"] += 1
-                    print(f"  🔁 blob_dedup [{gmina}]: pominięto duplikat treści @ {url[:60]}", flush=True)
-                elif _context_is_duplicate:
-                    diag["counts"]["context_dedup_skipped"] += 1
-                    print(f"  🔁 ctx_dedup [{gmina}]: pominięto duplikat kontekstu kw={kw_any!r} @ {url[:60]}", flush=True)
-                else:
-                    diag["counts"]["dedup_skipped"] += 1
+                diag["counts"]["dedup_skipped"] += 1
 
-        # --- [v2.23] Linki z HTML (aiohttp) → kolejka ---
-        # [v2.41] Gdy blob jest duplikatem → ta strona zwraca tę samą treść co poprzednia
-        # (strona błędu, catch-all, nawigacja bez treści). Jej linki nawigacyjne są identyczne
-        # z linkami już zebranymi — nie dodawaj ich do kolejki bo frontier będzie rósł.
-        # LINK_HITS działa ZAWSZE — keyword w anchor text raportujemy niezależnie od duplikatu.
+        # Linki z HTML → kolejka
         for abs_u, txt in iter_links_fast(soup, final_c):
             cu = _canon(abs_u)
-            if not cu or not allow_url(cu) or cu in dead_set: continue
+            if not cu or not allow_url(cu): continue
+            # [v2.42 Fix5] NIE sprawdzamy cu in dead_set — dead nie blokuje
 
-            # LINK_HITS: zawsze sprawdzaj anchor text, nawet na stronie błędu
             if ENABLE_LINK_HITS and not is_download_url(cu) and cu not in seen_in_frontier:
                 filename = urlparse(cu).path.split("/")[-1]
                 ok_link, kw_link = keyword_match_in_blob(f"{txt} {filename}")
@@ -3394,24 +3204,19 @@ async def phase2_focus(
                         found.append((gmina, kw_link, (txt or filename)[:240], cu, "NOWE"))
                         diag["counts"]["link_hits_new"] += 1
 
-            # Dodaj do kolejki tylko gdy blob nie jest duplikatem
-            # Strona błędu/catch-all ma identyczny blob — jej linki nawigacyjne
-            # są tymi samymi linkami co już w frontierze → nie dodawaj ponownie
-            if _blob_is_duplicate: continue
             if cu in seen_in_frontier: continue
             seen_in_frontier.add(cu)
             q.append((cu, depth + 1))
             new_links_added += 1
 
-        # --- [v2.23] Linki z Playwright → też do kolejki ---
-        # Gdy blob duplikat → nie dodawaj linków z Playwright (ta sama logika)
-        if not _blob_is_duplicate:
-            for cu in pw_extra_links_for_phase2:
-                if cu in dead_set or cu in seen_in_frontier: continue
-                seen_in_frontier.add(cu)
-                q.append((cu, depth + 1))
-                new_links_added += 1
-                diag["counts"]["pw_extra_links_phase2"] = int(diag["counts"].get("pw_extra_links_phase2", 0)) + 1
+        # Linki z Playwright → kolejka
+        for cu in pw_extra_links_for_phase2:
+            if cu in seen_in_frontier: continue
+            # [v2.42 Fix5] NIE sprawdzamy dead_set
+            seen_in_frontier.add(cu)
+            q.append((cu, depth + 1))
+            new_links_added += 1
+            diag["counts"]["pw_extra_links_phase2"] = int(diag["counts"].get("pw_extra_links_phase2", 0)) + 1
 
     async with state.cache_lock:
         if q:
@@ -3601,14 +3406,12 @@ async def worker(
                 state.diag_errors.append(e)
 
             for (g, kw, t, u, st) in (found or []):
-                # [v2.39 Fix4] Pomijaj PDF/DOC w mailu — chcemy tylko strony HTML
                 _u_low = (u or "").lower()
                 _MAIL_SKIP_EXT = (".pdf", ".doc", ".docx", ".xls", ".xlsx", ".odt", ".rtf",
                                   ".zip", ".rar", ".7z", ".gml", ".xml")
                 if any(_u_low.endswith(ext) for ext in _MAIL_SKIP_EXT):
                     continue
-                # [v2.39 Fix8] Tylko URL-e zawierające "bip" w domenie
-                # Zbieramy ogłoszenia wyłącznie z BIP — nie z głównych stron gminy
+                # Tylko URL-e z BIP w domenie
                 _u_host = urlparse(u).netloc.lower() if u else ""
                 if not _is_bip_domain(_u_host):
                     continue
@@ -3616,7 +3419,7 @@ async def worker(
                 if mail_line not in state.mail_dedup:
                     state.mail_dedup.add(mail_line)
                     state.new_items_for_mail.append(mail_line)
-                    append_hits_to_backup([mail_line])  # [v2.36] backup natychmiast
+                    append_hits_to_backup([mail_line])
                     log_new_item(g, t, u, kw)
 
             checkpoint_counter["done"] = int(checkpoint_counter.get("done", 0)) + 1
@@ -3646,9 +3449,6 @@ async def worker(
             )
 
         except asyncio.CancelledError:
-            # [v2.36] Zamiast po prostu return — zapisz co zdążyliśmy zebrać.
-            # GitHub Actions cancel powoduje CancelledError — bez tego tracimy
-            # wszystkie wyniki z danego runu bezpowrotnie.
             print(f"⚠️  [{name}] CancelledError — zapisuję wyniki przed wyjściem...", flush=True)
             try:
                 if USE_CACHE and os.getenv("GITHUB_ACTIONS") and get_shard_index() >= 0:
@@ -3793,16 +3593,11 @@ async def main():
                 save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds)
         save_diag(state.diag_rows, state.diag_errors)
         write_summary(state.diag_rows, state.new_items_for_mail)
-        # export_summary_to_onedrive() — niedostępne w GitHub Actions
     except Exception as e:
         print(f"⚠️  Final save failed: {e}")
 
-    # [v2.36] Email — zawsze próbuj wysłać (usunięto błędny warunek not shutdown_requested).
-    # Używamy _try_send_email_sync() która po wysłaniu czyści listę (no-resend w nast. runie).
     _try_send_email_sync()
 
-    # [v2.36] Po wysłaniu emaila — zapisz shard jeszcze raz żeby nowa_items=[],
-    # tak żeby następny run nie wysyłał tych samych wyników ponownie.
     try:
         if USE_CACHE:
             if os.getenv("GITHUB_ACTIONS") and get_shard_index() >= 0:
