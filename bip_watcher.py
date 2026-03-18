@@ -1348,53 +1348,6 @@ def panic_save_checkpoint_sync(reason: str = "SIGTERM"):
 import atexit
 atexit.register(panic_save_checkpoint_sync, "atexit")
 
-# ===================== URL NORMALIZATION =====================
-# [v2.41 Fix1] Whitelist parametrów URL — zachowaj TYLKO params które identyfikują dokument.
-# Poprzednia blacklista (acc_*, switch_extend_*, bsc=, lang=, ...) nigdy nie była kompletna.
-# Każdy nowy CMS ma własne noise params → eksplozja frontieru (Miłoradz, Ścinawa, Pępowo...).
-# Teraz: wszystko spoza KEEP_PARAMS jest automatycznie wyrzucane — żadnej interwencji w przyszłości.
-#
-# Wyjątek: id= jest zachowywane TYLKO gdy document_id= nie jest obecne w tym samym URL-u.
-# Gdy document_id= jest → id= to nawigacyjne menu, nie identyfikator dokumentu.
-#
-# Źródła: analiza wszystkich gmin w bazie + znane polskie CMS-y BIP:
-#   bip.lubelskie.pl: action, document_id
-#   biuletyn.net: cid, id, a, c, rejid, rejz
-#   bip.info.pl: iddok, idmp
-#   wokiss.pl: pid
-#   asp CMS: typ, menu, strona, numer, poddzial, dzial
-#   WordPress BIP: page_id, p (ID posta)
-#   bip.strzegom.pl: id_menu
-#   eSesja: docid, meetingid
-#   FINN: id_aktualnosci, id_dokumentu
-#   Ogólne: nr, no, num, n (krótkie ID w różnych systemach)
-#   Ogólne: cat, tag, post (identyfikatory w CMS-ach)
-_KEEP_PARAMS = {
-    # Podstawowe ID dokumentów
-    "id", "document_id", "action", "cid",
-    "iddok", "idmp",
-    "a", "c",
-    "pid",
-    # asp CMS
-    "typ", "menu", "strona",
-    "numer", "poddzial", "dzial",
-    # WordPress / ogólne
-    "page_id", "p",
-    "post", "cat", "tag",
-    # bip.strzegom.pl
-    "id_menu",
-    # biuletyn.net rejestry
-    "rejid", "rejz",
-    # eSesja
-    "docid", "meetingid",
-    # FINN
-    "id_aktualnosci", "id_dokumentu",
-    # Ogólne krótkie ID (wiele własnych systemów gmin)
-    "nr", "no", "num", "n",
-    # Dodatkowe identyfikatory
-    "uid", "guid", "key", "hash", "ref", "token",
-    "entry", "item", "obj", "rec", "doc",
-}
 
 def normalize_url(url: str) -> str:
     try:
@@ -1404,30 +1357,14 @@ def normalize_url(url: str) -> str:
         raw = raw.replace("%26", "&").replace("%3B", ";")
         raw = raw.replace("&amp;", "&")
         p = urlparse(raw)
-        params = parse_qsl(p.query, keep_blank_values=True)
-
-        # Czy URL zawiera document_id? Jeśli tak, id= to menu nawigacyjne, nie dokument.
-        has_document_id = any(
-            (k or "").strip().lower().lstrip("amp;") == "document_id"
-            for k, v in params
-        )
-
-        q = []
-        for k, v in params:
-            kl = (k or "").strip().lower()
-            if not kl: continue
-            # Zdekoduj prefix amp; (pozostałość po &amp; → & → amp;param)
-            if kl.startswith("amp;"): kl = kl[4:]
-            if not kl: continue
-            # [v2.41 Fix1] Whitelist — zachowaj tylko params identyfikujące dokument
-            if kl not in _KEEP_PARAMS: continue
-            # id= przy document_id= to menu, nie dokument — stripuj
-            if kl == "id" and has_document_id: continue
-            q.append((kl, v))
-        q.sort(key=lambda kv: kv[0])
-        return urlunparse(p._replace(fragment="", query=urlencode(q, doseq=True)))
+        # Zachowuj wszystkie parametry bez żadnej modyfikacji.
+        # Filtrowanie hostów (exact match) zapewnia że nie wychodzimy poza BIP.
+        # Jedyne co robimy to strip fragment (#...) który nie jest częścią URL dokumentu.
+        return urlunparse(p._replace(fragment=""))
     except Exception:
         return url
+
+
 
 def canonical_url(url: str) -> str:
     u = normalize_url((url or "").strip())
