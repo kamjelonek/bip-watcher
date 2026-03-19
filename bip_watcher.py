@@ -3136,12 +3136,16 @@ async def phase2_focus(
             page_title = final_c
 
         # [v2.42 Fix4] Prosta logika statusu — brak blob_dedup/context_dedup jak v2.28
-        if prev is None:
+        # [v2.42 Fix7] PW_PROCESSING traktowany jak None — strona nie była jeszcze
+        # przetworzona (placeholder zapisany przed Playwright), więc jeśli teraz jest
+        # match → to jest NOWE odkrycie, nie HIT.
+        _prev_status = prev.get("status") if prev else None
+        if prev is None or _prev_status == "PW_PROCESSING":
             status_new = "NOWE" if ok_any else "NO_MATCH"
         else:
             if ok_any:
                 # [v2.41 Fix4] NO_MATCH + keyword = NOWE odkrycie (zachowane)
-                if prev.get("status") == "NO_MATCH":
+                if _prev_status == "NO_MATCH":
                     status_new = "NOWE"
                 else:
                     prev_att_set = att_sig_deserialize(prev.get("att_sig") or "")
