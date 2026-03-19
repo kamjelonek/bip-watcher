@@ -222,7 +222,6 @@ jobs:
             echo '{"schema":14,"urls_seen":{},"content_seen":{},"gmina_seeds":{},"gmina_frontiers":{},"gmina_retry":{},"dead_urls":{}}' > data/cache.json
           fi
 
-
       - name: Run watcher
         continue-on-error: true
         timeout-minutes: 320
@@ -273,6 +272,7 @@ jobs:
 
             git fetch origin cache-store 2>/dev/null || true
             git reset --hard origin/cache-store
+            mkdir -p shards
 
             gzip -9 -c "../${SHARD_JSON}" > "shards/cache_shard_${SHARD_INDEX}.json.gz"
 
