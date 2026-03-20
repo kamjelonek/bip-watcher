@@ -464,7 +464,7 @@ jobs:
           shard_files = sorted(glob.glob(str(SHARDS / "cache_shard_*.json.gz")))
           now_utc     = datetime.now(timezone.utc)
 
-          CUTOFF_H = 26
+          CUTOFF_H = 8
 
           results   = defaultdict(lambda: {"nowe": [], "zmiana": []})
           shards_ok = 0
