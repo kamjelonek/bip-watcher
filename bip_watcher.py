@@ -2555,10 +2555,6 @@ async def phase1_full_crawl(
         # zamiast tylko jednej strony (fetch_with_playwright z v2.41)
         pw_links = set()
         if use_pw:
-            if pw_fetches >= PHASE1_MAX_PW_FETCHES:
-                use_pw = False
-                pw_reason = f"limit_reached({pw_fetches}>={PHASE1_MAX_PW_FETCHES})"
-        if use_pw:
             pw_fetches += 1
             print(
                 f"  🎭 [{gmina}] PW mini-BFS @ depth={depth} "
