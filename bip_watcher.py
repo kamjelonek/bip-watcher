@@ -218,8 +218,8 @@ def keyword_match_in_blob(blob: str):
 
 # ===================== IGNORE =====================
 IGNORE_URL_SUBSTR = [
-    "kontakt", "mapa-strony", "mapa_strony", "wyszukiwarka", "statystyka",
-    "cookies", "deklaracja-dostepnosci", "deklaracja_dostepnosci",
+    "kontakt", "mapa-strony", "mapa_strony", "wyszukiwarka", "statystyka", "statystki", "rejestr-zmian",
+    "cookies", "deklaracja-dostepnosci", "deklaracja_dostepnosci", "redakcja",
     "majatk", "majątk", "regulamin", "sygnalis",
     "login", "logowanie", "rejestracja", "newsletter",
     # Galerie, multimedia, zdjęcia — nigdy nie zawierają ogłoszeń planistycznych
