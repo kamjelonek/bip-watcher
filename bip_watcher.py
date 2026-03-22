@@ -110,6 +110,8 @@ async def save_shard_cache_and_commit(loop=None):
     out["gmina_frontiers"] = state.gmina_frontiers or {}
     out["gmina_retry"] = state.gmina_retry or {}
     out["dead_urls"] = getattr(state, "dead_urls", {})
+    out["gmina_phase1_queue"] = getattr(state, "gmina_phase1_queue", {})
+    out["dead_path_suffixes"] = {h: list(v) for h, v in getattr(state, "dead_path_suffixes", {}).items()}
     out["new_items_for_mail"] = list(state.new_items_for_mail or [])
     filename = BASE_DIR / f"cache_shard_{shard}.json"
     try:
@@ -486,6 +488,8 @@ class GlobalState:
         self.gmina_frontiers = {}
         self.gmina_retry = {}
         self.dead_urls = {}
+        self.gmina_phase1_queue: dict = {}  # Phase1 BFS queue do wznowienia
+        self.dead_path_suffixes: dict = {}  # host → set of dead path suffixes [v2.43]
         self.cache_lock = asyncio.Lock()
         self.mail_dedup = set()
         self.reported_urls_this_run: set = set()
@@ -552,6 +556,16 @@ def dead_add(dead_key: str, dead_set: set, url: str):
     dead_set.add(cu)
     # Nadal zapisujemy do state.dead_urls dla kompatybilności z cache
     state.dead_urls.setdefault(dead_key, []).append(cu)
+    # [v2.43] Zapisz ścieżkę jako dead suffix per host
+    try:
+        from urllib.parse import urlparse as _up
+        _p = _up(cu)
+        _host = _p.netloc.lower()
+        _path = _p.path
+        if _host and _path and _path != "/":
+            state.dead_path_suffixes.setdefault(_host, set()).add(_path)
+    except Exception:
+        pass
 
 def pick_rows_for_shard(rows, shard_index: int, shard_total: int):
     if shard_index < 0 or shard_total <= 0: return rows
@@ -610,6 +624,31 @@ def is_block_page(text: str) -> bool:
     low = text.lower()
     for p in _BLOCK_PATTERNS_SURE:
         if p.lower() in low: return True
+    return False
+
+# [v2.43] Soft 404 — serwer zwraca HTTP 200 ale treść informuje o braku strony
+_SOFT_404_PATTERNS = [
+    "nie ma takiej strony",
+    "strona nie istnieje",
+    "nie znaleziono strony",
+    "strona nie została znaleziona",
+    "strona nie zostala znaleziona",
+    "nie znaleziono żądanego zasobu",
+    "nie znaleziono zadanego zasobu",
+    "żądana strona nie istnieje",
+    "zadana strona nie istnieje",
+    "błąd 404", "blad 404",
+    "error 404", "page not found",
+    "nie odnaleziono strony",
+    "brak strony", "brak takiej strony",
+]
+
+def is_soft_404(text: str) -> bool:
+    """[v2.43] Wykrywa soft 404 — HTTP 200 ale treść mówi 'nie ma strony'."""
+    if not text: return False
+    low = text.lower()
+    for p in _SOFT_404_PATTERNS:
+        if p in low: return True
     return False
 
 # ===================== DYNAMIC PAGE DETECTOR =====================
@@ -1284,6 +1323,8 @@ def panic_save_checkpoint_sync(reason: str = "SIGTERM"):
             out["gmina_frontiers"] = state.gmina_frontiers or {}
             out["gmina_retry"] = state.gmina_retry or {}
             out["dead_urls"] = getattr(state, "dead_urls", {})
+            out["gmina_phase1_queue"] = getattr(state, "gmina_phase1_queue", {})
+            out["dead_path_suffixes"] = {h: list(v) for h, v in getattr(state, "dead_path_suffixes", {}).items()}
             out["new_items_for_mail"] = list(state.new_items_for_mail or [])
             filename = BASE_DIR / f"cache_shard_{shard}.json"
             tmp = str(filename) + ".tmp"
@@ -1436,6 +1477,20 @@ def should_skip_href(abs_href: str) -> bool:
     if url_is_ignored(u): return True
     if any(u.endswith(ext) for ext in BAD_EXT): return True
     if any(u.endswith(ext) for ext in ATT_EXT): return True
+    # [v2.43] Fix: dead path suffix — jeśli ścieżka kończy się na znany dead path
+    # tego hosta → URL jest fałszywym wariantem relative resolve → skip
+    try:
+        _p = urlparse(abs_href)
+        _host = _p.netloc.lower()
+        _path = _p.path
+        if _host and _path and _path != "/":
+            _dead = state.dead_path_suffixes.get(_host)
+            if _dead:
+                for _suffix in _dead:
+                    if _path.endswith(_suffix) and _path != _suffix:
+                        return True
+    except Exception:
+        pass
     # [v2.43] Fix: eksplozja frontieru przez relative URL resolve
     # Filtr 1 — powtarzający się segment ścieżki = błędne złożenie relative linka
     try:
@@ -1973,6 +2028,13 @@ def load_cache_v2():
         gf = _ensure_dict("gmina_frontiers")
         gr = _ensure_dict("gmina_retry")
         dead = _ensure_dict("dead_urls")
+        gp1q = _ensure_dict("gmina_phase1_queue")
+        state.gmina_phase1_queue = gp1q
+
+        # [v2.43] Wczytaj dead_path_suffixes
+        raw_dps = c.get("dead_path_suffixes", {})
+        if isinstance(raw_dps, dict):
+            state.dead_path_suffixes = {h: set(v) for h, v in raw_dps.items() if isinstance(v, list)}
 
         # Przywróć new_items_for_mail jeśli zapisane w shardzie
         if isinstance(c.get("new_items_for_mail"), list):
@@ -2257,6 +2319,9 @@ async def fetch_conditional(session: aiohttp.ClientSession, url: str, extra_head
                 if status == 200 and is_block_page(text):
                     rate_limiter.report_403(domain)
                     return None, final, "blocked", 429, ctype, "block_page_detected", ms, resp_meta
+                # [v2.43] Soft 404 — HTTP 200 ale treść mówi "nie ma strony"
+                if status == 200 and is_soft_404(text):
+                    return None, final, "http_err", 404, ctype, "soft_404_detected", ms, resp_meta
                 if _is_binary_response(ctype, data, final):
                     return None, final, "pdf", status, ctype, None, ms, resp_meta
                 if status != 200:
@@ -2359,11 +2424,37 @@ def _extract_links_from_html(html: str, base_url: str, allowed_host: str) -> set
 
 
 def _html_visible_text_len(html: str) -> int:
-    """Szybkie przybliżenie długości widocznego tekstu w HTML."""
+    """
+    Przybliżenie długości widocznego tekstu w HTML — BEZ menu nawigacyjnego.
+    [v2.43] Najpierw próbuje wyciąć content selectors, potem usuwa nav/header/footer.
+    Dzięki temu strony soft-404 z dużym menu nie zawyżają wyniku.
+    """
+    import copy as _copy
     soup = safe_soup(html)
     if not soup: return 0
     for tag in soup(["script", "style", "noscript"]): tag.decompose()
-    return len(re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip())
+
+    # Próbuj content selectors — jeśli jest główna treść, mierz tylko ją
+    _CONTENT_SELS = [
+        "#content", "#tresc", "#main-content", ".content", ".tresc",
+        "main", "article", "[role='main']", "#page-content",
+        "#s3_content", "#s3content", ".bip-content", "#bip-content",
+        "#middle-column", "#right-column", "td.content", "div.content",
+    ]
+    for sel in _CONTENT_SELS:
+        try:
+            node = soup.select_one(sel)
+            if node:
+                txt = re.sub(r"\s+", " ", node.get_text(" ", strip=True)).strip()
+                if len(txt) > 30:
+                    return len(txt)
+        except Exception:
+            continue
+
+    # Fallback: usuń nav/header/footer i mierz resztę
+    soup2 = _copy.copy(soup)
+    for tag in soup2(["nav", "header", "footer", "aside"]): tag.decompose()
+    return len(re.sub(r"\s+", " ", soup2.get_text(" ", strip=True)).strip())
 
 
 def _needs_playwright_for_links(html: str, url: str, aiohttp_links_count: int) -> tuple[bool, str]:
@@ -3004,6 +3095,12 @@ async def phase2_focus(
                     print(f"  💀 home_redirect_dead: {url[:70]}", flush=True)
                     continue
 
+                # [v2.43] Sprawdź soft 404 w wyniku Playwright
+                if is_soft_404(pw_html):
+                    dead_add(dead_key, dead_set, _canon(url))
+                    diag["counts"]["soft_404_pw"] = int(diag["counts"].get("soft_404_pw", 0)) + 1
+                    print(f"  💀 soft_404 (Playwright): {url[:70]}", flush=True)
+                    continue
                 print(f"  🎭 Phase2 Playwright OK: {len(pw_html)}B @ {url[:60]}", flush=True)
                 html, final, kind, status, ctype = pw_html, pw_final, pw_kind, pw_status, pw_ctype
 
