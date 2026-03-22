@@ -108,7 +108,6 @@ async def save_shard_cache_and_commit(loop=None):
     out["content_seen"] = state.content_seen or {}
     out["gmina_seeds"] = state.gmina_seeds or {}
     out["gmina_frontiers"] = state.gmina_frontiers or {}
-    out["gmina_phase1_queue"] = getattr(state, "gmina_phase1_queue", {}) or {}
     out["gmina_retry"] = state.gmina_retry or {}
     out["dead_urls"] = getattr(state, "dead_urls", {})
     out["new_items_for_mail"] = list(state.new_items_for_mail or [])
@@ -144,7 +143,7 @@ BOOTSTRAP_MODE = False
 FORCE_PHASE1_REDISCOVERY = False
 
 # ===================== REPORTING RULES =====================
-ENABLE_LINK_HITS = True
+ENABLE_LINK_HITS = False
 ALIAS_FINAL_AND_SOURCE_KEYS = True
 
 # ===================== EMAIL =====================
@@ -370,7 +369,7 @@ CONCURRENT_GMINY = env_int("CONCURRENT_GMINY", 1)
 CONCURRENT_REQUESTS = env_int("CONCURRENT_REQUESTS", 80)
 LIMIT_PER_HOST = env_int("LIMIT_PER_HOST", 10)
 
-PHASE1_MAX_DEPTH = env_int("PHASE1_MAX_DEPTH", 4)
+PHASE1_MAX_DEPTH = env_int("PHASE1_MAX_DEPTH", 1)
 PHASE1_MAX_URLS = env_int("PHASE1_MAX_URLS", 999999)
 
 PHASE2_MAX_DEPTH = 4
@@ -484,7 +483,6 @@ class GlobalState:
         self.diag_rows = []
         self.diag_errors = []
         self.gmina_frontiers = {}
-        self.gmina_phase1_queue = {}
         self.gmina_retry = {}
         self.dead_urls = {}
         self.cache_lock = asyncio.Lock()
@@ -1283,7 +1281,6 @@ def panic_save_checkpoint_sync(reason: str = "SIGTERM"):
             out["content_seen"] = state.content_seen or {}
             out["gmina_seeds"] = state.gmina_seeds or {}
             out["gmina_frontiers"] = state.gmina_frontiers or {}
-            out["gmina_phase1_queue"] = getattr(state, "gmina_phase1_queue", {}) or {}
             out["gmina_retry"] = state.gmina_retry or {}
             out["dead_urls"] = getattr(state, "dead_urls", {})
             out["new_items_for_mail"] = list(state.new_items_for_mail or [])
@@ -1327,10 +1324,12 @@ def normalize_url(url: str) -> str:
         for k, v in parse_qsl(p.query, keep_blank_values=True):
             kl = (k or "").strip().lower()
             if not kl: continue
+            # Usuń śmieci z podwójnego enkodowania &amp; → amp%3b w kluczu
+            if kl.startswith("amp%3b") or kl.startswith("amp;"): continue
             if kl.startswith("utm_"): continue
             if kl in {"fbclid", "gclid", "yclid", "sid", "session", "sessionid",
                       "phpsessid", "jsessionid", "print", "format"}: continue
-            if kl.startswith("amp%3b") or kl.startswith("amp;"): continue
+            # Parametry dostępności (kontrast, czcionka itp.) — nie wpływają na treść
             if kl.startswith("acc_"): continue
             q.append((kl, v))
         q.sort(key=lambda kv: kv[0])
@@ -1953,18 +1952,15 @@ def load_cache_v2():
         content = _ensure_dict("content_seen")
         gseeds = _ensure_dict("gmina_seeds")
         gf = _ensure_dict("gmina_frontiers")
-        gp1q = _ensure_dict("gmina_phase1_queue")
         gr = _ensure_dict("gmina_retry")
         dead = _ensure_dict("dead_urls")
-
-        state.gmina_phase1_queue = gp1q
 
         # Przywróć new_items_for_mail jeśli zapisane w shardzie
         if isinstance(c.get("new_items_for_mail"), list):
             state.new_items_for_mail = list(c["new_items_for_mail"])
             print(f"📨 Przywrócono {len(state.new_items_for_mail)} wyników z poprzedniego runu")
 
-        print(f"📦 Cache loaded: {len(urls)} URLs, {len(content)} content, {len(gseeds)} seeds, {len(gf)} frontiers, {len(gp1q)} p1queues")
+        print(f"📦 Cache loaded: {len(urls)} URLs, {len(content)} content, {len(gseeds)} seeds, {len(gf)} frontiers")
         return c, set(urls.keys()), content, gseeds, gf, gr, dead
 
     except Exception as e:
@@ -1979,7 +1975,6 @@ def save_cache_v2(raw_cache, urls_seen_set, content_seen, gmina_seeds):
     out["content_seen"] = content_seen or {}
     out["gmina_seeds"] = gmina_seeds or {}
     out["gmina_frontiers"] = state.gmina_frontiers or {}
-    out["gmina_phase1_queue"] = getattr(state, "gmina_phase1_queue", {}) or {}
     out["gmina_retry"] = state.gmina_retry or {}
     out["dead_urls"] = getattr(state, "dead_urls", {})
     tmp = str(CACHE_FILE) + ".tmp"
@@ -2402,8 +2397,6 @@ async def phase1_full_crawl(
     session_ipv4,
     session_crawl,
     diag,
-    resume_seeds: dict = None,
-    resume_queue: list = None,
 ) -> tuple:
     """
     Phase1 — adaptacyjny BFS z automatycznym Playwright fallback.
@@ -2499,19 +2492,6 @@ async def phase1_full_crawl(
     home_links: set = set()
     home_text_for_phase2: str = ""
 
-    if resume_seeds:
-        seeds.update(resume_seeds)
-        visited.update(resume_seeds.keys())
-        print(f"  🔄 Phase1 resume seeds [{gmina}]: {len(seeds)} URL", flush=True)
-    if resume_queue:
-        for item in resume_queue:
-            cu = _canon(item[0] if isinstance(item, list) else item)
-            rd = int(item[1]) if isinstance(item, list) and len(item) > 1 else 0
-            if cu and cu not in visited:
-                visited.add(cu)
-                q.append((cu, rd))
-        print(f"  🔄 Phase1 resume queue [{gmina}]: {len(q)} URL w kolejce BFS", flush=True)
-
     print(
         f"  🕷️  BFS [{gmina}] @ {allowed_host} "
         f"sitemap_seeds={len(seeds)} max_depth={PHASE1_MAX_DEPTH}",
@@ -2524,9 +2504,18 @@ async def phase1_full_crawl(
             print(f"  ⏱️  Phase1 limit czasu [{gmina}]: pages={pages_crawled}", flush=True)
             if allowed_host:
                 _p1_gkey = gmina_cache_key(gmina, "https://" + allowed_host)
+                _partial_urls = sorted(seeds.keys(), key=lambda u: -seeds.get(u, 0))
+                async with state.cache_lock:
+                    state.gmina_frontiers[_p1_gkey] = [[u, 0] for u in _partial_urls]
                 state.gmina_phase1_queue[_p1_gkey] = [[u, d] for u, d in list(q)]
-                print(f"  💾 Phase1 queue zapisana [{gmina}]: {len(q)} URL do wznowienia", flush=True)
+                print(
+                    f"  💾 Phase1 przerwana [{gmina}]: seeds={len(_partial_urls)} "
+                    f"queue_pozostało={len(q)} do wznowienia",
+                    flush=True
+                )
+                await save_shard_cache_and_commit()
             break
+
 
         url, depth = q.popleft()
         url = normalize_url(url)
@@ -2582,6 +2571,10 @@ async def phase1_full_crawl(
         # _fetch_links_playwright() odwiedza stronę + jej podstrony (głębokość 1)
         # zamiast tylko jednej strony (fetch_with_playwright z v2.41)
         pw_links = set()
+        if use_pw:
+            if pw_fetches >= PHASE1_MAX_PW_FETCHES:
+                use_pw = False
+                pw_reason = f"limit_reached({pw_fetches}>={PHASE1_MAX_PW_FETCHES})"
         if use_pw:
             pw_fetches += 1
             print(
@@ -2639,11 +2632,8 @@ async def phase1_full_crawl(
             diag["notes"].append(f"PHASE1_MAX_URLS_REACHED={len(seeds)}")
             break
 
-    phase1_complete = not q and not state.shutdown_requested
+    phase1_complete = not state.shutdown_requested
     all_urls = sorted(seeds.keys(), key=lambda u: -seeds.get(u, 0))
-    if phase1_complete and allowed_host:
-        _p1_gkey = gmina_cache_key(gmina, "https://" + allowed_host)
-        state.gmina_phase1_queue.pop(_p1_gkey, None)
 
     diag["notes"].append(
         f"PHASE1_DONE pages={pages_crawled} seeds={len(all_urls)} "
@@ -3327,8 +3317,6 @@ async def worker(
             gkey_approx = gmina_cache_key(gmina, start_url)
             has_frontier = bool((state.gmina_frontiers or {}).get(gkey_approx))
             frontier_complete = is_frontier_complete(gkey_approx)
-            saved_p1_queue = (getattr(state, "gmina_phase1_queue", {}) or {}).get(gkey_approx)
-            has_p1_resume = bool(saved_p1_queue)
 
             p1meta = None
             found = []
@@ -3354,16 +3342,7 @@ async def worker(
                 p1meta = {"status": "SKIP", "seeds": 0, "phase1_complete": True}
 
             else:
-                if has_p1_resume:
-                    reason = f"wznowienie Phase1 (queue={len(saved_p1_queue)})"
-                    resume_seeds = {u: 1 for item in ((state.gmina_frontiers or {}).get(gkey_approx) or [])
-                                    for u in [item[0] if isinstance(item, list) else item] if u}
-                    resume_queue = saved_p1_queue
-                else:
-                    reason = "brak frontieru" if not has_frontier else "frontier niekompletny"
-                    resume_seeds = None
-                    resume_queue = None
-
+                reason = "brak frontieru" if not has_frontier else "frontier niekompletny"
                 print(f"  🆕 [{name}] {gmina}: Phase1 — {reason}", flush=True)
 
                 all_urls, p1meta = await phase1_full_crawl(
@@ -3373,8 +3352,6 @@ async def worker(
                     session_ipv4=session_ipv4,
                     session_crawl=session_crawl,
                     diag=diag,
-                    resume_seeds=resume_seeds,
-                    resume_queue=resume_queue,
                 )
 
                 if p1meta.get("status") != "OK":
