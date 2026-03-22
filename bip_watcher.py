@@ -218,9 +218,9 @@ def keyword_match_in_blob(blob: str):
 
 # ===================== IGNORE =====================
 IGNORE_URL_SUBSTR = [
-    "kontakt", "mapa-strony", "mapa_strony", "wyszukiwarka", "statystyka", "statystki", "rejestr-zmian",
-    "cookies", "deklaracja-dostepnosci", "deklaracja_dostepnosci", "redakcja",
-    "majatk", "majątk", "regulamin", "sygnalis",
+    "kontakt", "mapa-strony", "mapa_strony", "wyszukiwarka", "statystyka", "statystyki",
+    "cookies", "deklaracja-dostepnosci", "deklaracja_dostepnosci",
+    "majatk", "majątk", "regulamin", "sygnalis", "redakcja",
     "login", "logowanie", "rejestracja", "newsletter",
     # Galerie, multimedia, zdjęcia — nigdy nie zawierają ogłoszeń planistycznych
     "galeria-zdjec", "galeria_zdjec", "galeria-fotografii", "galeria_fotografii",
@@ -371,6 +371,7 @@ LIMIT_PER_HOST = env_int("LIMIT_PER_HOST", 10)
 
 PHASE1_MAX_DEPTH = env_int("PHASE1_MAX_DEPTH", 1)
 PHASE1_MAX_URLS = env_int("PHASE1_MAX_URLS", 999999)
+MAX_URL_PATH_DEPTH = env_int("MAX_URL_PATH_DEPTH", 8)  # Maks. głębokość ścieżki URL — deeper = relative link explosion
 
 PHASE2_MAX_DEPTH = 4
 PHASE2_MAX_PAGES = 999999
@@ -1435,6 +1436,24 @@ def should_skip_href(abs_href: str) -> bool:
     if url_is_ignored(u): return True
     if any(u.endswith(ext) for ext in BAD_EXT): return True
     if any(u.endswith(ext) for ext in ATT_EXT): return True
+    # [v2.43] Fix: eksplozja frontieru przez relative URL resolve
+    # Filtr 1 — powtarzający się segment ścieżki = błędne złożenie relative linka
+    try:
+        _path = urlparse(abs_href).path
+        _segs = [s for s in _path.split("/") if s]
+        if len(_segs) != len(set(_segs)):
+            return True
+    except Exception:
+        pass
+    # Filtr 2 — zbyt głęboka ścieżka = niemożliwa do wystąpienia w prawdziwym BIP
+    if MAX_URL_PATH_DEPTH > 0:
+        try:
+            _path2 = urlparse(abs_href).path
+            _depth = len([s for s in _path2.split("/") if s])
+            if _depth > MAX_URL_PATH_DEPTH:
+                return True
+        except Exception:
+            pass
     return False
 
 def base_domain(host: str) -> str:
