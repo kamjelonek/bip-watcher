@@ -1330,6 +1330,8 @@ def normalize_url(url: str) -> str:
             if kl.startswith("utm_"): continue
             if kl in {"fbclid", "gclid", "yclid", "sid", "session", "sessionid",
                       "phpsessid", "jsessionid", "print", "format"}: continue
+            if kl.startswith("amp%3b") or kl.startswith("amp;"): continue
+            if kl.startswith("acc_"): continue
             q.append((kl, v))
         q.sort(key=lambda kv: kv[0])
         return urlunparse(p._replace(fragment="", query=urlencode(q, doseq=True)))
