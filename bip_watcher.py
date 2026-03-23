@@ -273,6 +273,7 @@ IGNORE_URL_SUBSTR = [
     # p=print, p=document — alternatywne widoki/akcje
     "p=print", "p=document", "p=edit", "p=save",
     # Alternatywne formaty tej samej treści
+    "/rss/", "/rss.", "feed.xml", "/feed/",
     "/xml/", "drukuj.asp", "core/drukuj", "core/pdf",
     "akcja=drukuj", "akcja=pdf", "format=pdf", "format=xml",
     "/print/", "/drukuj/",
@@ -528,6 +529,7 @@ class GlobalState:
         self.cache_lock = asyncio.Lock()
         self.mail_dedup = set()
         self.reported_urls_this_run: set = set()
+        self.reported_blobs_this_run: set = set()  # [v2.43] dedup po treści bloba
         self.last_printed: dict = {}
 
     def request_shutdown(self):
@@ -3372,8 +3374,10 @@ async def phase2_focus(
         # [v2.42 Fix4] Proste raportowanie bez blob_dedup/context_dedup
         if status_new in {"NOWE", "ZMIANA"}:
             diag["counts"][f"hit_{status_new.lower()}"] += 1
-            if final_c not in state.reported_urls_this_run:
+            _blob_key = sha1(blob[:2000])  # [v2.43] dedup po treści
+            if final_c not in state.reported_urls_this_run and _blob_key not in state.reported_blobs_this_run:
                 state.reported_urls_this_run.add(final_c)
+                state.reported_blobs_this_run.add(_blob_key)
                 print_hit(f"🟢 {status_new}", gmina, kw_any, page_title)
                 found.append((gmina, kw_any, page_title, final_c, status_new))
             else:
