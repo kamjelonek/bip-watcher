@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-BIP WATCHER v2.42 - PRODUCTION (hybryda v2.28 + v2.41)
+BIP WATCHER v2.43 - PRODUCTION (hybryda v2.28 + v2.41)
 
 Zmiany v2.42 vs v2.41:
 
@@ -42,6 +42,41 @@ Zmiany v2.42 vs v2.41:
     Przywrócono v2.28: _fetch_links_playwright() odwiedza stronę startową PLUS
     wszystkie znalezione linki (głębokość 1, max PLAYWRIGHT_MINI_BFS_MAX_PAGES stron).
     Efekt: dla stron JS z listami generowanymi przez JS zbieramy pełny zbiór linków.
+
+Zmiany v2.43:
+
+[FIX 1] gmina_phase1_queue — dodano do GlobalState, save_shard, load_cache, panic_save
+    Bug: AttributeError przy Phase1 timeout — queue do wznowienia nie była zdefiniowana.
+
+[FIX 2] dead_path_suffixes — nowy mechanizm blokowania fałszywych wariantów URL
+    Gdy URL zwraca 404 (prawdziwy lub soft), jego ścieżka trafia do dead_path_suffixes[host].
+    Wszystkie przyszłe URL-e kończące się tą ścieżką są blokowane w should_skip_href.
+    Rozwiązuje eksplozję frontieru Żarowa przez relative URL resolve (fałszywe warianty).
+    Persystowane w cache między runami.
+
+[FIX 3] is_soft_404 — wykrywa HTTP 200 z treścią błędu 404
+    Warunek podwójny: wzorzec tekstowy + treść po odcięciu menu < 150 znaków.
+    Chroni przed fałszywymi pozytywami na stronach Next.js (Czaplinek).
+
+[FIX 4] _html_visible_text_len — mierzy tekst po odcięciu menu nawigacyjnego
+    Najpierw próbuje content selectors, potem usuwa nav/header/footer.
+    Dzięki temu soft_404 z dużym menu jest poprawnie wykrywany.
+
+[FIX 5] full_text fallback — usuwa duże listy nawigacyjne przed keyword match
+    Gdy żaden selektor treści nie zadziałał, usuwa <ul>/<ol> z >= 8 elementami.
+    Eliminuje false positivy z menu nawigacyjnego (Chojnów: 1780 fałszywych trafień).
+    Bezpieczne bo program wchodzi w każdy link z listy osobno.
+
+[FIX 6] normalize_url — filtrowanie parametru lang=
+    lang= i language= usuwane jak utm_ — eliminuje duplikaty trafień dla gmin
+    z wielojęzycznym BIP-em (Czarna: 5x te same ogłoszenia w uk/en/de/fr/pl).
+
+[FIX 7] should_skip_href — filtr powtarzającego się segmentu ścieżki
+    /plan-ogolny/plan-ogolny/930 → powtórzony segment → skip.
+
+[FIX 8] IGNORE_URL_SUBSTR — dodano statystyki, redakcja
+
+[FIX 9] PHASE1_MAX_DEPTH = 1, ENABLE_LINK_HITS = False
 
 Zachowane z v2.41:
 - TTL 168h (HIT_RECHECK, NO_MATCH_RECHECK)
@@ -627,29 +662,32 @@ def is_block_page(text: str) -> bool:
     return False
 
 # [v2.43] Soft 404 — serwer zwraca HTTP 200 ale treść informuje o braku strony
+# [v2.43] Soft 404 — tylko bardzo specyficzne wzorce które nie mogą
+# pojawić się w normalnej treści BIP. Ogólne wzorce jak "strona nie istnieje"
+# dawały fałszywe pozytywy na istniejących stronach.
 _SOFT_404_PATTERNS = [
     "nie ma takiej strony",
-    "strona nie istnieje",
-    "nie znaleziono strony",
-    "strona nie została znaleziona",
-    "strona nie zostala znaleziona",
-    "nie znaleziono żądanego zasobu",
-    "nie znaleziono zadanego zasobu",
-    "żądana strona nie istnieje",
-    "zadana strona nie istnieje",
-    "błąd 404", "blad 404",
-    "error 404", "page not found",
-    "nie odnaleziono strony",
-    "brak strony", "brak takiej strony",
+    "404 - nie ma takiej strony",
+    "błąd 404 - nie ma",
+    "blad 404 - nie ma",
 ]
 
 def is_soft_404(text: str) -> bool:
-    """[v2.43] Wykrywa soft 404 — HTTP 200 ale treść mówi 'nie ma strony'."""
+    """[v2.43] Wykrywa soft 404 — HTTP 200 ale treść mówi 'nie ma strony'.
+    
+    Warunek podwójny: wzorzec obecny AND treść po odcięciu menu < 150 znaków.
+    Chroni przed fałszywymi pozytywami na stronach Next.js (np. Czaplinek)
+    które mają errorMessage w konfiguracji JS na każdej stronie.
+    Prawdziwa strona 404 ma ~40 znaków treści, istniejąca strona ma setki.
+    """
     if not text: return False
     low = text.lower()
-    for p in _SOFT_404_PATTERNS:
-        if p in low: return True
-    return False
+    # Sprawdź czy wzorzec obecny
+    found = any(p in low for p in _SOFT_404_PATTERNS)
+    if not found: return False
+    # Sprawdź czy treść po odcięciu menu jest bardzo krótka
+    content_len = _html_visible_text_len(text)
+    return content_len < 150
 
 # ===================== DYNAMIC PAGE DETECTOR =====================
 class DynamicPageDetector:
@@ -1249,7 +1287,7 @@ def write_summary(diag_rows, new_items_for_mail):
         ok = sum(1 for r in (diag_rows or []) if r.get("status") == "OK")
         start_fail = sum(1 for r in (diag_rows or []) if r.get("status") == "START_FAIL")
         lines = [
-            f"BIP WATCHER v2.42 SUMMARY @ {now_iso()}",
+            f"BIP WATCHER v2.43 SUMMARY @ {now_iso()}",
             f"gminy_total={total} ok={ok} start_fail={start_fail}",
             f"mail_items={len(new_items_for_mail or [])}",
             "",
@@ -1370,7 +1408,9 @@ def normalize_url(url: str) -> str:
             if kl.startswith("amp%3b") or kl.startswith("amp;"): continue
             if kl.startswith("utm_"): continue
             if kl in {"fbclid", "gclid", "yclid", "sid", "session", "sessionid",
-                      "phpsessid", "jsessionid", "print", "format"}: continue
+                      "phpsessid", "jsessionid", "print", "format",
+                      "lang", "language"}:  # [v2.43] lang= duplikuje te same strony w różnych językach
+                continue
             # Parametry dostępności (kontrast, czcionka itp.) — nie wpływają na treść
             if kl.startswith("acc_"): continue
             q.append((kl, v))
@@ -2778,22 +2818,43 @@ async def phase1_full_crawl(
 def _extract_content_text(soup_orig, url: str, home_text: str = "") -> tuple:
     """
     Wyciąga tekst TYLKO z treści strony, z pominięciem menu nawigacyjnego.
+    [v2.43] Przed przetwarzaniem usuwa duże listy nawigacyjne (>= 8 elementów)
+    z kopii soup — działa niezależnie od tego który selektor treści zadziała.
     """
     import copy
 
     _ul = (url or "").lower()
     _is_detail = "action=details" in _ul or "document_id=" in _ul
 
+    # [v2.43] Zrób kopię soup z usuniętymi dużymi listami nawigacyjnymi
+    # Działa zawsze — niezależnie od selektora treści
+    # all_headings budujemy z oryginału żeby nie stracić tytułów
     all_headings = " ".join(
         re.sub(r"\s+", " ", t.get_text(" ", strip=True))
         for t in soup_orig.find_all(["h1", "h2", "h3", "h4", "h5"])
     )
 
-    full_text_raw = re.sub(r"\s+", " ", soup_orig.get_text(" ", strip=True)).strip()
+    # [v2.43] Zbierz tekst pomijając duże listy nawigacyjne (>= 8 li)
+    # Używamy get_text() selektywnie zamiast decompose() żeby nie niszczyć soup_orig
+    def _get_text_no_nav(node) -> str:
+        parts = []
+        for child in node.children:
+            tag_name = getattr(child, 'name', None)
+            if tag_name in ("ul", "ol"):
+                if len(child.find_all("li", recursive=False)) >= 5:
+                    continue  # pomiń dużą listę nawigacyjną
+            if tag_name:
+                parts.append(_get_text_no_nav(child))
+            else:
+                parts.append(str(child))
+        return " ".join(parts)
+
+    soup = soup_orig  # nie niszczymy oryginału
+    full_text_raw = re.sub(r"\s+", " ", _get_text_no_nav(soup_orig)).strip()
 
     if _is_detail:
         anchor = None
-        for tag in soup_orig.find_all(["h1", "h2", "h3", "h4"]):
+        for tag in soup.find_all(["h1", "h2", "h3", "h4"]):
             txt = (tag.get_text(" ", strip=True) or "").lower()
             if "szczeg" in txt and "dokument" in txt:
                 anchor = tag
@@ -2822,22 +2883,24 @@ def _extract_content_text(soup_orig, url: str, home_text: str = "") -> tuple:
         "td.content", "div.content",
     ]:
         try:
-            node = soup_orig.select_one(sel)
+            node = soup.select_one(sel)
             if node:
-                node_text = re.sub(r"\s+", " ", node.get_text(" ", strip=True)).strip()
+                # [v2.43] Użyj _get_text_no_nav żeby usunąć menu nawet wewnątrz selektora
+                node_text = re.sub(r"\s+", " ", _get_text_no_nav(node)).strip()
                 if len(node_text) > 200:
                     removed = len(full_text_raw) - len(node_text)
                     return f"{all_headings} {node_text}", removed, f"sel:{sel}"
         except Exception:
             continue
 
-    soup2 = copy.copy(soup_orig)
+    soup2 = copy.copy(soup)
     removed_tags = 0
     for tag in soup2.find_all(["nav", "header", "footer", "aside"]):
         tag.decompose()
         removed_tags += 1
     if removed_tags > 0:
-        stripped = re.sub(r"\s+", " ", soup2.get_text(" ", strip=True)).strip()
+        # [v2.43] strip_nav też używa _get_text_no_nav
+        stripped = re.sub(r"\s+", " ", _get_text_no_nav(soup2)).strip()
         removed = len(full_text_raw) - len(stripped)
         if removed > 500:
             return f"{all_headings} {stripped}", removed, "strip_nav"
@@ -2859,7 +2922,7 @@ def _extract_content_text(soup_orig, url: str, home_text: str = "") -> tuple:
         if removed > 500:
             return f"{all_headings} {clean_text}", removed, "sliding_window"
 
-    return f"{all_headings} {full_text_raw}", 0, "full_text"
+    return f"{all_headings} {full_text_raw}", 0, "full_text_no_nav"
 
 
 async def phase2_focus(
