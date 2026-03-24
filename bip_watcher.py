@@ -259,6 +259,7 @@ IGNORE_URL_SUBSTR = [
     "cookies", "deklaracja-dostepnosci", "deklaracja_dostepnosci",
     "majatk", "majątk", "regulamin", "sygnalis", "redakcja",
     "login", "logowanie", "rejestracja", "newsletter",
+
     # Galerie, multimedia, zdjęcia — nigdy nie zawierają ogłoszeń planistycznych
     "galeria-zdjec", "galeria_zdjec", "galeria-fotografii", "galeria_fotografii",
     "galeria/", "/galeria", "photo", "photogallery", "zdjecia", "zdjęcia",
@@ -530,6 +531,7 @@ class GlobalState:
         self.mail_dedup = set()
         self.reported_urls_this_run: set = set()
         self.reported_blobs_this_run: set = set()  # [v2.43] dedup po treści bloba
+        self._home_html_hashes: dict = {}  # [v2.43] host → sha1(home_html) dla SPA detection
         self.last_printed: dict = {}
 
     def request_shutdown(self):
@@ -2994,6 +2996,14 @@ async def phase2_focus(
         f"frontier={total_in_frontier} | retry={retry_added} | dead_logged={len(dead_set)}",
         flush=True
     )
+    # [v2.43] Pobierz i zapisz sha1 HTML strony głównej dla SPA detection
+    if home_url and allowed_host not in state._home_html_hashes:
+        try:
+            _hr, _hf, _hk, _hs, _hc, _he, _hm, _hm2 = await fetch_conditional(session_crawl, home_url)
+            if _hk == "html" and _hr:
+                state._home_html_hashes[allowed_host] = sha1(_hr[:20000])
+        except Exception:
+            pass
 
     allow_url, is_strict = make_allow_url_fn(allowed_host)
     _mode = "strict (bip w nazwie)" if is_strict else "same_base_domain"
@@ -3110,6 +3120,17 @@ async def phase2_focus(
             if text_len < PHASE2_MIN_TEXT_FOR_HTML:
                 need_pw_for_content = True
                 pw_content_reason = f"too_little_text({text_len}<{PHASE2_MIN_TEXT_FOR_HTML})"
+            # [v2.43] SPA detection: jeśli sha1(html) identyczny z sha1(home_html)
+            # i URL różny od home → SPA shell → triggeruj Playwright
+            if not need_pw_for_content and home_url and len(html) > 10000:
+                _home_c = _canon(home_url)
+                _url_c = _canon(url)
+                if _url_c != _home_c:
+                    _html_hash = sha1(html[:20000])
+                    _home_hash = state._home_html_hashes.get(urlparse(_url_c).netloc, "")
+                    if _home_hash and _html_hash == _home_hash:
+                        need_pw_for_content = True
+                        pw_content_reason = "spa_same_as_home"
 
             if not need_pw_for_content:
                 is_dyn, dyn_score, dyn_reasons = dynamic_detector.is_dynamic(html=html, url=final or url)
