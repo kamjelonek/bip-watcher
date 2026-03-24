@@ -274,6 +274,9 @@ IGNORE_URL_SUBSTR = [
     # p=print, p=document — alternatywne widoki/akcje
     "p=print", "p=document", "p=edit", "p=save",
     # Alternatywne formaty tej samej treści
+    "slabowidzacy",  # [v2.43] wersja BIP dla słabowidzących — surowy HTML bez CSS
+    "rejestr-zmian", "rejestr_zmian",  # [v2.43] strona systemowa rejestru zmian CMS
+    "api=xml", "api=json",  # [v2.43] API endpoints zwracające dane maszynowe
     "/rss/", "/rss.", "feed.xml", "/feed/",
     "/xml/", "drukuj.asp", "core/drukuj", "core/pdf",
     "akcja=drukuj", "akcja=pdf", "format=pdf", "format=xml",
@@ -363,6 +366,8 @@ _GENERIC_TITLE_PATTERNS = [
     "zarząd", "zarzad", "burmistrz", "wójt", "wojt", "starosta",
     "najnowsze informacje", "najnowsze", "więcej informacji", "wiecej informacji",
     "lista zmian", "rejestr zmian strony", "historia zmian",
+    "metryczka wpisu", "metryczka", "metryka wpisu", "metryka",
+    "rejestr spraw", "rejestr zmian dokumentu",
     "projekty unijne", "projekty europejskie", "dla mediów", "dla mediow",
 ]
 
@@ -530,7 +535,7 @@ class GlobalState:
         self.cache_lock = asyncio.Lock()
         self.mail_dedup = set()
         self.reported_urls_this_run: set = set()
-        self.reported_blobs_this_run: set = set()  # [v2.43] dedup po treści bloba
+        self.crawled_blobs_this_run: set = set()  # [v2.43] dedup crawlowania po treści
         self._home_html_hashes: dict = {}  # [v2.43] host → sha1(home_html) dla SPA detection
         self.last_printed: dict = {}
 
@@ -1417,6 +1422,11 @@ def normalize_url(url: str) -> str:
                 continue
             # Parametry dostępności (kontrast, czcionka itp.) — nie wpływają na treść
             if kl.startswith("acc_"): continue
+            # [v2.43] Parametry dostępności WCAG — nie zmieniają treści strony
+            if kl in {"contrast", "size", "letterspacing", "lineheight",
+                      "reset", "pasek", "fontsize", "font_size",
+                      "high_contrast", "wcag"}:
+                continue
             q.append((kl, v))
         q.sort(key=lambda kv: kv[0])
         return urlunparse(p._replace(fragment="", query=urlencode(q, doseq=True)))
@@ -2991,6 +3001,10 @@ async def phase2_focus(
     if isinstance(state.gmina_retry, dict):
         state.gmina_retry[gkey] = []
 
+    # [v2.43] Reset crawled_blobs per gmina — żeby nie blokować identycznych
+    # treści między różnymi gminami (np. strony błędów, landing pages)
+    state.crawled_blobs_this_run.clear()
+
     print(
         f"  🔍 Phase2 start [{gmina}]: "
         f"frontier={total_in_frontier} | retry={retry_added} | dead_logged={len(dead_set)}",
@@ -3329,6 +3343,18 @@ async def phase2_focus(
                         print(f"  🎭 Phase2 Playwright retry OK: blob={len(blob)} @ {url[:60]}", flush=True)
                     diag["counts"]["pw_small_blob_retry"] = int(diag["counts"].get("pw_small_blob_retry", 0)) + 1
 
+        # [v2.43] Content dedup przy crawlowaniu — skip jeśli identyczna treść
+        # Chroni przed eksplozją gdy wiele URL-ów zwraca tę samą stronę
+        # (np. rejestr zmian z parametrami dekoracyjnymi)
+        # Tylko dla blobów > 200 znaków — krótkie bloby mogą być przypadkowo identyczne
+        if len(blob) > 200:
+            _crawl_blob_key = sha1(blob[:3000])
+            if _crawl_blob_key in state.crawled_blobs_this_run:
+                diag["counts"]["crawl_blob_dedup_skip"] = int(diag["counts"].get("crawl_blob_dedup_skip", 0)) + 1
+                pages_skipped_ttl += 1
+                continue
+            state.crawled_blobs_this_run.add(_crawl_blob_key)
+
         ok_any, kw_any = keyword_match_in_blob(blob)
 
         # Diagnostyka
@@ -3395,10 +3421,8 @@ async def phase2_focus(
         # [v2.42 Fix4] Proste raportowanie bez blob_dedup/context_dedup
         if status_new in {"NOWE", "ZMIANA"}:
             diag["counts"][f"hit_{status_new.lower()}"] += 1
-            _blob_key = sha1(blob[:2000])  # [v2.43] dedup po treści
-            if final_c not in state.reported_urls_this_run and _blob_key not in state.reported_blobs_this_run:
+            if final_c not in state.reported_urls_this_run:
                 state.reported_urls_this_run.add(final_c)
-                state.reported_blobs_this_run.add(_blob_key)
                 print_hit(f"🟢 {status_new}", gmina, kw_any, page_title)
                 found.append((gmina, kw_any, page_title, final_c, status_new))
             else:
