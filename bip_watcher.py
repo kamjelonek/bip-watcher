@@ -573,8 +573,29 @@ def iso_parse(s: str):
 def now_iso():
     return datetime.now().isoformat(timespec="seconds")
 
+_WCAG_PARAMS = frozenset({
+    "contrast", "size", "letterspacing", "lineheight", "reset",
+    "pasek", "fontsize", "font_size", "high_contrast", "wcag",
+    "lang", "language",
+})
+
+def _strip_wcag_params(u: str) -> str:
+    """[v2.43] Usuwa parametry dostępności WCAG i językowe z URL przed normalizacją."""
+    try:
+        p = urlparse(u)
+        if not p.query:
+            return u
+        filtered = [(k, v) for k, v in parse_qsl(p.query, keep_blank_values=True)
+                    if k.lower() not in _WCAG_PARAMS]
+        if len(filtered) == len(parse_qsl(p.query, keep_blank_values=True)):
+            return u  # nic nie usunięto
+        new_query = urlencode(filtered, doseq=True)
+        return urlunparse(p._replace(query=new_query))
+    except Exception:
+        return u
+
 def _canon(u: str) -> str:
-    return canonical_url(normalize_url(u or ""))
+    return canonical_url(normalize_url(_strip_wcag_params(u or "")))
 
 def sha1(s: str) -> str:
     return hashlib.sha1(s.encode("utf-8", errors="ignore")).hexdigest()
