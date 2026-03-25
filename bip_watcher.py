@@ -743,7 +743,7 @@ class DynamicPageDetector:
             if s:
                 links = s.find_all("a", href=True)
                 link_count = len(links)
-                if html_size > 10000 and link_count < 5:
+                if html_size > 10000 and link_count < 4:
                     total += 3
                     reasons.append(f"very_few_links(links={link_count},html={html_size})")
                 elif html_size > 5000 and link_count < 10:
@@ -2615,45 +2615,45 @@ async def phase1_full_crawl(
 
 
     # [v2.44] Wznów Phase1 BFS z zapisanego stanu (jeśli był przerywany)
-_p1_gkey_resume = gmina_cache_key(gmina, "https://" + allowed_host)
-_saved_p1_queue = state.gmina_phase1_queue.get(_p1_gkey_resume, [])
-_saved_frontier = state.gmina_frontiers.get(_p1_gkey_resume, [])
-if _saved_p1_queue or _saved_frontier:
-    _restored_q = 0
-    _restored_seeds = 0
-    for item in (_saved_p1_queue or []):
-        try:
-            su = item[0] if isinstance(item, list) else str(item)
-            sd = int(item[1]) if isinstance(item, list) and len(item) > 1 else 0
-        except Exception:
-            continue
-        cu = _canon(su)
-        if cu and cu not in visited:
-            visited.add(cu)
-            q.append((su, sd))
-            _restored_q += 1
-    for item in (_saved_frontier or []):
-        try:
-            fu = item[0] if isinstance(item, list) else str(item)
-        except Exception:
-            continue
-        cu = _canon(fu)
-        if cu:
-            seeds[cu] = seeds.get(cu, 1)
-            if cu not in visited:
+    _p1_gkey_resume = gmina_cache_key(gmina, "https://" + allowed_host)
+    _saved_p1_queue = state.gmina_phase1_queue.get(_p1_gkey_resume, [])
+    _saved_frontier = state.gmina_frontiers.get(_p1_gkey_resume, [])
+    if _saved_p1_queue or _saved_frontier:
+        _restored_q = 0
+        _restored_seeds = 0
+        for item in (_saved_p1_queue or []):
+            try:
+                su = item[0] if isinstance(item, list) else str(item)
+                sd = int(item[1]) if isinstance(item, list) and len(item) > 1 else 0
+            except Exception:
+                continue
+            cu = _canon(su)
+            if cu and cu not in visited:
                 visited.add(cu)
-            _restored_seeds += 1
-    state.gmina_phase1_queue[_p1_gkey_resume] = []  # wyczyść — wznawiamy
-    diag["notes"].append(
-        f"PHASE1_RESUME: restored_queue={_restored_q} restored_seeds={_restored_seeds}"
-    )
-    print(
-        f"  🔄 [{gmina}] Phase1 RESUME: "
-        f"q+={_restored_q} seeds+={_restored_seeds} z poprzedniego runu",
-        flush=True
-    )
+                q.append((su, sd))
+                _restored_q += 1
+        for item in (_saved_frontier or []):
+            try:
+                fu = item[0] if isinstance(item, list) else str(item)
+            except Exception:
+                continue
+            cu = _canon(fu)
+            if cu:
+                seeds[cu] = seeds.get(cu, 1)
+                if cu not in visited:
+                    visited.add(cu)
+                _restored_seeds += 1
+        state.gmina_phase1_queue[_p1_gkey_resume] = []  # wyczyść — wznawiamy
+        diag["notes"].append(
+            f"PHASE1_RESUME: restored_queue={_restored_q} restored_seeds={_restored_seeds}"
+        )
+        print(
+            f"  🔄 [{gmina}] Phase1 RESUME: "
+            f"q+={_restored_q} seeds+={_restored_seeds} z poprzedniego runu",
+            flush=True
+        )
 
-    
+
     print(
         f"  🕷️  BFS [{gmina}] @ {allowed_host} "
         f"sitemap_seeds={len(seeds)} max_depth={PHASE1_MAX_DEPTH}",
