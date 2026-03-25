@@ -2848,18 +2848,25 @@ def _extract_content_text(soup_orig, url: str, home_text: str = "") -> tuple:
 
     # [v2.43] Zbierz tekst pomijając duże listy nawigacyjne (>= 8 li)
     # Używamy get_text() selektywnie zamiast decompose() żeby nie niszczyć soup_orig
-    def _get_text_no_nav(node) -> str:
-        parts = []
-        for child in node.children:
-            tag_name = getattr(child, 'name', None)
+    def _get_text_no_nav(root) -> str:
+        parts: list[str] = []
+        stack = [root]
+        while stack:
+            node = stack.pop()
+            tag_name = getattr(node, 'name', None)
+            if not tag_name:
+                # węzeł tekstowy
+                parts.append(str(node))
+                continue
+            # pomiń dużą listę nawigacyjną
             if tag_name in ("ul", "ol"):
-                if len(child.find_all("li", recursive=False)) >= 5:
-                    continue  # pomiń dużą listę nawigacyjną
-            if tag_name:
-                parts.append(_get_text_no_nav(child))
-            else:
-                parts.append(str(child))
+                if len(node.find_all("li", recursive=False)) >= 5:
+                    continue
+            # wrzuć dzieci na stos w odwróconej kolejności (by zachować porządek)
+            for child in reversed(list(node.children)):
+                stack.append(child)
         return " ".join(parts)
+
 
     soup = soup_orig  # nie niszczymy oryginału
     full_text_raw = re.sub(r"\s+", " ", _get_text_no_nav(soup_orig)).strip()
