@@ -2089,7 +2089,7 @@ def _extract_content_text(soup_orig, url: str, home_text: str = "") -> tuple:
         for child in node.children:
             tag_name = getattr(child, 'name', None)
             if tag_name in ("ul", "ol"):
-                if len(child.find_all("li", recursive=False)) >= 5:
+                if len(child.find_all("li", recursive=False)) >= 8:
                     continue  # pomiń dużą listę nawigacyjną
             if tag_name:
                 parts.append(_get_text_no_nav(child))
