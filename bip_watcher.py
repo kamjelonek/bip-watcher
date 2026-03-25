@@ -54,6 +54,7 @@ Zmiany v2.43:
     Rozwiązuje eksplozję frontieru Żarowa przez relative URL resolve (fałszywe warianty).
     Persystowane w cache między runami.
 
+[FIX 3] is_soft_404 — wykrywa HTTP 200 z treścią błędu 404
     Warunek podwójny: wzorzec tekstowy + treść po odcięciu menu < 150 znaków.
     Chroni przed fałszywymi pozytywami na stronach Next.js (Czaplinek).
 
@@ -273,10 +274,6 @@ IGNORE_URL_SUBSTR = [
     # p=print, p=document — alternatywne widoki/akcje
     "p=print", "p=document", "p=edit", "p=save",
     # Alternatywne formaty tej samej treści
-    "slabowidzacy",  # [v2.43] wersja BIP dla słabowidzących — surowy HTML bez CSS
-    "contentsversions",  # [v2.43] historia wersji dokumentu — nie aktualna treść
-    "rejestr-zmian", "rejestr_zmian",  # [v2.43] strona systemowa rejestru zmian CMS
-    "api=xml", "api=json",  # [v2.43] API endpoints zwracające dane maszynowe
     "/rss/", "/rss.", "feed.xml", "/feed/",
     "/xml/", "drukuj.asp", "core/drukuj", "core/pdf",
     "akcja=drukuj", "akcja=pdf", "format=pdf", "format=xml",
@@ -366,8 +363,6 @@ _GENERIC_TITLE_PATTERNS = [
     "zarząd", "zarzad", "burmistrz", "wójt", "wojt", "starosta",
     "najnowsze informacje", "najnowsze", "więcej informacji", "wiecej informacji",
     "lista zmian", "rejestr zmian strony", "historia zmian",
-    "metryczka wpisu", "metryczka", "metryka wpisu", "metryka",
-    "rejestr spraw", "rejestr zmian dokumentu",
     "projekty unijne", "projekty europejskie", "dla mediów", "dla mediow",
 ]
 
@@ -535,7 +530,9 @@ class GlobalState:
         self.cache_lock = asyncio.Lock()
         self.mail_dedup = set()
         self.reported_urls_this_run: set = set()
-        self.crawled_blobs_this_run: set = set()  # [v2.43] dedup crawlowania po treści
+        self.reported_blobs_this_run: set = set()  # [v2.43] dedup po treści bloba
+        self.crawled_blobs_this_run: set = set()  # [v2.44] dedup crawlowania - skip PW i keyword match
+
         self._home_html_hashes: dict = {}  # [v2.43] host → sha1(home_html) dla SPA detection
         self.last_printed: dict = {}
 
@@ -573,29 +570,8 @@ def iso_parse(s: str):
 def now_iso():
     return datetime.now().isoformat(timespec="seconds")
 
-_WCAG_PARAMS = frozenset({
-    "contrast", "size", "letterspacing", "lineheight", "reset",
-    "pasek", "fontsize", "font_size", "high_contrast", "wcag",
-    "lang", "language",
-})
-
-def _strip_wcag_params(u: str) -> str:
-    """[v2.43] Usuwa parametry dostępności WCAG i językowe z URL przed normalizacją."""
-    try:
-        p = urlparse(u)
-        if not p.query:
-            return u
-        filtered = [(k, v) for k, v in parse_qsl(p.query, keep_blank_values=True)
-                    if k.lower() not in _WCAG_PARAMS]
-        if len(filtered) == len(parse_qsl(p.query, keep_blank_values=True)):
-            return u  # nic nie usunięto
-        new_query = urlencode(filtered, doseq=True)
-        return urlunparse(p._replace(query=new_query))
-    except Exception:
-        return u
-
 def _canon(u: str) -> str:
-    return canonical_url(normalize_url(_strip_wcag_params(u or "")))
+    return canonical_url(normalize_url(u or ""))
 
 def sha1(s: str) -> str:
     return hashlib.sha1(s.encode("utf-8", errors="ignore")).hexdigest()
@@ -691,16 +667,769 @@ def is_block_page(text: str) -> bool:
         if p.lower() in low: return True
     return False
 
-# [v2.43] Soft 404 — serwer zwraca HTTP 200 ale treść informuje o braku strony
-# [v2.43] Soft 404 — tylko bardzo specyficzne wzorce które nie mogą
-# pojawić się w normalnej treści BIP. Ogólne wzorce jak "strona nie istnieje"
-# dawały fałszywe pozytywy na istniejących stronach.
-_SOFT_404_PATTERNS = [
-    "nie ma takiej strony",
-    "404 - nie ma takiej strony",
-    "błąd 404 - nie ma",
-    "blad 404 - nie ma",
-]
+# ===================== DYNAMIC PAGE DETECTOR =====================
+class DynamicPageDetector:
+    _FRAMEWORK_MARKERS = [
+        ("data-reactroot", 3), ("__next_data__", 3), ("_next/static", 3), ("react-dom", 2),
+        ("__vue__", 3), ("data-v-", 2), ("__nuxt", 3), ("nuxt.js", 2),
+        ("ng-version", 3), ("ng-app", 2), ("[ng-", 2), ("__svelte", 3),
+        ("webpack", 1), ("vite", 1), ("chunk.js", 1), ("bundle.js", 1),
+    ]
+
+    _ROOT_PATTERNS = re.compile(
+        r'(id=["\'])(root|app|__next|__nuxt|app-root|ng-app|vue-app)(["\'])',
+        re.IGNORECASE
+    )
+
+    def score(self, html: str, url: str = "", kind: str = "html", status: int = None) -> tuple:
+        total = 0
+        reasons = []
+
+        if not html:
+            if kind == "html" and status == 200:
+                total += 3
+                reasons.append("empty_html_200")
+            return total, reasons
+
+        low = html.lower()
+        html_size = len(html)
+
+        fw_score = 0
+        fw_hits = []
+        for marker, weight in self._FRAMEWORK_MARKERS:
+            if marker.lower() in low:
+                fw_score = max(fw_score, weight)
+                fw_hits.append(marker)
+        if fw_score > 0:
+            total += fw_score
+            reasons.append(f"js_framework({','.join(fw_hits[:3])})")
+
+        if self._ROOT_PATTERNS.search(html):
+            total += 3
+            reasons.append("spa_root_container")
+
+        soup = None
+        def _get_soup():
+            nonlocal soup
+            if soup is None:
+                try:
+                    soup = BeautifulSoup(html, "lxml")
+                except Exception:
+                    soup = None
+            return soup
+
+        try:
+            s = _get_soup()
+            if s:
+                for tag in s(["script", "style", "noscript"]): tag.decompose()
+                visible_text = re.sub(r"\s+", " ", s.get_text(" ", strip=True)).strip()
+                text_len = len(visible_text)
+                if html_size > 5000 and text_len < 200:
+                    total += 3
+                    reasons.append(f"near_empty_body(text={text_len},html={html_size})")
+                elif html_size > 5000 and text_len < 300:
+                    total += 2
+                    reasons.append(f"sparse_text(text={text_len},html={html_size})")
+                elif html_size > 50000 and text_len > 0:
+                    ratio = text_len / html_size
+                    if ratio < 0.02:
+                        total += 3
+                        reasons.append(f"low_text_ratio({ratio:.3f},text={text_len},html={html_size})")
+        except Exception:
+            pass
+
+        try:
+            s = _get_soup()
+            if s:
+                links = s.find_all("a", href=True)
+                link_count = len(links)
+                if html_size > 10000 and link_count < 5:
+                    total += 3
+                    reasons.append(f"very_few_links(links={link_count},html={html_size})")
+                elif html_size > 5000 and link_count < 10:
+                    total += 1
+                    reasons.append(f"few_links(links={link_count},html={html_size})")
+        except Exception:
+            pass
+
+        try:
+            s = _get_soup()
+            if s:
+                scripts_with_src = s.find_all("script", src=True)
+                if len(scripts_with_src) > 8:
+                    total += 2
+                    reasons.append(f"many_ext_scripts({len(scripts_with_src)})")
+                elif len(scripts_with_src) > 4:
+                    total += 1
+                    reasons.append(f"ext_scripts({len(scripts_with_src)})")
+        except Exception:
+            pass
+
+        try:
+            s = _get_soup()
+            if s:
+                title_tag = s.find("title")
+                title_text = (title_tag.get_text(strip=True) if title_tag else "")
+                if not title_text or len(title_text) < 5:
+                    total += 1
+                    reasons.append("no_title")
+        except Exception:
+            pass
+
+        if total >= 1:
+            url_low = (url or "").lower()
+            dynamic_url_hints = ["/#/", "/#!/", "/_next/", "/__nuxt/", "/static/js/"]
+            if any(h in url_low for h in dynamic_url_hints):
+                total += 2
+                reasons.append("dynamic_url_pattern")
+
+        return total, reasons
+
+    def is_dynamic(self, html: str, url: str = "", kind: str = "html", status: int = None) -> tuple:
+        score, reasons = self.score(html, url, kind, status)
+        return score >= DYNAMIC_SCORE_THRESHOLD, score, reasons
+
+dynamic_detector = DynamicPageDetector()
+
+
+# ===================== PLAYWRIGHT — fetch z treścią =====================
+
+async def fetch_with_playwright(url: str, interact: bool = False) -> tuple:
+    """
+    Pobiera pojedynczą stronę przez Playwright, zwraca wyrenderowany HTML.
+    Zwraca 8-elementową krotkę: (html, final_url, kind, status, ctype, err, ms, {})
+    """
+    try:
+        from playwright.async_api import async_playwright
+    except ImportError:
+        return None, url, "exc", None, "", "playwright_not_installed", 0, {}
+
+    async with async_playwright() as p:
+        browser = None
+        page = None
+        try:
+            browser = await p.chromium.launch(
+                headless=True,
+                args=[
+                    "--no-sandbox", "--disable-setuid-sandbox",
+                    "--ignore-certificate-errors",
+                    "--disable-blink-features=AutomationControlled",
+                ]
+            )
+            page = await browser.new_page()
+            await page.set_extra_http_headers({
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept-Language": "pl-PL,pl;q=0.9,en-US;q=0.8",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            })
+            await page.route(
+                "**/*.{png,jpg,jpeg,gif,svg,ico,woff,woff2,ttf,eot,mp4,mp3,css}",
+                lambda r: r.abort()
+            )
+
+            t0 = time.time()
+            try:
+                await page.goto(url, wait_until="load", timeout=45000)
+            except Exception:
+                await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+
+            if interact:
+                try:
+                    await page.wait_for_selector("tbody tr", timeout=8000)
+                except Exception:
+                    pass
+                for _ in range(3):
+                    await page.evaluate("window.scrollBy(0, document.body.scrollHeight)")
+                    await asyncio.sleep(1.2)
+
+            content = await page.content()
+            final_url = page.url
+            ms = round((time.time() - t0) * 1000)
+            return content, final_url, "html", 200, "text/html", None, ms, {}
+
+        except Exception as e:
+            return None, url, "exc", None, "", str(e), 0, {}
+        finally:
+            if page:
+                try: await page.close()
+                except Exception: pass
+            if browser:
+                try: await browser.close()
+                except Exception: pass
+
+
+# ===================== [v2.23 / v2.42] _fetch_links_playwright — mini-BFS =====================
+
+async def _fetch_links_playwright(url: str, allowed_host: str) -> set:
+    """
+    [v2.23 przywrócony w v2.42] Zbiera linki przez Playwright używając mini-BFS (głębokość 1).
+
+    Algorytm:
+    1. Załaduj stronę startową przez Playwright
+    2. Przewiń stronę aby załadować lazy content
+    3. Zbierz WSZYSTKIE <a href> z wyrenderowanego DOM + iframe + document_id z source
+    4. Dla każdego nowego linka (allowed_host, not skip):
+       - Odwiedź go Playwrightem (max PLAYWRIGHT_MINI_BFS_MAX_PAGES stron)
+       - Zbierz kolejne <a href> z tej podstrony
+    5. Zwróć kompletny zbiór canonicznych URL-i
+
+    [v2.42] Używa _host_allowed() z nową logiką "bip w nazwie" (nie same_base_domain).
+    """
+    try:
+        from playwright.async_api import async_playwright
+    except ImportError:
+        print("    ⚠️ Playwright nie jest zainstalowany", flush=True)
+        return set()
+
+    found_links: set = set()
+    bfs_queue: deque = deque()
+    bfs_visited: set = set()
+
+    cu_start = _canon(url)
+    if cu_start:
+        bfs_visited.add(cu_start)
+    bfs_queue.append((url, 0))
+
+    pages_crawled = 0
+
+    async def _collect_links_from_playwright_page(pw_page, base_url: str) -> set:
+        collected = set()
+
+        # 1. Standardowe <a href> z DOM
+        try:
+            hrefs = await pw_page.eval_on_selector_all(
+                "a[href]",
+                "els => els.map(e => e.href || '').filter(h => h && !h.startsWith('javascript:') && !h.startsWith('mailto:') && !h.startsWith('tel:'))"
+            )
+            if len(hrefs) == 0:
+                raw_count = await pw_page.eval_on_selector_all("a", "els => els.length")
+                raw_count = raw_count[0] if raw_count else 0
+                tbody_rows = await pw_page.eval_on_selector_all("tbody tr", "els => els.length")
+                tbody_rows = tbody_rows[0] if tbody_rows else 0
+                try:
+                    _title = await pw_page.title()
+                    _body_snip = await pw_page.evaluate("() => document.body ? document.body.innerText.slice(0,150).replace(/\n/g,' ') : 'NO_BODY'")
+                    _page_url = pw_page.url
+                except Exception:
+                    _title, _body_snip, _page_url = "?", "?", base_url
+                print(f"      [PW-DBG] a[href]=0 raw_a={raw_count} tbody_tr={tbody_rows}", flush=True)
+                print(f"      [PW-DBG] title={_title!r} final_url={_page_url[:80]}", flush=True)
+                print(f"      [PW-DBG] body={_body_snip!r}", flush=True)
+            for href in hrefs:
+                if not href: continue
+                try:
+                    abs_u = normalize_url(urljoin(base_url, href))
+                    if not is_valid_url(abs_u): continue
+                    if not _host_allowed(urlparse(abs_u).netloc, allowed_host): continue
+                    if should_skip_href(abs_u): continue
+                    cu = _canon(abs_u)
+                    if cu: collected.add(cu)
+                except Exception:
+                    continue
+        except Exception:
+            pass
+
+        # 2. document_id z całego source (dla systemów BIP z AJAX)
+        try:
+            page_source = await pw_page.content()
+            doc_ids = set(re.findall(r'document_id[=\'":\s]+(\d+)', page_source, re.IGNORECASE))
+            if doc_ids:
+                parsed = urlparse(base_url)
+                base_no_query = urlunparse((parsed.scheme, parsed.netloc, parsed.path, "", "", ""))
+                base_root = urlunparse((parsed.scheme, parsed.netloc, "/", "", "", ""))
+                for doc_id in doc_ids:
+                    for base in (base_no_query, base_root):
+                        detail_url = f"{base}?action=details&document_id={doc_id}"
+                        cu = _canon(detail_url)
+                        if cu and _host_allowed(urlparse(cu).netloc, allowed_host):
+                            collected.add(cu)
+        except Exception:
+            pass
+
+        # 3. onclick / data-href / data-url
+        try:
+            js_attrs = await pw_page.eval_on_selector_all(
+                "[onclick], [data-href], [data-url]",
+                """els => els.map(e => ({
+                    onclick: e.getAttribute('onclick') || '',
+                    dataHref: e.getAttribute('data-href') || '',
+                    dataUrl: e.getAttribute('data-url') || ''
+                }))"""
+            )
+            for attrs in js_attrs:
+                for val in (attrs.get("onclick", ""), attrs.get("dataHref", ""), attrs.get("dataUrl", "")):
+                    if not val: continue
+                    for m in re.findall(r"['\"]([^'\"]*?(?:[?&][^'\"]*|/[^'\"]+))['\"]", val):
+                        try:
+                            abs_u = normalize_url(urljoin(base_url, m))
+                            if not is_valid_url(abs_u): continue
+                            if not _host_allowed(urlparse(abs_u).netloc, allowed_host): continue
+                            if should_skip_href(abs_u): continue
+                            cu = _canon(abs_u)
+                            if cu: collected.add(cu)
+                        except Exception:
+                            continue
+        except Exception:
+            pass
+
+        # 4. iframe
+        try:
+            frames = pw_page.frames
+            for frame in frames:
+                if frame == pw_page.main_frame: continue
+                try:
+                    frame_hrefs = await frame.eval_on_selector_all(
+                        "a[href]",
+                        "els => els.map(e => e.href || '').filter(h => h && !h.startsWith('javascript:'))"
+                    )
+                    for href in frame_hrefs:
+                        try:
+                            abs_u = normalize_url(urljoin(base_url, href))
+                            if not is_valid_url(abs_u): continue
+                            if not _host_allowed(urlparse(abs_u).netloc, allowed_host): continue
+                            if should_skip_href(abs_u): continue
+                            cu = _canon(abs_u)
+                            if cu: collected.add(cu)
+                        except Exception:
+                            continue
+                except Exception:
+                    continue
+        except Exception:
+            pass
+
+        return collected
+
+    async with async_playwright() as p:
+        browser = None
+        try:
+            browser = await p.chromium.launch(
+                headless=True,
+                args=[
+                    "--no-sandbox", "--disable-setuid-sandbox",
+                    "--ignore-certificate-errors",
+                    "--disable-blink-features=AutomationControlled",
+                ]
+            )
+
+            while bfs_queue and pages_crawled < PLAYWRIGHT_MINI_BFS_MAX_PAGES:
+                current_url, depth = bfs_queue.popleft()
+                page = None
+
+                try:
+                    page = await browser.new_page()
+                    await page.set_extra_http_headers({
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                        "Accept-Language": "pl-PL,pl;q=0.9,en-US;q=0.8",
+                        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                    })
+                    await page.route(
+                        "**/*.{png,jpg,jpeg,gif,svg,ico,woff,woff2,ttf,eot,mp4,mp3,css}",
+                        lambda r: r.abort()
+                    )
+
+                    _goto_ok = False
+                    _goto_err = None
+                    for _wait in ("load", "domcontentloaded"):
+                        try:
+                            await page.goto(current_url, wait_until=_wait, timeout=30000)
+                            _goto_ok = True
+                            break
+                        except Exception as _ge:
+                            _goto_err = _ge
+                    if not _goto_ok:
+                        print(f"      [PW-DBG] goto FAIL: {str(_goto_err)[:120]} url={current_url[:60]}", flush=True)
+                        pages_crawled += 1
+                        continue
+
+                    try:
+                        await page.wait_for_selector("tbody tr", timeout=8000)
+                    except Exception:
+                        pass
+
+                    for _ in range(2):
+                        try:
+                            await page.evaluate("window.scrollBy(0, document.body.scrollHeight)")
+                        except Exception:
+                            pass
+                        await asyncio.sleep(1.0)
+
+                    final_url = page.url
+                    pages_crawled += 1
+
+                    page_links = await _collect_links_from_playwright_page(page, final_url)
+                    new_links = page_links - found_links
+                    found_links.update(page_links)
+
+                    print(
+                        f"    🎭 PW mini-BFS p={pages_crawled} depth={depth} "
+                        f"links_here={len(page_links)} new={len(new_links)} "
+                        f"total={len(found_links)} url={current_url[:60]}",
+                        flush=True
+                    )
+
+                    for cu in new_links:
+                        if cu in bfs_visited: continue
+                        if any(cu.lower().endswith(ext) for ext in ATT_EXT): continue
+                        bfs_visited.add(cu)
+                        if depth < 1:
+                            bfs_queue.append((cu, depth + 1))
+
+                except Exception as e:
+                    print(f"    ⚠️ PW mini-BFS error @ {current_url[:60]}: {str(e)[:80]}", flush=True)
+                finally:
+                    if page:
+                        try: await page.close()
+                        except Exception: pass
+
+        except Exception as e:
+            print(f"    ❌ PW mini-BFS fatal: {e}", flush=True)
+        finally:
+            if browser:
+                try: await browser.close()
+                except Exception: pass
+
+    print(
+        f"    🎭 PW mini-BFS DONE: pages={pages_crawled} total_links={len(found_links)} "
+        f"start={url[:60]}",
+        flush=True
+    )
+    return found_links
+
+
+# ===================== PLAYWRIGHT — pełny BFS (zachowany z v2.22) =====================
+
+async def playwright_bfs(
+    start_url: str,
+    allowed_host: str,
+    max_depth: int,
+    diag: dict,
+    existing_visited: set = None,
+) -> set:
+    """Pełny równoległy BFS przez Playwright (używany tylko jeśli Phase1 całkowicie fail)."""
+    try:
+        from playwright.async_api import async_playwright
+    except ImportError:
+        diag["notes"].append("PLAYWRIGHT_BFS_SKIP: playwright not installed")
+        return set()
+
+    if existing_visited is None:
+        existing_visited = set()
+
+    found_urls = set()
+    visited = set(existing_visited)
+    queue = deque()
+
+    cu_start = _canon(start_url)
+    if cu_start: visited.add(cu_start)
+    queue.append((start_url, 0))
+
+    pages_crawled = 0
+    pages_failed = 0
+    t0 = time.time()
+
+    print(f"  🎭 Playwright BFS start: {start_url} (max_depth={max_depth})", flush=True)
+
+    async with async_playwright() as p:
+        browser = None
+        try:
+            browser = await p.chromium.launch(headless=True)
+
+            while queue and not state.shutdown_requested:
+                url_bfs, depth = queue.popleft()
+                if depth > max_depth:
+                    cu = _canon(url_bfs)
+                    if cu: found_urls.add(cu)
+                    continue
+
+                page = None
+                try:
+                    page = await browser.new_page()
+                    await page.route(
+                        "**/*.{png,jpg,jpeg,gif,svg,ico,woff,woff2,ttf,eot}",
+                        lambda r: r.abort()
+                    )
+                    try:
+                        await page.goto(url_bfs, wait_until="load", timeout=45000)
+                    except Exception:
+                        await page.goto(url_bfs, wait_until="domcontentloaded", timeout=30000)
+                    try:
+                        await page.wait_for_selector("tbody tr", timeout=8000)
+                    except Exception:
+                        pass
+                    try:
+                        await page.wait_for_selector("a[href]", timeout=8000)
+                    except Exception:
+                        pass
+
+                    final_url = page.url
+                    pages_crawled += 1
+
+                    raw_links = await page.eval_on_selector_all(
+                        "a[href]",
+                        "els => els.map(e => ({href: e.href, text: e.innerText || e.textContent || ''}))"
+                    )
+
+                    for link_obj in raw_links:
+                        try:
+                            href = (link_obj.get("href") or "").strip()
+                            if not href or href.startswith(("mailto:", "tel:", "javascript:")): continue
+                            abs_u = normalize_url(urljoin(final_url, href))
+                            if not is_valid_url(abs_u): continue
+                            if not _host_allowed(urlparse(abs_u).netloc, allowed_host): continue
+                            if should_skip_href(abs_u): continue
+                            cu = _canon(abs_u)
+                            if not cu or cu in visited: continue
+                            visited.add(cu)
+                            found_urls.add(cu)
+                            if depth + 1 <= max_depth:
+                                queue.append((abs_u, depth + 1))
+                        except Exception:
+                            continue
+
+                except Exception as e:
+                    pages_failed += 1
+                    if pages_failed <= 5:
+                        print(f"  ⚠️  Playwright BFS error @ {url_bfs}: {str(e)[:80]}", flush=True)
+                finally:
+                    if page:
+                        try: await page.close()
+                        except Exception: pass
+
+        except Exception as e:
+            diag["notes"].append(f"PW_BFS_FATAL: {str(e)[:100]}")
+        finally:
+            if browser:
+                try: await browser.close()
+                except Exception: pass
+
+    elapsed = round((time.time() - t0) / 60, 1)
+    diag["notes"].append(f"PW_BFS pages={pages_crawled} failed={pages_failed} found={len(found_urls)} time={elapsed}min")
+    diag["counts"]["pw_bfs_pages"] = pages_crawled
+    diag["counts"]["pw_bfs_found"] = len(found_urls)
+    return found_urls
+
+
+def retry_io(action, tries: int = 5, base_sleep: float = 0.6):
+    last_exc = None
+    for i in range(tries):
+        try:
+            return action()
+        except PermissionError as e:
+            last_exc = e
+            time.sleep(base_sleep + (i * 0.4) + random.uniform(0.0, 0.3))
+        except OSError as e:
+            msg = str(e).lower()
+            if "permission" in msg or "access" in msg or "denied" in msg:
+                last_exc = e
+                time.sleep(base_sleep + (i * 0.4) + random.uniform(0.0, 0.3))
+            else:
+                raise
+    if last_exc: raise last_exc
+
+# ===================== FUNKCJE POMOCNICZE =====================
+
+def save_diag(diag_rows, diag_errors):
+    try:
+        def _do():
+            new_file = not DIAG_GMINY_CSV.exists()
+            with open(DIAG_GMINY_CSV, "a", encoding="utf-8", newline="") as f:
+                w = csv.writer(f)
+                if new_file:
+                    w.writerow(["datetime", "gmina", "start_url", "status",
+                                "phase1_seeds", "phase2_pages_ok", "notes", "counts_json"])
+                for r in (diag_rows or []):
+                    w.writerow([
+                        r.get("datetime"), r.get("gmina"), r.get("start_url"),
+                        r.get("status"), r.get("phase1_seeds"), r.get("phase2_pages_ok"),
+                        " | ".join(r.get("notes", []) or [])[:900],
+                        json.dumps(r.get("counts", {}), ensure_ascii=False)[:5000],
+                    ])
+            new_file2 = not DIAG_ERRORS_CSV.exists()
+            with open(DIAG_ERRORS_CSV, "a", encoding="utf-8", newline="") as f:
+                w = csv.writer(f)
+                if new_file2:
+                    w.writerow(["datetime", "gmina", "stage", "kind", "status", "url", "err"])
+                for e in (diag_errors or []):
+                    w.writerow([
+                        now_iso(), e.get("gmina"), e.get("stage"), e.get("kind"),
+                        e.get("status"), (e.get("url") or "")[:400], (e.get("err") or "")[:300],
+                    ])
+        retry_io(_do, tries=6, base_sleep=0.7)
+    except Exception as ex:
+        print(f"⚠️ save_diag failed: {ex}")
+
+
+def write_summary(diag_rows, new_items_for_mail):
+    try:
+        total = len(diag_rows or [])
+        ok = sum(1 for r in (diag_rows or []) if r.get("status") == "OK")
+        start_fail = sum(1 for r in (diag_rows or []) if r.get("status") == "START_FAIL")
+        lines = [
+            f"BIP WATCHER v2.43 SUMMARY @ {now_iso()}",
+            f"gminy_total={total} ok={ok} start_fail={start_fail}",
+            f"mail_items={len(new_items_for_mail or [])}",
+            "",
+            "TOP hits:",
+        ]
+        for x in (new_items_for_mail or [])[:500]:
+            lines.append("- " + re.sub(r"\s+", " ", x).strip())
+        def _do():
+            with open(SUMMARY_FILE, "w", encoding="utf-8") as f:
+                f.write("\n".join(lines))
+        retry_io(_do, tries=6, base_sleep=0.7)
+        print(f"🧾 Summary saved: {SUMMARY_FILE}")
+    except Exception as ex:
+        print(f"⚠️ write_summary failed: {ex}")
+
+
+def append_hits_to_backup(items: list):
+    if not items:
+        return
+    try:
+        def _do():
+            with open(HITS_BACKUP_FILE, "a", encoding="utf-8") as f:
+                for item in items:
+                    f.write(json.dumps({"ts": now_iso(), "item": item}, ensure_ascii=False) + "\n")
+        retry_io(_do, tries=4, base_sleep=0.3)
+        print(f"💾 Hits backup: +{len(items)} wpisów → {HITS_BACKUP_FILE}", flush=True)
+    except Exception as ex:
+        print(f"⚠️ hits backup failed: {ex}", flush=True)
+
+
+def _try_send_email_sync():
+    if not ENABLE_EMAIL:
+        return
+    items = list(state.new_items_for_mail or [])
+    if not items:
+        print("📨 Email: brak wyników do wysłania.")
+        return
+    try:
+        subject = (
+            f"BIP WATCHER: {len(items)} nowych/zmienionych wpisów "
+            f"({datetime.now().strftime('%Y-%m-%d %H:%M')})"
+        )
+        body = "\n\n".join(items[:1200])
+        if len(items) > 1200:
+            body += f"\n\n... truncated ({len(items)} total)"
+        msg = MIMEText(body, "plain", "utf-8")
+        msg["Subject"] = subject
+        msg["From"] = EMAIL_TO
+        msg["To"] = EMAIL_TO
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as srv:
+            srv.send_message(msg)
+        print(f"📨 Email: SENT ✅ ({len(items)} wpisów)")
+        state.new_items_for_mail.clear()
+        state.mail_dedup.clear()
+    except Exception as e:
+        print(f"⚠️  Email failed: {e}")
+
+
+def panic_save_checkpoint_sync(reason: str = "SIGTERM"):
+    try:
+        if not USE_CACHE: return
+        if os.getenv("GITHUB_ACTIONS") and get_shard_index() >= 0:
+            shard = get_shard_index()
+            out = {"schema": CACHE_SCHEMA}
+            out["urls_seen"] = {}
+            old_urls = (state.raw_cache or {}).get("urls_seen", {}) if isinstance(state.raw_cache, dict) else {}
+            for h in state.urls_seen:
+                out["urls_seen"][h] = old_urls.get(h, now_iso())
+            out["content_seen"] = state.content_seen or {}
+            out["gmina_seeds"] = state.gmina_seeds or {}
+            out["gmina_frontiers"] = state.gmina_frontiers or {}
+            out["gmina_retry"] = state.gmina_retry or {}
+            out["dead_urls"] = getattr(state, "dead_urls", {})
+            out["gmina_phase1_queue"] = getattr(state, "gmina_phase1_queue", {})
+            out["dead_path_suffixes"] = {h: list(v) for h, v in getattr(state, "dead_path_suffixes", {}).items()}
+            out["new_items_for_mail"] = list(state.new_items_for_mail or [])
+            filename = BASE_DIR / f"cache_shard_{shard}.json"
+            tmp = str(filename) + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(out, f, indent=2, ensure_ascii=False)
+            os.replace(tmp, filename)
+            print(f"🧯 PANIC SAVE (shard) OK [{reason}]: {filename}", flush=True)
+        else:
+            save_cache_v2(state.raw_cache, state.urls_seen, state.content_seen, state.gmina_seeds)
+            print(f"🧯 PANIC SAVE (cache.json) OK [{reason}]", flush=True)
+        try:
+            save_diag(state.diag_rows, state.diag_errors)
+            print(f"🧯 PANIC SAVE (diag) OK [{reason}]", flush=True)
+        except Exception as e:
+            print(f"⚠️ PANIC diag save failed: {e}", flush=True)
+        try:
+            write_summary(state.diag_rows, state.new_items_for_mail)
+            _try_send_email_sync()
+        except Exception as e:
+            print(f"⚠️ PANIC email failed: {e}", flush=True)
+    except Exception as e:
+        print(f"⚠️ PANIC SAVE FAILED [{reason}]: {e}", flush=True)
+
+import atexit
+atexit.register(panic_save_checkpoint_sync, "atexit")
+
+
+# ===================== URL NORMALIZATION =====================
+
+def normalize_url(url: str) -> str:
+    """
+    [v2.42 Fix1] Przywrócono z v2.28 — blacklista tracking params, sortowanie,
+    usunięcie fragmentu. BEZ dekodowania &amp; — BeautifulSoup robi to automatycznie
+    przy ekstrakcji href z HTML, Playwright zwraca e.href już zdekodowane przez DOM.
+    """
+    try:
+        p = urlparse(url)
+        q = []
+        for k, v in parse_qsl(p.query, keep_blank_values=True):
+            kl = (k or "").strip().lower()
+            if not kl: continue
+            # Usuń śmieci z podwójnego enkodowania &amp; → amp%3b w kluczu
+            if kl.startswith("amp%3b") or kl.startswith("amp;"): continue
+            if kl.startswith("utm_"): continue
+            if kl in {"fbclid", "gclid", "yclid", "sid", "session", "sessionid",
+                      "phpsessid", "jsessionid", "print", "format",
+                      "lang", "language"}:  # [v2.43] lang= duplikuje te same strony w różnych językach
+                continue
+            # Parametry dostępności (kontrast, czcionka itp.) — nie wpływają na treść
+            if kl.startswith("acc_"): continue
+            q.append((kl, v))
+        q.sort(key=lambda kv: kv[0])
+        return urlunparse(p._replace(fragment="", query=urlencode(q, doseq=True)))
+    except Exception:
+        return url
+
+
+def canonical_url(url: str) -> str:
+    """
+    [v2.42 Fix2] Usunięto breadcrumb normalizację z v2.41.
+    Problem: /a/b/c/930 i /x/y/c/930 → /c/930 powodowało że dwa RÓŻNE dokumenty
+    z tym samym ID pod różnymi sekcjami były traktowane jako jeden.
+    Przywrócono v2.28: https + strip www + trailing slash + strip /xml.
+    """
+    u = normalize_url((url or "").strip())
+    try:
+        p = urlparse(u)
+        scheme = "https"
+        netloc = (p.netloc or "").lower().strip()
+        if netloc.startswith("www."): netloc = netloc[4:]
+        path = p.path or "/"
+        if path != "/" and path.endswith("/"): path = path[:-1]
+
+        # Pomiń wariant /xml — to samo co HTML (eksport XML Dmosin)
+        segs = [s for s in path.split("/") if s]
+        if segs and segs[-1].lower() == "xml":
+            path = "/" + "/".join(segs[:-1]) if len(segs) > 1 else "/"
+
+        return urlunparse((scheme, netloc, path, "", p.query, ""))
+    except Exception:
+        return u
+
+
+def is_home_url(u: str) -> bool:
+    try:
+        p = urlparse(u)
+        return p.path == "" or p.path == "/"
+    except Exception:
+        return False
 
 def is_listing_url(u: str) -> bool:
     low = (u or "").lower()
@@ -925,15 +1654,6 @@ def safe_soup(html: str):
         return BeautifulSoup(html, "lxml")
     except Exception:
         return None
-
-def cache_mark_url(u: str):
-    if not USE_CACHE: return
-    if is_phase1_listing(u): return
-    h = url_key(u)
-    state.urls_seen.add(h)
-    if isinstance(state.raw_cache, dict):
-        d = state.raw_cache.setdefault("urls_seen", {})
-        if isinstance(d, dict): d[h] = now_iso()
 
 # ===================== SITEMAP + ROBOTS =====================
 def detect_js_app(html: str) -> bool:
@@ -1341,12 +2061,16 @@ def load_cache_v2():
 def save_cache_v2(raw_cache, urls_seen_set, content_seen, gmina_seeds):
     out = {"schema": CACHE_SCHEMA}
     old_urls = (raw_cache or {}).get("urls_seen", {}) if isinstance(raw_cache, dict) else {}
+    out["urls_seen"] = {h: old_urls.get(h, now_iso()) for h in (urls_seen_set or set())}
     print(f"💾 save_cache_v2: urls={len(urls_seen_set)} content={len(content_seen or {})} seeds={len(gmina_seeds or {})}")
     out["content_seen"] = content_seen or {}
     out["gmina_seeds"] = gmina_seeds or {}
     out["gmina_frontiers"] = state.gmina_frontiers or {}
     out["gmina_retry"] = state.gmina_retry or {}
     out["dead_urls"] = getattr(state, "dead_urls", {})
+    out["gmina_phase1_queue"] = getattr(state, "gmina_phase1_queue", {})
+    out["dead_path_suffixes"] = {h: list(v) for h, v in getattr(state, "dead_path_suffixes", {}).items()}
+    out["new_items_for_mail"] = list(state.new_items_for_mail or [])
     tmp = str(CACHE_FILE) + ".tmp"
     def _do_save():
         with open(tmp, "w", encoding="utf-8") as f:
@@ -1354,6 +2078,7 @@ def save_cache_v2(raw_cache, urls_seen_set, content_seen, gmina_seeds):
         os.replace(tmp, CACHE_FILE)
     retry_io(_do_save, tries=6, base_sleep=0.7)
     print(f"💾 Cache saved: {len(urls_seen_set)} URLs, {len(out['content_seen'])} content")
+
 
 def purge_old_cache(raw_cache: dict, urls_seen_set: set, content_seen: dict, gmina_seeds: dict, dead_urls: dict):
     cutoff = datetime.now() - timedelta(days=SCANNED_TTL_DAYS)
@@ -1608,8 +2333,6 @@ async def fetch_conditional(session: aiohttp.ClientSession, url: str, extra_head
                 if status == 200 and is_block_page(text):
                     rate_limiter.report_403(domain)
                     return None, final, "blocked", 429, ctype, "block_page_detected", ms, resp_meta
-                # [v2.43] Soft 404 — HTTP 200 ale treść mówi "nie ma strony"
-
                 if _is_binary_response(ctype, data, final):
                     return None, final, "pdf", status, ctype, None, ms, resp_meta
                 if status != 200:
@@ -1890,6 +2613,47 @@ async def phase1_full_crawl(
     home_links: set = set()
     home_text_for_phase2: str = ""
 
+
+    # [v2.44] Wznów Phase1 BFS z zapisanego stanu (jeśli był przerywany)
+_p1_gkey_resume = gmina_cache_key(gmina, "https://" + allowed_host)
+_saved_p1_queue = state.gmina_phase1_queue.get(_p1_gkey_resume, [])
+_saved_frontier = state.gmina_frontiers.get(_p1_gkey_resume, [])
+if _saved_p1_queue or _saved_frontier:
+    _restored_q = 0
+    _restored_seeds = 0
+    for item in (_saved_p1_queue or []):
+        try:
+            su = item[0] if isinstance(item, list) else str(item)
+            sd = int(item[1]) if isinstance(item, list) and len(item) > 1 else 0
+        except Exception:
+            continue
+        cu = _canon(su)
+        if cu and cu not in visited:
+            visited.add(cu)
+            q.append((su, sd))
+            _restored_q += 1
+    for item in (_saved_frontier or []):
+        try:
+            fu = item[0] if isinstance(item, list) else str(item)
+        except Exception:
+            continue
+        cu = _canon(fu)
+        if cu:
+            seeds[cu] = seeds.get(cu, 1)
+            if cu not in visited:
+                visited.add(cu)
+            _restored_seeds += 1
+    state.gmina_phase1_queue[_p1_gkey_resume] = []  # wyczyść — wznawiamy
+    diag["notes"].append(
+        f"PHASE1_RESUME: restored_queue={_restored_q} restored_seeds={_restored_seeds}"
+    )
+    print(
+        f"  🔄 [{gmina}] Phase1 RESUME: "
+        f"q+={_restored_q} seeds+={_restored_seeds} z poprzedniego runu",
+        flush=True
+    )
+
+    
     print(
         f"  🕷️  BFS [{gmina}] @ {allowed_host} "
         f"sitemap_seeds={len(seeds)} max_depth={PHASE1_MAX_DEPTH}",
@@ -2089,7 +2853,7 @@ def _extract_content_text(soup_orig, url: str, home_text: str = "") -> tuple:
         for child in node.children:
             tag_name = getattr(child, 'name', None)
             if tag_name in ("ul", "ol"):
-                if len(child.find_all("li", recursive=False)) >= 8:
+                if len(child.find_all("li", recursive=False)) >= 5:
                     continue  # pomiń dużą listę nawigacyjną
             if tag_name:
                 parts.append(_get_text_no_nav(child))
@@ -2234,10 +2998,6 @@ async def phase2_focus(
 
     if isinstance(state.gmina_retry, dict):
         state.gmina_retry[gkey] = []
-
-    # [v2.43] Reset crawled_blobs per gmina — żeby nie blokować identycznych
-    # treści między różnymi gminami (np. strony błędów, landing pages)
-    state.crawled_blobs_this_run.clear()
 
     print(
         f"  🔍 Phase2 start [{gmina}]: "
@@ -2429,7 +3189,6 @@ async def phase2_focus(
                     print(f"  💀 home_redirect_dead: {url[:70]}", flush=True)
                     continue
 
-                # [v2.43] Sprawdź soft 404 w wyniku Playwright
                 print(f"  🎭 Phase2 Playwright OK: {len(pw_html)}B @ {url[:60]}", flush=True)
                 html, final, kind, status, ctype = pw_html, pw_final, pw_kind, pw_status, pw_ctype
 
@@ -2547,6 +3306,27 @@ async def phase2_focus(
             soup, url=url, home_text=home_text
         )
 
+
+        # [v2.44] Wczesny blob dedup — jeśli identyczny blob był już w tym runie, skip PW
+        _blob_key_early = sha1(blob[:2000])
+        if blob and len(blob) > 100 and _blob_key_early in state.crawled_blobs_this_run:
+            diag["counts"]["blob_dedup_early"] = int(diag["counts"].get("blob_dedup_early", 0)) + 1
+            async with state.cache_lock:
+                _be = {
+                    "found_at": (prev.get("found_at") if prev else now_iso()),
+                    "last_checked": now_iso(),
+                    "etag": (resp_meta.get("etag") if resp_meta else ""),
+                    "last_modified": (resp_meta.get("last_modified") if resp_meta else ""),
+                    "gmina": gmina, "title": (title or final_c)[:240],
+                    "url": final_c, "keywords": [],
+                    "att_sig": att_sig_serialize(att_set), "status": "NO_MATCH",
+                }
+                content_seen[url_dedup_final] = _be
+                if ALIAS_FINAL_AND_SOURCE_KEYS and url_dedup != url_dedup_final:
+                    content_seen[url_dedup] = _be.copy()
+            continue
+
+        
         # Post-blob Playwright retry — mały blob przy dużym HTML (bip.lubelskie.pl)
         if (not need_pw_for_content and len(blob) < 400 and len(html) > 50000):
             _remaining = (RUN_DEADLINE_MIN - (time.time() - GLOBAL_T0) / 60) if RUN_DEADLINE_MIN > 0 else 999
@@ -2572,27 +3352,28 @@ async def phase2_focus(
                         print(f"  🎭 Phase2 Playwright retry OK: blob={len(blob)} @ {url[:60]}", flush=True)
                     diag["counts"]["pw_small_blob_retry"] = int(diag["counts"].get("pw_small_blob_retry", 0)) + 1
 
-        # [v2.43] Content dedup przy crawlowaniu — skip jeśli identyczna treść
-        # Chroni przed eksplozją gdy wiele URL-ów zwraca tę samą stronę
-        # (np. rejestr zmian z parametrami dekoracyjnymi)
-        # Tylko dla blobów > 200 znaków — krótkie bloby mogą być przypadkowo identyczne
-        if len(blob) > 200:
-            _crawl_blob_key = sha1(blob[:3000])
-            if _crawl_blob_key in state.crawled_blobs_this_run:
-                diag["counts"]["crawl_blob_dedup_skip"] = int(diag["counts"].get("crawl_blob_dedup_skip", 0)) + 1
-                pages_skipped_ttl += 1
-                # [v2.43] Zapisz do content_seen jako NO_MATCH żeby TTL chronił w następnych runach
-                # Bez tego URL nie jest w cache i przy następnym runie jest odwiedzany ponownie
-                async with state.cache_lock:
-                    content_seen[url_dedup_final] = {
-                        "found_at": now_iso(), "last_checked": now_iso(),
-                        "etag": "", "last_modified": "",
-                        "gmina": gmina, "title": "", "url": final_c,
-                        "keywords": [], "att_sig": "", "status": "NO_MATCH",
-                    }
-                continue
-            state.crawled_blobs_this_run.add(_crawl_blob_key)
 
+        # [v2.44] Późny blob dedup — po ewentualnym PW retry (łapie PW-duplicate i soft-404)
+        _blob_key_final = sha1(blob[:2000])
+        if blob and len(blob) > 30 and _blob_key_final in state.crawled_blobs_this_run:
+            diag["counts"]["blob_dedup_late"] = int(diag["counts"].get("blob_dedup_late", 0)) + 1
+            async with state.cache_lock:
+                _bl = {
+                    "found_at": (prev.get("found_at") if prev else now_iso()),
+                    "last_checked": now_iso(),
+                    "etag": (resp_meta.get("etag") if resp_meta else ""),
+                    "last_modified": (resp_meta.get("last_modified") if resp_meta else ""),
+                    "gmina": gmina, "title": (title or final_c)[:240],
+                    "url": final_c, "keywords": [],
+                    "att_sig": att_sig_serialize(att_set), "status": "NO_MATCH",
+                }
+                content_seen[url_dedup_final] = _bl
+                if ALIAS_FINAL_AND_SOURCE_KEYS and url_dedup != url_dedup_final:
+                    content_seen[url_dedup] = _bl.copy()
+            continue
+        state.crawled_blobs_this_run.add(_blob_key_final)
+
+        
         ok_any, kw_any = keyword_match_in_blob(blob)
 
         # Diagnostyka
@@ -2659,8 +3440,10 @@ async def phase2_focus(
         # [v2.42 Fix4] Proste raportowanie bez blob_dedup/context_dedup
         if status_new in {"NOWE", "ZMIANA"}:
             diag["counts"][f"hit_{status_new.lower()}"] += 1
-            if final_c not in state.reported_urls_this_run:
+            _blob_key = sha1(blob[:2000])  # [v2.43] dedup po treści
+            if final_c not in state.reported_urls_this_run and _blob_key not in state.reported_blobs_this_run:
                 state.reported_urls_this_run.add(final_c)
+                state.reported_blobs_this_run.add(_blob_key)
                 print_hit(f"🟢 {status_new}", gmina, kw_any, page_title)
                 found.append((gmina, kw_any, page_title, final_c, status_new))
             else:
@@ -2808,7 +3591,7 @@ async def worker(
                 p1meta = {"status": "SKIP", "seeds": 0, "phase1_complete": True}
 
             else:
-                reason = "brak frontieru" if not has_frontier else "frontier niekompletny"
+                reason = "brak frontieru" if not has_frontier else "frontier niekompletny (Phase1 wznowiona)"
                 print(f"  🆕 [{name}] {gmina}: Phase1 — {reason}", flush=True)
 
                 all_urls, p1meta = await phase1_full_crawl(
@@ -2839,6 +3622,20 @@ async def worker(
                 async with state.cache_lock:
                     state.gmina_frontiers[gkey] = [[u, 0] for u in all_urls]
 
+                # [v2.44] Scal nowe seed-y z istniejącym partial frontierm (jeśli był)
+                _existing_frontier = state.gmina_frontiers.get(gkey, []) or []
+                if _existing_frontier and not all_urls:
+                    # Phase1 nic nie znalazła — użyj starego frontieru
+                    all_urls = [item[0] if isinstance(item, list) else str(item) for item in _existing_frontier]
+                    diag["notes"].append(f"FRONTIER_REUSED_FROM_PARTIAL={len(all_urls)}")
+                elif _existing_frontier:
+                    _existing_set = {item[0] if isinstance(item, list) else str(item) for item in _existing_frontier}
+                    for u in all_urls:
+                        _existing_set.add(u)
+                    all_urls = list(_existing_set)
+                    diag["notes"].append(f"FRONTIER_MERGED: total={len(all_urls)}")
+
+                
                 state.gmina_seeds[gkey_approx] = {
                     "allowed_host": allowed_host,
                     "start_final": p1meta.get("start_final", ""),
