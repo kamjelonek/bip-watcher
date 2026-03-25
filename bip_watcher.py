@@ -1412,7 +1412,8 @@ def canonical_url(url: str) -> str:
         netloc = (p.netloc or "").lower().strip()
         if netloc.startswith("www."): netloc = netloc[4:]
         path = p.path or "/"
-        if path != "/" and path.endswith("/"): path = path[:-1]
+        if path != "/" and path.endswith("/") and not p.query:
+            path = path[:-1]
 
         # Pomiń wariant /xml — to samo co HTML (eksport XML Dmosin)
         segs = [s for s in path.split("/") if s]
