@@ -542,14 +542,14 @@ jobs:
                   body_lines.append(f"\n📍 {gmina}")
                   if v["nowe"]:
                       body_lines.append(f"  🟢 NOWE ({len(v['nowe'])}):")
-                      for title, url, kw in v["nowe"][:30]:
+                      for title, url, kw in v["nowe"][:100]:
                           body_lines.append(f"    • {title}")
                           body_lines.append(f"      {url}")
                           if kw:
                               body_lines.append(f"      [{kw}]")
                   if v["zmiana"]:
                       body_lines.append(f"  🔄 ZMIANA ZAŁĄCZNIKÓW ({len(v['zmiana'])}):")
-                      for title, url, kw in v["zmiana"][:15]:
+                      for title, url, kw in v["zmiana"][:100]:
                           body_lines.append(f"    • {title}")
                           body_lines.append(f"      {url}")
                           if kw:
