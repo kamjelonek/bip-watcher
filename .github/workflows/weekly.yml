@@ -467,6 +467,7 @@ jobs:
           CUTOFF_H = 23
 
           results   = defaultdict(lambda: {"nowe": [], "zmiana": []})
+          seen_urls = set()
           shards_ok = 0
 
           for sf in shard_files:
@@ -496,16 +497,21 @@ jobs:
                       except Exception:
                           pass
 
-                  gmina  = meta.get("gmina") or "nieznana"
-                  url    = meta.get("url") or key
-                  title  = (meta.get("title") or "").strip() or "(brak tytułu)"
-                  kws    = meta.get("keywords") or []
-                  kw_str = ", ".join(kws[:5]) if isinstance(kws, list) else str(kws)
-
-                  if status == "NOWE":
-                      results[gmina]["nowe"].append((title, url, kw_str))
-                  else:
-                      results[gmina]["zmiana"].append((title, url, kw_str))
+                    # PO:
+                    gmina  = meta.get("gmina") or "nieznana"
+                    url    = meta.get("url") or key
+                    title  = (meta.get("title") or "").strip() or "(brak tytułu)"
+                    kws    = meta.get("keywords") or []
+                    kw_str = ", ".join(kws[:5]) if isinstance(kws, list) else str(kws)
+                    
+                    if url in seen_urls:
+                        continue
+                    seen_urls.add(url)
+                    
+                    if status == "NOWE":
+                        results[gmina]["nowe"].append((title, url, kw_str))
+                    else:
+                        results[gmina]["zmiana"].append((title, url, kw_str))
 
           total_nowe   = sum(len(v["nowe"])   for v in results.values())
           total_zmiana = sum(len(v["zmiana"]) for v in results.values())
