@@ -258,7 +258,7 @@ IGNORE_URL_SUBSTR = [
     "kontakt", "mapa-strony", "mapa_strony", "wyszukiwarka", "statystyka", "statystyki",
     "cookies", "deklaracja-dostepnosci", "deklaracja_dostepnosci",
     "majatk", "majątk", "regulamin", "sygnalis", "redakcja",
-    "login", "logowanie", "rejestracja", "newsletter",
+    "login", "logowanie", "rejestracja", "newsletter", "slabowidzacy",
 
     # Galerie, multimedia, zdjęcia — nigdy nie zawierają ogłoszeń planistycznych
     "galeria-zdjec", "galeria_zdjec", "galeria-fotografii", "galeria_fotografii",
