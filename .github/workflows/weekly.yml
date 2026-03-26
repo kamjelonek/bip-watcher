@@ -146,7 +146,7 @@ jobs:
     name: Scan shard ${{ matrix.shard }}
     runs-on: ubuntu-latest
     continue-on-error: true
-    timeout-minutes: 325
+    timeout-minutes: 340
     needs: [setup]
     if: needs.setup.result == 'success' && needs.setup.outputs.total != '0'
 
@@ -224,12 +224,12 @@ jobs:
 
       - name: Run watcher
         continue-on-error: true
-        timeout-minutes: 320
+        timeout-minutes: 300
         env:
           PYTHONUNBUFFERED: "1"
           SHARD_TOTAL: ${{ needs.setup.outputs.total }}
           SHARD_INDEX: "${{ matrix.shard }}"
-          RUN_DEADLINE_MIN: "320"
+          RUN_DEADLINE_MIN: "300"
           CONCURRENT_GMINY: "1"
           CONCURRENT_REQUESTS: "60"
           LIMIT_PER_HOST: "8"
