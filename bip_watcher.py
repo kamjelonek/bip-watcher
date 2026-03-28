@@ -3418,7 +3418,9 @@ async def phase2_focus(
             if ok_any:
                 # [v2.41 Fix4] NO_MATCH + keyword = NOWE odkrycie (zachowane)
                 if _prev_status == "NO_MATCH":
-                    status_new = "NOWE"
+                    prev_html_hash = prev.get("html_hash", "")
+                    cur_html_hash = sha1(html[:10000]) if html else ""
+                    status_new = "NOWE" if (prev_html_hash != cur_html_hash) else "HIT"
                 else:
                     prev_att_set = att_sig_deserialize(prev.get("att_sig") or "")
                     added_files = att_set - prev_att_set
@@ -3438,6 +3440,7 @@ async def phase2_focus(
             "keywords": [kw_any] if ok_any else [],
             "att_sig": att_sig_serialize(att_set),
             "status": status_new,
+            "html_hash": sha1(html[:10000]) if html else "",
         }
 
         async with state.cache_lock:
