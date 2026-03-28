@@ -277,7 +277,7 @@ IGNORE_URL_SUBSTR = [
     "/rss/", "/rss.", "feed.xml", "/feed/",
     "/xml/", "drukuj.asp", "core/drukuj", "core/pdf",
     "akcja=drukuj", "akcja=pdf", "format=pdf", "format=xml",
-    "/print/", "/drukuj/",
+    "/print/", "/drukuj/", "wydruk",
 ]
 
 IGNORE_URL_PATH_PATTERNS = [
