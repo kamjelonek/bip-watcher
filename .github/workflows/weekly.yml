@@ -13,9 +13,6 @@ on:
         options:
           - "false"
           - "true"
-  workflow_run:
-    workflows: ["BIP Watcher Daily"]
-    types: [completed]
 
 # [FIX] concurrency tylko dla jobów scan — NIE dla merge.
 concurrency:
@@ -33,10 +30,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 320
     steps:
-      - name: Wait 1h after previous run
-        if: github.event_name == 'workflow_run'
-        run: sleep 3600
-
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
