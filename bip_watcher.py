@@ -3113,6 +3113,11 @@ async def phase2_focus(
                     diag["counts"]["failed_ttl_skip"] += 1
                     pages_skipped_ttl += 1
                     continue
+            elif status_prev == "DEAD":
+                if not should_recheck_no_match(prev_pre):
+                    diag["counts"]["dead_ttl_skip"] += 1
+                    pages_skipped_ttl += 1
+                    continue
 
         extra_headers = {}
         if prev_pre and prev_pre.get("etag"):
@@ -3245,7 +3250,20 @@ async def phase2_focus(
             else:
                 print(f"  🎭 Phase2 Playwright FAIL: {pw_err or '?'} @ {url[:60]}", flush=True)
                 diag["counts"]["pw_content_fail"] = int(diag["counts"].get("pw_content_fail", 0)) + 1
-
+                if (pw_content_reason.startswith("too_little_text")
+                        and len(html or "") < 5000):
+                    dead_add(dead_key, dead_set, final_c)
+                    async with state.cache_lock:
+                        _pw_dead = {
+                            "found_at": now_iso(), "last_checked": now_iso(),
+                            "etag": "", "last_modified": "",
+                            "gmina": gmina, "title": "", "url": final_c,
+                            "keywords": [], "att_sig": "", "status": "DEAD",
+                        }
+                        content_seen[url_dedup_final] = _pw_dead
+                        if ALIAS_FINAL_AND_SOURCE_KEYS and url_dedup != url_dedup_final:
+                            content_seen[url_dedup] = _pw_dead.copy()
+                    continue
         final_c = _canon(final or url)
         url_dedup_final = sha1(canonical_url(final_c))
         prev = content_seen.get(url_dedup_final) or prev_pre
@@ -3289,6 +3307,16 @@ async def phase2_focus(
             if status in (404, 410):
                 dead_add(dead_key, dead_set, final_c)
                 diag["counts"]["dead_urls"] += 1
+                async with state.cache_lock:
+                    _dead_entry = {
+                        "found_at": now_iso(), "last_checked": now_iso(),
+                        "etag": "", "last_modified": "",
+                        "gmina": gmina, "title": "", "url": final_c,
+                        "keywords": [], "att_sig": "", "status": "DEAD",
+                    }
+                    content_seen[url_dedup_final] = _dead_entry
+                    if ALIAS_FINAL_AND_SOURCE_KEYS and url_dedup != url_dedup_final:
+                        content_seen[url_dedup] = _dead_entry.copy()
                 continue
             if status in (403, 429) or kind in {"timeout", "exc"} or (status and int(status) >= 500):
                 retry_add(gkey, retry_seen, final_c)
