@@ -3252,17 +3252,17 @@ async def phase2_focus(
                 diag["counts"]["pw_content_fail"] = int(diag["counts"].get("pw_content_fail", 0)) + 1
                 if (pw_content_reason.startswith("too_little_text")
                         and len(html or "") < 5000):
-                    dead_add(dead_key, dead_set, final_c)
+                    _dead_url = _canon(url)
+                    _dead_dedup = sha1(canonical_url(_dead_url))
+                    dead_add(dead_key, dead_set, _dead_url)
                     async with state.cache_lock:
-                        _pw_dead = {
+                        content_seen[_dead_dedup] = {
                             "found_at": now_iso(), "last_checked": now_iso(),
                             "etag": "", "last_modified": "",
-                            "gmina": gmina, "title": "", "url": final_c,
+                            "gmina": gmina, "title": "", "url": _dead_url,
                             "keywords": [], "att_sig": "", "status": "DEAD",
                         }
-                        content_seen[url_dedup_final] = _pw_dead
-                        if ALIAS_FINAL_AND_SOURCE_KEYS and url_dedup != url_dedup_final:
-                            content_seen[url_dedup] = _pw_dead.copy()
+                    diag["counts"]["pw_fail_dead"] = int(diag["counts"].get("pw_fail_dead", 0)) + 1
                     continue
         final_c = _canon(final or url)
         url_dedup_final = sha1(canonical_url(final_c))
