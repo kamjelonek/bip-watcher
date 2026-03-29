@@ -231,8 +231,8 @@ jobs:
           SHARD_INDEX: "${{ matrix.shard }}"
           RUN_DEADLINE_MIN: "300"
           CONCURRENT_GMINY: "1"
-          CONCURRENT_REQUESTS: "60"
-          LIMIT_PER_HOST: "8"
+          CONCURRENT_REQUESTS: "100"
+          LIMIT_PER_HOST: "12"
           RATE_MIN_DELAY: "0.3"
           CHECKPOINT_EVERY_SEC: "300"
           RESET_CACHE: ${{ github.event.inputs.full_reset || 'false' }}
