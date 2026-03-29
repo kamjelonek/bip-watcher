@@ -441,10 +441,10 @@ SEED_CACHE_TTL_DAYS = 999
 FAST_TEXT_MAX_CHARS = 400_000
 
 # TTL 168h (7 dni) — URL odwiedzony w ostatnim tygodniu jest pomijany
-HIT_RECHECK_TTL_HOURS      = env_int("HIT_RECHECK_TTL_HOURS",      168)
-NO_MATCH_RECHECK_TTL_HOURS = env_int("NO_MATCH_RECHECK_TTL_HOURS", 168)
-BLOCKED_RECHECK_TTL_MIN    = env_int("BLOCKED_RECHECK_TTL_MIN",    120)
-FAILED_RECHECK_TTL_MIN     = env_int("FAILED_RECHECK_TTL_MIN",      60)
+HIT_RECHECK_TTL_HOURS      = env_int("HIT_RECHECK_TTL_HOURS",      1)
+NO_MATCH_RECHECK_TTL_HOURS = env_int("NO_MATCH_RECHECK_TTL_HOURS", 1)
+BLOCKED_RECHECK_TTL_MIN    = env_int("BLOCKED_RECHECK_TTL_MIN",    10)
+FAILED_RECHECK_TTL_MIN     = env_int("FAILED_RECHECK_TTL_MIN",      10)
 
 FRONTIER_CHECKPOINT_EVERY = 500
 
@@ -3419,7 +3419,7 @@ async def phase2_focus(
                 # [v2.41 Fix4] NO_MATCH + keyword = NOWE odkrycie (zachowane)
                 if _prev_status == "NO_MATCH":
                     prev_html_hash = prev.get("html_hash", "")
-                    cur_html_hash = sha1(html[:10000]) if html else ""
+                    cur_html_hash = sha1(blob[:5000]) if blob else ""
                     status_new = "NOWE" if (prev_html_hash != cur_html_hash) else "HIT"
                 else:
                     prev_att_set = att_sig_deserialize(prev.get("att_sig") or "")
@@ -3440,7 +3440,7 @@ async def phase2_focus(
             "keywords": [kw_any] if ok_any else [],
             "att_sig": att_sig_serialize(att_set),
             "status": status_new,
-            "html_hash": sha1(html[:10000]) if html else "",
+            "html_hash": sha1(blob[:5000]) if blob else "",
         }
 
         async with state.cache_lock:
