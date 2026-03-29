@@ -278,6 +278,7 @@ IGNORE_URL_SUBSTR = [
     "/xml/", "drukuj.asp", "core/drukuj", "core/pdf",
     "akcja=drukuj", "akcja=pdf", "format=pdf", "format=xml",
     "/print/", "/drukuj/", "wydruk",
+    "getarticleexport", "articleexport", "exportarticle",
 ]
 
 IGNORE_URL_PATH_PATTERNS = [
@@ -1391,6 +1392,11 @@ def normalize_url(url: str) -> str:
                 continue
             # Parametry dostępności (kontrast, czcionka itp.) — nie wpływają na treść
             if kl.startswith("acc_"): continue
+            if kl.startswith("switch_"): continue
+            if kl in {"fontsize", "pokaz_rejestr_zmian",
+                      "rejestr_zmian", "dark", "darkmode",
+                      "contrast", "kontrast"}:
+                continue
             q.append((kl, v))
         q.sort(key=lambda kv: kv[0])
         return urlunparse(p._replace(fragment="", query=urlencode(q, doseq=True)))
@@ -3125,6 +3131,7 @@ async def phase2_focus(
 
         need_pw_for_content = False
         pw_content_reason = ""
+        pw_html = None
 
         if kind in ("pdf", "not_modified", "blocked"):
             pass
@@ -3461,10 +3468,19 @@ async def phase2_focus(
                 diag["counts"]["dedup_skipped"] += 1
 
         # Linki z HTML → kolejka
+        _skip_new_links = (
+            need_pw_for_content
+            and pw_content_reason.startswith("ajax_signals")
+            and pw_html is not None
+            and len(pw_html) > 400_000
+        )
+
         for abs_u, txt in iter_links_fast(soup, final_c):
             cu = _canon(abs_u)
             if not cu or not allow_url(cu): continue
             # [v2.42 Fix5] NIE sprawdzamy cu in dead_set — dead nie blokuje
+            if _skip_new_links and cu not in seen_in_frontier:
+                continue
 
             if ENABLE_LINK_HITS and not is_download_url(cu) and cu not in seen_in_frontier:
                 filename = urlparse(cu).path.split("/")[-1]
