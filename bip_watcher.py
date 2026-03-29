@@ -405,8 +405,8 @@ def is_junk_link_title(title: str, url: str = "") -> bool:
 
 # ===================== PERFORMANCE =====================
 CONCURRENT_GMINY = env_int("CONCURRENT_GMINY", 1)
-CONCURRENT_REQUESTS = env_int("CONCURRENT_REQUESTS", 80)
-LIMIT_PER_HOST = env_int("LIMIT_PER_HOST", 10)
+CONCURRENT_REQUESTS = env_int("CONCURRENT_REQUESTS", 100)
+LIMIT_PER_HOST = env_int("LIMIT_PER_HOST", 12)
 
 PHASE1_MAX_DEPTH = env_int("PHASE1_MAX_DEPTH", 1)
 PHASE1_MAX_URLS = env_int("PHASE1_MAX_URLS", 999999)
