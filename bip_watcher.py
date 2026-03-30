@@ -279,6 +279,12 @@ IGNORE_URL_SUBSTR = [
     "akcja=drukuj", "akcja=pdf", "format=pdf", "format=xml",
     "/print/", "/drukuj/", "wydruk",
     "getarticleexport", "articleexport", "exportarticle",
+    "rejestr-zmian",        # Kostomloty (było tylko 'rejestr_zmian' z podkreślnikiem)
+    "script=rejestr",       # Kondratowice/biuletyn.net
+    "action=history",       # Dołhobyczów i inne — historia zmian dokumentu
+    "redir,drukuj",         # Głowno — widok do druku
+    "pokaz_rejestr_zmian",  # Głowno — stare URL-e z cache
+    "&rpg=",                # Działdowo — paginacja rejestru zmian, puste strony
 ]
 
 IGNORE_URL_PATH_PATTERNS = [
@@ -3442,10 +3448,25 @@ async def phase2_focus(
         if not page_title:
             page_title = final_c
 
-        # [v2.42 Fix4] Prosta logika statusu — brak blob_dedup/context_dedup jak v2.28
-        # [v2.42 Fix7] PW_PROCESSING traktowany jak None — strona nie była jeszcze
-        # przetworzona (placeholder zapisany przed Playwright), więc jeśli teraz jest
-        # match → to jest NOWE odkrycie, nie HIT.
+        # Filtruj logi rejestru zmian systemu BIP (Finn i podobne)
+        # Modyfikacja/przeniesienie = edycja starego wpisu, nie nowe ogłoszenie
+        # Publikacja aktualności jest zachowana — to może być prawdziwe nowe ogłoszenie
+        if ok_any:
+            _REJESTR_ZMIAN_PREFIXES = (
+                "modyfikacja treści aktualności",
+                "modyfikacja treści strony",
+                "automatyczne przeniesienie aktualności",
+                "przeniesienie aktualoności",  # literówka w systemie BIP
+                "przeniesienie aktualności",
+                "usunięcie treści aktualności",
+            )
+            _pt_lower = page_title.lower()
+            if any(_pt_lower.startswith(p) for p in _REJESTR_ZMIAN_PREFIXES):
+                ok_any = False
+                diag["counts"]["rejestr_zmian_skip"] = \
+                    int(diag["counts"].get("rejestr_zmian_skip", 0)) + 1
+
+        # [v2.42 Fix4] Prosta logika statusu ...
         _prev_status = prev.get("status") if prev else None
         if prev is None or _prev_status == "PW_PROCESSING":
             status_new = "NOWE" if ok_any else "NO_MATCH"
