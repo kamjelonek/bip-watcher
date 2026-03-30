@@ -325,6 +325,8 @@ DOWNLOAD_URL_SEGMENTS = [
     "/file_add/", "/file_add/download/", "/filedownload/", "/file-download/",
     "/pobierz-plik/", "/get-file/",
     "/pliki/",
+    "pobierz.php", "download.php", "getfile.php", "get_file.php",
+    "pobieranie.php", "attachment.php", "filedownload.php", "file-download.php",
 ]
 
 DOWNLOAD_URL_PARAMS = ["file=", "pobierz=", "download=", "attachment=", "getfile="]
@@ -450,8 +452,8 @@ FAST_TEXT_MAX_CHARS = 400_000
 # TTL 168h (7 dni) — URL odwiedzony w ostatnim tygodniu jest pomijany
 HIT_RECHECK_TTL_HOURS      = env_int("HIT_RECHECK_TTL_HOURS",      168)
 NO_MATCH_RECHECK_TTL_HOURS = env_int("NO_MATCH_RECHECK_TTL_HOURS", 168)
-BLOCKED_RECHECK_TTL_MIN    = env_int("BLOCKED_RECHECK_TTL_MIN",    168)
-FAILED_RECHECK_TTL_MIN     = env_int("FAILED_RECHECK_TTL_MIN",     168)
+BLOCKED_RECHECK_TTL_MIN    = env_int("BLOCKED_RECHECK_TTL_MIN",    1380)
+FAILED_RECHECK_TTL_MIN     = env_int("FAILED_RECHECK_TTL_MIN",     120)
 
 FRONTIER_CHECKPOINT_EVERY = 500
 
