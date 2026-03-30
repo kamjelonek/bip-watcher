@@ -486,7 +486,7 @@ jobs:
                   if status not in ("NOWE", "ZMIANA"):
                       continue
 
-                  checked_str = meta.get("last_checked") or meta.get("found_at", "")
+                  checked_str = meta.get("found_at") or meta.get("last_checked", "")
                   if checked_str:
                       try:
                           fa = datetime.fromisoformat(checked_str.replace("Z", "+00:00"))
