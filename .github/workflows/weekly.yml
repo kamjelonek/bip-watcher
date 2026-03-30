@@ -485,8 +485,10 @@ jobs:
                   status = meta.get("status", "")
                   if status not in ("NOWE", "ZMIANA"):
                       continue
-
-                  checked_str = meta.get("found_at") or meta.get("last_checked", "")
+                  if status == "NOWE":      ← na tym samym poziomie co status =
+                      checked_str = meta.get("found_at") or meta.get("last_checked", "")
+                  else:
+                      checked_str = meta.get("last_checked") or meta.get("found_at", "")
                   if checked_str:
                       try:
                           fa = datetime.fromisoformat(checked_str.replace("Z", "+00:00"))
@@ -621,7 +623,7 @@ jobs:
 
           now_utc   = datetime.now(timezone.utc)
           run_date  = now_utc.strftime("%Y-%m-%d %H:%M UTC")
-          CUTOFF_H  = 26
+          CUTOFF_H  = 23
 
           # Zbierz wpisy z hits_backup_*.jsonl z ostatnich CUTOFF_H godzin
           backup_files = sorted(glob.glob("cache-store/hits_backup_*.jsonl"))
