@@ -485,7 +485,7 @@ jobs:
                   status = meta.get("status", "")
                   if status not in ("NOWE", "ZMIANA"):
                       continue
-                  if status == "NOWE":      ← na tym samym poziomie co status =
+                  if status == "NOWE":
                       checked_str = meta.get("found_at") or meta.get("last_checked", "")
                   else:
                       checked_str = meta.get("last_checked") or meta.get("found_at", "")
