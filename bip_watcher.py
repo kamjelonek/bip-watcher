@@ -3216,7 +3216,7 @@ async def phase2_focus(
                     _slug_ok, _slug_kw = keyword_match_in_blob(_slug)
                     if _slug_ok:
                         # Slug zawiera keyword — prawdopodobnie realna strona, nie killuj
-                        diag["counts"]["home_redirect_kw_slug_skip"] += 1
+                        diag["counts"]["home_redirect_kw_slug_skip"] = int(diag["counts"].get("home_redirect_kw_slug_skip", 0)) + 1
                         print(f"  ⚠️ home_redirect_kw_slug (kw={_slug_kw}): {url[:70]}", flush=True)
                         continue
                     dead_add(dead_key, dead_set, _canon(url))
