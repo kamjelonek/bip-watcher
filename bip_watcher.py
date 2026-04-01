@@ -3212,8 +3212,15 @@ async def phase2_focus(
                 _pw_final_canon = _canon(pw_final or url)
                 _home_canon = _canon(home_url) if home_url else ""
                 if _home_canon and _pw_final_canon == _home_canon and _pw_final_canon != _canon(url):
+                    _slug = urlparse(_canon(url)).path.replace("-", " ").replace("_", " ")
+                    _slug_ok, _slug_kw = keyword_match_in_blob(_slug)
+                    if _slug_ok:
+                        # Slug zawiera keyword — prawdopodobnie realna strona, nie killuj
+                        diag["counts"]["home_redirect_kw_slug_skip"] += 1
+                        print(f"  ⚠️ home_redirect_kw_slug (kw={_slug_kw}): {url[:70]}", flush=True)
+                        continue
                     dead_add(dead_key, dead_set, _canon(url))
-                    diag["counts"]["home_redirect_dead"] = int(diag["counts"].get("home_redirect_dead", 0)) + 1
+                    diag["counts"]["home_redirect_dead"] = ...
                     print(f"  💀 home_redirect_dead: {url[:70]}", flush=True)
                     continue
 
