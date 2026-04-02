@@ -273,6 +273,7 @@ IGNORE_URL_SUBSTR = [
     "action=export", "action=download", "action=print",
     # p=print, p=document — alternatywne widoki/akcje
     "p=print", "p=document", "p=edit", "p=save",
+    "show=popup", "p1=historia", "p1=informacje",
     # Alternatywne formaty tej samej treści
     "/rss/", "/rss.", "feed.xml", "/feed/",
     "/xml/", "drukuj.asp", "core/drukuj", "core/pdf",
