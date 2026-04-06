@@ -3221,7 +3221,7 @@ async def phase2_focus(
                         print(f"  ⚠️ home_redirect_kw_slug (kw={_slug_kw}): {url[:70]}", flush=True)
                         continue
                     dead_add(dead_key, dead_set, _canon(url))
-                    diag["counts"]["home_redirect_dead"] = ...
+                    diag["counts"]["home_redirect_dead"] += 1
                     print(f"  💀 home_redirect_dead: {url[:70]}", flush=True)
                     continue
 
@@ -3650,14 +3650,23 @@ async def worker(
             print(f"\n🔎 [{name}] START: {gmina} -> {start_url}", flush=True)
 
             gkey_approx = gmina_cache_key(gmina, start_url)
-            has_frontier = bool((state.gmina_frontiers or {}).get(gkey_approx))
-            frontier_complete = is_frontier_complete(gkey_approx)
+            # Jeśli gmina była już skanowana, użyj recorded allowed_host do właściwego klucza.
+            # Bez tego fix-a: dla gmin gdzie start_url redirectuje na inną domenę (np. biuletyn.net)
+            # frontier jest zapisywany pod gkey(allowed_host) ale szukany pod gkey(start_url) → zawsze Phase1.
+            _cached_seeds_pre = state.gmina_seeds.get(gkey_approx, {})
+            _cached_ah_pre = _cached_seeds_pre.get("allowed_host", "")
+            if _cached_ah_pre:
+                gkey_for_frontier = gmina_cache_key(gmina, "https://" + _cached_ah_pre)
+            else:
+                gkey_for_frontier = gkey_approx
+            has_frontier = bool((state.gmina_frontiers or {}).get(gkey_for_frontier))
+            frontier_complete = is_frontier_complete(gkey_for_frontier)
 
             p1meta = None
             found = []
 
             if has_frontier and frontier_complete:
-                frontier_size = len((state.gmina_frontiers or {}).get(gkey_approx, []))
+                frontier_size = len((state.gmina_frontiers or {}).get(gkey_for_frontier, []))
                 print(f"  ▶️  [{name}] {gmina}: kontynuacja Phase2 (frontier={frontier_size})", flush=True)
                 cached_seeds = state.gmina_seeds.get(gkey_approx, {})
                 allowed_host = cached_seeds.get(
@@ -3708,7 +3717,7 @@ async def worker(
                 async with state.cache_lock:
                     state.gmina_frontiers[gkey] = [[u, 0] for u in all_urls]
 
-                # [v2.44] Scal nowe seed-y z istniejącym partial frontierm (jeśli był)
+                # [v2.45 FIX] Odczytaj stary frontier PRZED nadpisaniem
                 _existing_frontier = state.gmina_frontiers.get(gkey, []) or []
                 if _existing_frontier and not all_urls:
                     # Phase1 nic nie znalazła — użyj starego frontieru
@@ -3720,6 +3729,9 @@ async def worker(
                         _existing_set.add(u)
                     all_urls = list(_existing_set)
                     diag["notes"].append(f"FRONTIER_MERGED: total={len(all_urls)}")
+
+                async with state.cache_lock:
+                    state.gmina_frontiers[gkey] = [[u, 0] for u in all_urls]
 
                 
                 state.gmina_seeds[gkey_approx] = {
