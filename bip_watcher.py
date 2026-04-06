@@ -3228,6 +3228,29 @@ async def phase2_focus(
                 print(f"  🎭 Phase2 Playwright OK: {len(pw_html)}B @ {url[:60]}", flush=True)
                 html, final, kind, status, ctype = pw_html, pw_final, pw_kind, pw_status, pw_ctype
 
+                # [v2.45] Soft 404 po Playwright: jeśli reason=too_little_text i Playwright
+                # wciąż zwrócił bardzo mało tekstu → "strona nie istnieje" (HTTP 200 + pusty DOM).
+                # Bez tego: setki URL-i /156/xxx w frontieru Żagania odpala PW w każdym runie.
+                if pw_content_reason.startswith("too_little_text"):
+                    _pw_text_after = _html_visible_text_len(pw_html)
+                    if _pw_text_after < 100:
+                        _dead_soft_url = _canon(url)
+                        _dead_soft_dedup = sha1(canonical_url(_dead_soft_url))
+                        dead_add(dead_key, dead_set, _dead_soft_url)
+                        async with state.cache_lock:
+                            _soft404_entry = {
+                                "found_at": now_iso(), "last_checked": now_iso(),
+                                "etag": "", "last_modified": "",
+                                "gmina": gmina, "title": "", "url": _dead_soft_url,
+                                "keywords": [], "att_sig": "", "status": "DEAD",
+                            }
+                            content_seen[_dead_soft_dedup] = _soft404_entry
+                            if ALIAS_FINAL_AND_SOURCE_KEYS and url_dedup != _dead_soft_dedup:
+                                content_seen[url_dedup] = _soft404_entry.copy()
+                        diag["counts"]["pw_soft404_dead"] = int(diag["counts"].get("pw_soft404_dead", 0)) + 1
+                        print(f"  💀 PW soft404 dead (pw_text={_pw_text_after}<100): {url[:70]}", flush=True)
+                        continue
+
                 # PW_PROCESSING placeholder — zapobiega pętli (Fix v2.41)
                 async with state.cache_lock:
                     if url_dedup not in content_seen:
