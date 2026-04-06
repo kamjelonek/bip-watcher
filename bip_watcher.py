@@ -3233,7 +3233,7 @@ async def phase2_focus(
                 # Bez tego: setki URL-i /156/xxx w frontieru Żagania odpala PW w każdym runie.
                 if pw_content_reason.startswith("too_little_text"):
                     _pw_text_after = _html_visible_text_len(pw_html)
-                    if _pw_text_after < 80:
+                    if _pw_text_after < 70:
                         _dead_soft_url = _canon(url)
                         _dead_soft_dedup = sha1(canonical_url(_dead_soft_url))
                         dead_add(dead_key, dead_set, _dead_soft_url)
@@ -3248,7 +3248,7 @@ async def phase2_focus(
                             if ALIAS_FINAL_AND_SOURCE_KEYS and url_dedup != _dead_soft_dedup:
                                 content_seen[url_dedup] = _soft404_entry.copy()
                         diag["counts"]["pw_soft404_dead"] = int(diag["counts"].get("pw_soft404_dead", 0)) + 1
-                        print(f"  💀 PW soft404 dead (pw_text={_pw_text_after}<80): {url[:70]}", flush=True)
+                        print(f"  💀 PW soft404 dead (pw_text={_pw_text_after}<70): {url[:70]}", flush=True)
                         continue
 
                 # PW_PROCESSING placeholder — zapobiega pętli (Fix v2.41)
