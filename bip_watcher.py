@@ -270,7 +270,7 @@ IGNORE_URL_SUBSTR = [
     "readmore=", "news.php", "aktualnosci.php", "artykul.php",
     # Akcje systemowe CMS — zwracają pusty response lub JSON
     "action=save", "action=show&", "action=edit", "action=delete",
-    "action=export", "action=download", "action=print",
+    "action=export", "action=download", "action=print", "action=info",
     # p=print, p=document — alternatywne widoki/akcje
     "p=print", "p=document", "p=edit", "p=save",
     "show=popup", "p1=historia", "p1=informacje",
@@ -292,6 +292,7 @@ IGNORE_URL_PATH_PATTERNS = [
     r"prognoza.pogody", r"prognoza_pogody",
     r"/wersja/\d+/?$", r"/wersja[_/]",
     r"[/=\-]rodo[/.\-_]", r"[/=\-]rodo$", r"/rodo/",
+    r"/\d+/rejestr/?$",     # Barciany i inne — historia edycji dokumentu (/{id}/rejestr/)
 ]
 
 IGNORE_ANCHOR_TEXT = [
@@ -3491,17 +3492,33 @@ async def phase2_focus(
         # Filtruj logi rejestru zmian systemu BIP (Finn i podobne)
         # Modyfikacja/przeniesienie = edycja starego wpisu, nie nowe ogłoszenie
         # Publikacja aktualności jest zachowana — to może być prawdziwe nowe ogłoszenie
+        # Filtruj logi rejestru zmian systemu BIP (Finn i podobne)
         if ok_any:
             _REJESTR_ZMIAN_PREFIXES = (
                 "modyfikacja treści aktualności",
                 "modyfikacja treści strony",
                 "automatyczne przeniesienie aktualności",
-                "przeniesienie aktualoności",  # literówka w systemie BIP
+                "przeniesienie aktualoności",
                 "przeniesienie aktualności",
                 "usunięcie treści aktualności",
             )
+            _REJESTR_ZMIAN_H1 = (
+                "rejestr zmian",
+                "lista zmian",
+                "historia zmian",
+                "historia dokumentu",
+                "historia edycji",
+                "dziennik zmian",
+                "log zmian",
+            )
             _pt_lower = page_title.lower()
-            if any(_pt_lower.startswith(p) for p in _REJESTR_ZMIAN_PREFIXES):
+            _is_change_log = any(_pt_lower.startswith(p) for p in _REJESTR_ZMIAN_PREFIXES)
+            if not _is_change_log and soup:
+                _h1 = soup.find("h1")
+                if _h1:
+                    _h1_text = _h1.get_text(" ", strip=True).lower()
+                    _is_change_log = any(p in _h1_text for p in _REJESTR_ZMIAN_H1)
+            if _is_change_log:
                 ok_any = False
                 diag["counts"]["rejestr_zmian_skip"] = \
                     int(diag["counts"].get("rejestr_zmian_skip", 0)) + 1
