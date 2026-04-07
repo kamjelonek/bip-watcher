@@ -3454,6 +3454,7 @@ async def phase2_focus(
                     "gmina": gmina, "title": (title or final_c)[:240],
                     "url": final_c, "keywords": [],
                     "att_sig": att_sig_serialize(att_set), "status": "NO_MATCH",
+                    "html_hash": sha1(blob[:5000]) if blob else "",
                 }
                 content_seen[url_dedup_final] = _bl
                 if ALIAS_FINAL_AND_SOURCE_KEYS and url_dedup != url_dedup_final:
@@ -3746,10 +3747,9 @@ async def worker(
                 async with state.cache_lock:
                     state.gmina_frontiers[gkey] = [[u, 0] for u in all_urls]
 
-                # [v2.45 FIX] Odczytaj stary frontier PRZED nadpisaniem
+                # [v2.44] Scal nowe seed-y z istniejącym partial frontierm (jeśli był)
                 _existing_frontier = state.gmina_frontiers.get(gkey, []) or []
                 if _existing_frontier and not all_urls:
-                    # Phase1 nic nie znalazła — użyj starego frontieru
                     all_urls = [item[0] if isinstance(item, list) else str(item) for item in _existing_frontier]
                     diag["notes"].append(f"FRONTIER_REUSED_FROM_PARTIAL={len(all_urls)}")
                 elif _existing_frontier:
