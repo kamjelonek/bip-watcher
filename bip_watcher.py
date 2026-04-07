@@ -280,7 +280,7 @@ IGNORE_URL_SUBSTR = [
     "akcja=drukuj", "akcja=pdf", "format=pdf", "format=xml",
     "/print/", "/drukuj/", "wydruk",
     "getarticleexport", "articleexport", "exportarticle",
-    "rejestr-zmian",        # Kostomloty (było tylko 'rejestr_zmian' z podkreślnikiem)
+    "rejestr-zmian", 'rejestr_zmian',
     "script=rejestr",       # Kondratowice/biuletyn.net
     "action=history",       # Dołhobyczów i inne — historia zmian dokumentu
     "redir,drukuj",         # Głowno — widok do druku
@@ -3091,6 +3091,11 @@ async def phase2_focus(
         url = _canon(url)
         if not url: continue
 
+        # Odfiltruj URL-e z frontieru które pasują do IGNORE (np. rejestr_zmian już w cache)
+        if url_is_ignored(url):
+            diag["counts"]["ignored_in_phase2"] = int(diag["counts"].get("ignored_in_phase2", 0)) + 1
+            continue
+
         url_dedup = sha1(canonical_url(url))
         prev_pre = content_seen.get(url_dedup)
 
@@ -3402,6 +3407,7 @@ async def phase2_focus(
                     "gmina": gmina, "title": (title or final_c)[:240],
                     "url": final_c, "keywords": [],
                     "att_sig": att_sig_serialize(att_set), "status": "NO_MATCH",
+                    "html_hash": sha1(blob[:5000]) if blob else "",
                 }
                 content_seen[url_dedup_final] = _be
                 if ALIAS_FINAL_AND_SOURCE_KEYS and url_dedup != url_dedup_final:
