@@ -3761,11 +3761,8 @@ async def worker(
                 gkey = gmina_cache_key(gmina, "https://" + allowed_host)
                 phase1_complete = p1meta.get("phase1_complete", False)
 
-                async with state.cache_lock:
-                    state.gmina_frontiers[gkey] = [[u, 0] for u in all_urls]
-
                 # [v2.44] Scal nowe seed-y z istniejącym partial frontierm (jeśli był)
-                _existing_frontier = state.gmina_frontiers.get(gkey, []) or []
+                _existing_frontier = state.gmina_frontiers.get(gkey, []) or []  # ← czyta STARY frontier
                 if _existing_frontier and not all_urls:
                     all_urls = [item[0] if isinstance(item, list) else str(item) for item in _existing_frontier]
                     diag["notes"].append(f"FRONTIER_REUSED_FROM_PARTIAL={len(all_urls)}")
