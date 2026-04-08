@@ -270,10 +270,10 @@ IGNORE_URL_SUBSTR = [
     "readmore=", "news.php", "aktualnosci.php", "artykul.php",
     # Akcje systemowe CMS — zwracają pusty response lub JSON
     "action=save", "action=show&", "action=edit", "action=delete",
-    "action=export", "action=download", "action=print", "action=info",
+    "action=export", "action=download", "action=print", "action=info", "xmlEksportuj",
     # p=print, p=document — alternatywne widoki/akcje
-    "p=print", "p=document", "p=edit", "p=save",
-    "show=popup", "p1=historia", "p1=informacje",
+    "p=print", "p=document", "p=edit", "p=save", "/archiwum/",
+    "show=popup", "p1=historia", "p1=informacje", "p=history",
     # Alternatywne formaty tej samej treści
     "/rss/", "/rss.", "feed.xml", "/feed/",
     "/xml/", "drukuj.asp", "core/drukuj", "core/pdf",
@@ -292,7 +292,7 @@ IGNORE_URL_PATH_PATTERNS = [
     r"prognoza.pogody", r"prognoza_pogody",
     r"/wersja/\d+/?$", r"/wersja[_/]",
     r"[/=\-]rodo[/.\-_]", r"[/=\-]rodo$", r"/rodo/",
-    r"/\d+/rejestr/?$",     # Barciany i inne — historia edycji dokumentu (/{id}/rejestr/)
+    r"/\d+/rejestr/?$", r"/rejestr/?$",    # Barciany i inne — historia edycji dokumentu (/{id}/rejestr/)
 ]
 
 IGNORE_ANCHOR_TEXT = [
