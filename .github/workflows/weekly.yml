@@ -562,11 +562,11 @@ jobs:
               msg = MIMEMultipart("alternative")
               msg["Subject"] = subject
               msg["From"]    = GMAIL_USER
-              msg["To"]      = GMAIL_USER
+              msg["To"]      = "planowanie@wpd-polska.pl"
               msg.attach(MIMEText(body, "plain", "utf-8"))
               with smtplib.SMTP_SSL("smtp.gmail.com", 465) as srv:
                   srv.login(GMAIL_USER, GMAIL_APP_PASSWORD)
-                  srv.sendmail(GMAIL_USER, [GMAIL_USER], msg.as_string())
+                  srv.sendmail(GMAIL_USER, ["planowanie@wpd-polska.pl"], msg.as_string())
               print(f"✅ Email wysłany: {subject}")
           except Exception as e:
               print(f"❌ Błąd emaila: {e}")
@@ -683,11 +683,11 @@ jobs:
               msg = MIMEMultipart("alternative")
               msg["Subject"] = subject
               msg["From"]    = GMAIL_USER
-              msg["To"]      = GMAIL_USER
+              msg["To"]      = "planowanie@wpd-polska.pl"
               msg.attach(MIMEText(body, "plain", "utf-8"))
               with smtplib.SMTP_SSL("smtp.gmail.com", 465) as srv:
                   srv.login(GMAIL_USER, GMAIL_APP_PASSWORD)
-                  srv.sendmail(GMAIL_USER, [GMAIL_USER], msg.as_string())
+                  srv.sendmail(GMAIL_USER, ["planowanie@wpd-polska.pl"], msg.as_string())
               print(f"✅ Fallback email wysłany: {subject}")
           except Exception as e:
               print(f"❌ Błąd fallback emaila: {e}")
