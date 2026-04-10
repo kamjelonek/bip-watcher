@@ -3401,7 +3401,7 @@ async def phase2_focus(
             diag["counts"]["blob_dedup_early"] = int(diag["counts"].get("blob_dedup_early", 0)) + 1
             async with state.cache_lock:
                 _be = {
-                    "found_at": (prev.get("found_at") if prev else now_iso()),
+                    "found_at": (now_iso() if (status_new == "NOWE") else (prev.get("found_at") if prev else now_iso())),
                     "last_checked": now_iso(),
                     "etag": (resp_meta.get("etag") if resp_meta else ""),
                     "last_modified": (resp_meta.get("last_modified") if resp_meta else ""),
