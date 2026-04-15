@@ -286,13 +286,16 @@ IGNORE_URL_SUBSTR = [
     "redir,drukuj",         # Głowno — widok do druku
     "pokaz_rejestr_zmian",  # Głowno — stare URL-e z cache
     "&rpg=",                # Działdowo — paginacja rejestru zmian, puste strony
+    "xmlEksportuj",         # bip.gminazagan.pl — eksport XML dokumentu (setki URLi)
+    "/archiwum/",           # lista archiwalna sesji rady — generuje więcej xmlEksportuj
+    "p=history",            # bip.nysa.pl — Historia zmian artykułu
 ]
 
 IGNORE_URL_PATH_PATTERNS = [
     r"prognoza.pogody", r"prognoza_pogody",
     r"/wersja/\d+/?$", r"/wersja[_/]",
     r"[/=\-]rodo[/.\-_]", r"[/=\-]rodo$", r"/rodo/",
-    r"/rejestr/?$",    # Barciany i inne — historia edycji dokumentu (/{id}/rejestr/)
+    r"/rejestr/?$",         # rejestr BIP — /{id}/rejestr/ i /Name/rejestr
 ]
 
 IGNORE_ANCHOR_TEXT = [
@@ -3543,7 +3546,7 @@ async def phase2_focus(
                 status_new = "NO_MATCH"
 
         meta = {
-            "found_at": (prev.get("found_at") if prev else now_iso()),
+            "found_at": (now_iso() if (status_new == "NOWE") else (prev.get("found_at") if prev else now_iso())),
             "last_checked": now_iso(),
             "etag": (resp_meta.get("etag") if resp_meta else ""),
             "last_modified": (resp_meta.get("last_modified") if resp_meta else ""),
@@ -3608,6 +3611,14 @@ async def phase2_focus(
                         diag["counts"]["link_hits_new"] += 1
 
             if cu in seen_in_frontier: continue
+            # [FIX] Nie dodawaj do frontieru jeśli URL był niedawno przetworzony (TTL ważny)
+            _cu_prev = content_seen.get(sha1(canonical_url(cu)))
+            if _cu_prev:
+                _st = _cu_prev.get("status", "")
+                if _st in {"NOWE", "ZMIANA", "HIT"} and not should_recheck_hit(_cu_prev):
+                    seen_in_frontier.add(cu); continue
+                if _st in {"NO_MATCH", "PW_PROCESSING", "DEAD", "BLOCKED", "FAILED"} and not should_recheck_no_match(_cu_prev):
+                    seen_in_frontier.add(cu); continue
             seen_in_frontier.add(cu)
             q.append((cu, depth + 1))
             new_links_added += 1
@@ -3616,6 +3627,14 @@ async def phase2_focus(
         for cu in pw_extra_links_for_phase2:
             if cu in seen_in_frontier: continue
             # [v2.42 Fix5] NIE sprawdzamy dead_set
+            # [FIX] Nie dodawaj do frontieru jeśli URL był niedawno przetworzony (TTL ważny)
+            _cu_prev2 = content_seen.get(sha1(canonical_url(cu)))
+            if _cu_prev2:
+                _st2 = _cu_prev2.get("status", "")
+                if _st2 in {"NOWE", "ZMIANA", "HIT"} and not should_recheck_hit(_cu_prev2):
+                    seen_in_frontier.add(cu); continue
+                if _st2 in {"NO_MATCH", "PW_PROCESSING", "DEAD", "BLOCKED", "FAILED"} and not should_recheck_no_match(_cu_prev2):
+                    seen_in_frontier.add(cu); continue
             seen_in_frontier.add(cu)
             q.append((cu, depth + 1))
             new_links_added += 1
