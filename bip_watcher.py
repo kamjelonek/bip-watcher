@@ -2647,6 +2647,8 @@ async def phase1_full_crawl(
                 sd = int(item[1]) if isinstance(item, list) and len(item) > 1 else 0
             except Exception:
                 continue
+            if sd > 4:
+                continue
             cu = _canon(su)
             if cu and cu not in visited:
                 visited.add(cu)
@@ -2784,6 +2786,8 @@ async def phase1_full_crawl(
         for cu in all_links:
             if not cu or not allow_url(cu): continue
             if any(cu.lower().endswith(ext) for ext in ATT_EXT): continue
+            if depth + 1 > 4:
+                continue
             ul = cu.lower()
             score = 15 if any(h in ul for h in LISTING_URL_HINTS) else 1
             seeds[cu] = max(seeds.get(cu, 0), score)
@@ -3619,6 +3623,8 @@ async def phase2_focus(
                     seen_in_frontier.add(cu); continue
                 if _st in {"NO_MATCH", "PW_PROCESSING", "DEAD", "BLOCKED", "FAILED"} and not should_recheck_no_match(_cu_prev):
                     seen_in_frontier.add(cu); continue
+            if depth + 1 > 4:
+                continue
             seen_in_frontier.add(cu)
             q.append((cu, depth + 1))
             new_links_added += 1
@@ -3635,6 +3641,8 @@ async def phase2_focus(
                     seen_in_frontier.add(cu); continue
                 if _st2 in {"NO_MATCH", "PW_PROCESSING", "DEAD", "BLOCKED", "FAILED"} and not should_recheck_no_match(_cu_prev2):
                     seen_in_frontier.add(cu); continue
+            if depth + 1 > 4:
+                continue
             seen_in_frontier.add(cu)
             q.append((cu, depth + 1))
             new_links_added += 1
